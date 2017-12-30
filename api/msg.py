@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# -*- conding:utf-8 -*-
+# -*- conding:UTF-8 -*-
 
 
 class Msg(object):
-    def __init__(self,type,content,from_user_name,to_user_name):
+    def __init__(self,type,content,to_user_name):
         '''
         :param type:
             1:txt msg
@@ -13,7 +13,7 @@ class Msg(object):
         '''
         self.type = type
         self.content = content
-        self.from_user_name = from_user_name
+        #self.from_user_name = from_user_name
         self.to_user_name = to_user_name
 
         self.local_id = ''

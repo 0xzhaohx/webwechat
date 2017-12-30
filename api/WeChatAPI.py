@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding:utf-8 -*-
+# -*- coding:UTF-8 -*-
 
 import random
 import time
@@ -41,7 +41,14 @@ def _decode_data(data):
 class WeChatAPI(object):
 
     def __init__(self):
-        self.host = None
+        self.hosts = {
+            "weixin.qq.com":['login.weixin.qq.com','file.wx.qq.com','webpush.weixin.qq.com'],
+            "wx2.qq.com":['login.wx2.qq.com','file.wx2.qq.com','webpush.wx2.qq.com'],
+            "wx8.qq.com":['login.wx8.qq.com','file.wx8.qq.com','webpush.wx8.qq.com'],
+            "qq.com":['login.wx.qq.com','file.wx.qq.com','webpush.wx.qq.com'],
+            "wechat.com":['login.web.wechat.com','file.web.wechat.com','webpush.web.wechat.com'],
+            "web2.wechat.com":['login.web2.wechat.com','file.web2.wechat.com','webpush.web2.wechat.com']
+        }
         self.file_host = None
         self.appid = 'wx782c26e4c19acffb'
         self.uuid = ''
@@ -84,7 +91,7 @@ class WeChatAPI(object):
         response = urllib2.urlopen(url=request, timeout=30)
         data = response.read()
         response.close()
-        regx = r'login_window.QRLogin.code = (\d+); login_window.QRLogin.uuid = "(\S+?)"'
+        regx = r'wechat.QRLogin.code = (\d+); wechat.QRLogin.uuid = "(\S+?)"'
         if self.set_uuid(regx,data):
             pass
         else:
@@ -111,7 +118,7 @@ class WeChatAPI(object):
             return False
 
     def generate_qrcode(self):
-        print("self.uuid"+self.uuid)
+        #print("self.uuid"+self.uuid)
         url = "https://login.weixin.qq.com/qrcode/" + self.uuid;
         params = {
             't': 'webwx',
@@ -141,21 +148,28 @@ class WeChatAPI(object):
         request = urllib2.Request(url)
         response = urllib2.urlopen(url=request, timeout=30)
         data = response.read()
-        print("data:")
         print(data)
-        pm = re.search(r'login_window.code=(\d+);|window.code=(\d+);', data)
+        data = data.replace("\n","")
+        data = data.replace("\r","")
+        pm = re.search(r'wechat.code=(\d+);', data)
+        if not pm:
+            pm = re.search(r'window.code=(\d+);', data)
         code = pm.group(1)
         if code == '201':
             return True
         elif code == '200':
-            pm = re.search(r'login_window.redirect_uri="(\S+?)";|window.redirect_uri="(\S+?)";', data)
+            pm = re.search(r'wechat.redirect_uri="(\S+?)";', data)
+            if not pm:
+                pm = re.search(r'window.redirect_uri="(\S+?)";', data)
+            if not pm:
+                return False
             rd_uri = pm.group(1) + '&fun='+self.fun + '&version=v2'
             self.redirect_uri = rd_uri
             return True
         elif code == '408':
             print("error 408")
         else:
-            print("error")
+            print("unknow error")
 
         return False
 
@@ -173,6 +187,7 @@ class WeChatAPI(object):
     '''
     def login(self):
         url = self.redirect_uri;
+        print("redirect_uri="+url)
         request = urllib2.Request(url)
         response = urllib2.urlopen(url=request, timeout=30)
         data = response.read()
@@ -203,14 +218,6 @@ class WeChatAPI(object):
         }
         return True
 
-    def init_request_base(self):
-        self.base_request = {
-            'Uin': int(self.uin),
-            'Sid': str(self.sid),
-            'Skey': str(self.skey),
-            'DeviceID': self.device_id,
-        }
-
     def webwx_init(self):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxinit"+ \
             '?pass_ticket=%s&r=%s&lang=%s' % (
@@ -232,15 +239,16 @@ class WeChatAPI(object):
         data = response.read()
         dict = json.loads(data,object_hook=_decode_data)
         response.close()
-        print("webwx_init response data:")
-        print(dict)
+        #print("webwx_init response data:")
+        #print(dict)
         self.user = dict['User']
+        self.contact_list = dict['ContactList']
         self.sync_key_dic = dict['SyncKey']
 
         def foo(x):
             return str(x['Key']) + '_' + str(x['Val'])
 
-        self.sync_key = '|'.join([foo(keyVal) for keyVal in self.sync_key_dic['List']])
+        self.sync_key = '%7C'.join([foo(keyVal) for keyVal in self.sync_key_dic['List']])
         return dict
 
     def webwx_status_notify(self):
@@ -294,7 +302,7 @@ class WeChatAPI(object):
         return dict
 
     '''
-        return login_window.synccheck={retcode:"xxx",selector:"xxx"}
+        return wechat.synccheck={retcode:"xxx",selector:"xxx"}
         retcode:
             0:success
             1100:failed/logout
@@ -303,6 +311,10 @@ class WeChatAPI(object):
     '''
     def sync_check(self):
         url = "https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck"
+        url = "https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck" + \
+              '?r=%d&skey=%s&sid=%s&uin=%d&deviceid=%s&synckey=%s&_=%d' % (
+                  int(round(time.time() * 1000)),str(self.skey),str(self.sid),int(self.uin), str(self.device_id),str(self.sync_key),int(round(time.time() * 1000))
+              )
         params = {
             'r': int(time.time()),
             'skey': str(self.skey),
@@ -310,7 +322,7 @@ class WeChatAPI(object):
             'uin': int(self.uin),
             'deviceid': str(self.device_id),
             'synckey': str(self.sync_key),
-            '_': int(time.time()),
+            '_': int(time.time())
         }
 
         headers = {
@@ -318,13 +330,17 @@ class WeChatAPI(object):
             'Connection': 'keep-alive',
             "Referer": "https://wx.qq.com/?&lang=zh_TW"
         }
-        url = url + '?' + urllib.urlencode(params)
+        #url = url + '?' + urllib.urlencode(params)
         request = urllib2.Request(url=url)
 
+        request.add_header('Host', 'webpush.wx.qq.com')
         request.add_header('Connection', 'keep-alive')
         request.add_header('Referer', 'https://wx.qq.com/')
+        request.add_header("Content-Type","application/json; charset=UTF-8")
+        print(request.get_method())
         response = urllib2.urlopen(request, timeout=30)
-        print("full-url"+request.get_full_url())
+        print(response.getcode())
+        print("full-url:"+response.geturl())
         data = response.read()
         response.close()
         print("sync_check response:")
@@ -359,9 +375,8 @@ class WeChatAPI(object):
               '?pass_ticket=%s' % (
                   self.pass_ticket
               )
-        msg.local_id = clientMsgId = str(int(time.time() * 1000)) + \
+        local_id = client_msg_id = str(int(time.time() * 1000)) + \
             str(random.random())[:5].replace('.', '')
-        msg.client_msg_id = msg.local_id
 
         params = {
             'BaseRequest': self.base_request,
@@ -370,8 +385,8 @@ class WeChatAPI(object):
                 "Content":msg.content,
                 "FromUserName":self.user['UserName'],
                 "ToUserName":msg.to_user_name,
-                "LocalID":msg.local_id,
-                "ClientMsgId":msg.client_msg_id,
+                "LocalID":local_id,
+                "ClientMsgId":client_msg_id,
             }
         }
         headers = {
@@ -384,14 +399,30 @@ class WeChatAPI(object):
         response = urllib2.urlopen(request, timeout=30)
         data = response.read()
         response.close()
+        print(data)
         return data
 
 if __name__ =="__main__":
+
+    print(long(time.time()))
+    #sys.exit(0)
+
+    '''
+    dd = 'window.code=200;\nwindow.redirect_uri="https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxnewloginpage?ticket=AX0Rc5T1YmYIooRoxiAzKO-0@qrticket_0&uuid=wY0ILqfpwA==&lang=zh_CN&scan=1514535338";'
+    print(dd)
+    pm = re.search(r'window.redirect_uri="(\S+?)";', dd)
+    print pm.group(1)
+    sys.exit(0)
+    '''
+
     api = WeChatAPI()
     uuid = api.get_uuid()
     api.generate_qrcode()
     res = api.wait4login()
-    #print(res)
+    print(res)
+    if not api.redirect_uri:
+        res = api.wait4login()
+        print(res)
     res = api.login()
     #print(res)
     init_response = api.webwx_init()
@@ -399,7 +430,8 @@ if __name__ =="__main__":
     api.webwx_status_notify()
     api.webwx_get_contact()
     api.sync_check()
-    da = api.webwx_sync()
+    #da = api.webwx_sync()
+
 
 
 

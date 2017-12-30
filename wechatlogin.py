@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- conding:utf-8 -*-
+# -*- coding:UTF-8 -*-
 
 
 import sys
@@ -35,20 +35,18 @@ class WeChatLoginDialog(QtGui.QDialog, LoginWindow):
             pass
 
     def login(self):
-        login = self.api.wait4login()
-        if not self.api.redirect_uri:
-            login = True
+        login_state = self.api.wait4login()
+        if self.api.redirect_uri:
+            login_state = True
         else:
-            login = self.api.wait4login(0)
-            if not self.api.redirect_uri:
-                login = True
+            login_state = self.api.wait4login(0)
+            if self.api.redirect_uri:
+                login_state = True
             else:
-                login = False
+                login_state = False
 
-        if login:
-            return self.accept()
-        else:
-            return self.reject()
+        if login_state:
+            self.accept()
 
     def generate_qrcode(self):
         uuid = self.api.get_uuid()
@@ -61,9 +59,8 @@ if __name__ =="__main__":
     loginDialog = WeChatLoginDialog()
     loginDialog.show()
     if QtGui.QDialog.Accepted == loginDialog.exec_():
-        window = WeChat()
+        window = WeChat(loginDialog.api)
         window.show()
-        window.api = loginDialog.api
         sys.exit(app.exec_())
     else:
         sys.exit(0)
