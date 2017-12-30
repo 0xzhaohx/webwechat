@@ -333,14 +333,12 @@ class WeChatAPI(object):
         #url = url + '?' + urllib.urlencode(params)
         request = urllib2.Request(url=url)
 
-        request.add_header('Host', 'webpush.wx.qq.com')
         request.add_header('Connection', 'keep-alive')
         request.add_header('Referer', 'https://wx.qq.com/')
-        request.add_header("Content-Type","application/json; charset=UTF-8")
-        print(request.get_method())
-        response = urllib2.urlopen(request, timeout=30)
-        print(response.getcode())
+        #request.add_header("Content-Type","application/json; charset=UTF-8")
+        response = urllib2.urlopen(request, timeout=60)
         print("full-url:"+response.geturl())
+        print(response.getcode())
         data = response.read()
         response.close()
         print("sync_check response:")
@@ -371,6 +369,38 @@ class WeChatAPI(object):
         return data
 
     def webwx_send_msg(self,msg):
+        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg" + \
+              '?pass_ticket=%s' % (
+                  self.pass_ticket
+              )
+        local_id = client_msg_id = str(int(time.time() * 1000)) + \
+            str(random.random())[:5].replace('.', '')
+
+        params = {
+            'BaseRequest': self.base_request,
+            'Msg': {
+                "Type":msg.type,
+                "Content":msg.content,
+                "FromUserName":self.user['UserName'],
+                "ToUserName":msg.to_user_name,
+                "LocalID":local_id,
+                "ClientMsgId":client_msg_id,
+            }
+        }
+        headers = {
+            'User-Agent': "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)",
+            "Content-Type": "application/json; charset=UTF-8",
+            "Referer": "https://wx.qq.com"
+        }
+
+        request = urllib2.Request(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
+        response = urllib2.urlopen(request, timeout=30)
+        data = response.read()
+        response.close()
+        print(data)
+        return data
+
+    def webwx_revoke_msg(self,msg):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg" + \
               '?pass_ticket=%s' % (
                   self.pass_ticket

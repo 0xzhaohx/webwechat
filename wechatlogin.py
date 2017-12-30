@@ -55,6 +55,8 @@ class WeChatLoginDialog(QtGui.QDialog, LoginWindow):
 
 if __name__ =="__main__":
 
+    #QtGui.QTextCodec.setCodecForTr(QtGui.QTextCodec.codecForName("utf8"))
+    #QtGui.QTextCodec.setCodecForCStrings(QtGui.QTextCodec.codecForLocale())
     app = QtGui.QApplication(sys.argv)
     loginDialog = WeChatLoginDialog()
     loginDialog.show()

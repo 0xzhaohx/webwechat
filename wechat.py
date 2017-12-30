@@ -26,6 +26,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.init_reader()
         self.memberListWidget.setVisible(False)
         self.readerListWidget.setVisible(False)
+        self.current_select_contact = None
 
         #self.chatWidget.setVisible(False)
 
@@ -42,15 +43,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def init_contact(self):
         self.api.webwx_init()
         for contact in self.api.contact_list:
-            self.contactListWidget.addItem(contact['NickName'])
-
-        self.contactListWidget.addItem("contact")
+            self.contactListWidget.addItem(QtCore.QString.fromUtf8(contact['NickName']))
         self.contactListWidget.clicked.connect(self.contact_cell_clicked)
         self.contactListWidget.itemSelectionChanged.connect(self.contact_itemSelectionChanged)
 
     def init_member(self):
-        self.memberListWidget.addItem("members")
-        self.memberListWidget.clicked.connect(self.contact_cell_clicked)
+        self.api.webwx_get_contact()
+        for member in self.api.member_list:
+            self.memberListWidget.addItem(QtCore.QString.fromUtf8(member['NickName']))
+
+        self.memberListWidget.clicked.connect(self.member_cell_clicked)
 
     def init_reader(self):
         self.readerListWidget.addItem("readers")
@@ -75,30 +77,29 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def read_button_clicked(self):
         pass
 
-
     def contact_cell_clicked(self):
-        print("cell_click")
         current_row =self.contactListWidget.currentRow()
-        print(current_row)
+        print("current_row %d"%(current_row))
         contact = self.api.contact_list[current_row]
+        self.current_select_contact = contact
         print(contact)
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
 
     def member_cell_clicked(self):
         print("cell_click")
-        self.widget.setVisible(True)
-        self.label_2.setVisible(False)
+        current_row =self.memberListWidget.currentRow()
+        contact = self.api.member_list[current_row]
+        self.current_select_contact = contact
+        #self.widget.setVisible(True)
+        #self.label_2.setVisible(False)
 
     def send_button_click(self):
-        current_item = self.contactListWidget.currentItem()
-        current_row =self.contactListWidget.currentRow()
-        contact = self.api.contact_list[current_row]
-        print(current_row)
-        print(current_item)
+        contact = self.current_select_contact
         msg = str(self.draft.toPlainText())
         gsm = Msg(1,msg,contact['UserName'])
-        self.api.webwx_send_msg(gsm)
+        print(contact)
+        #self.api.webwx_send_msg(gsm)
         self.messages.append(msg)
 
         self.draft.setText("")
