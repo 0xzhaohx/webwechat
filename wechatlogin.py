@@ -2,13 +2,13 @@
 # -*- coding:UTF-8 -*-
 
 
-import sys
 import os
+import sys
 
-from PyQt4 import QtGui, uic,QtCore
+from PyQt4 import QtGui, uic
 
+from api.urllib2.WeChatAPI import WeChatAPI
 from wechat import WeChat
-from api.WeChatAPI import WeChatAPI
 
 qtCreatorFile = "resource/ui/wechatlogindialog.ui"
 

@@ -2,11 +2,12 @@
 # -*- coding:UTF-8 -*-
 
 import sys
-from PyQt4 import QtCore,QtGui,uic
-from api.WeChatAPI import WeChatAPI
-from api.msg import Msg
 import threading
-from time import ctime,sleep
+from time import sleep
+
+from PyQt4 import QtCore, QtGui, uic
+
+from api.msg import Msg
 
 qtCreatorFile = "resource/ui/wechat-0.1.1.ui"
 
@@ -79,18 +80,17 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
     def contact_cell_clicked(self):
         current_row =self.contactListWidget.currentRow()
-        print("current_row %d"%(current_row))
         contact = self.api.contact_list[current_row]
         self.current_select_contact = contact
-        print(contact)
+        self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(contact['NickName']))
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
 
     def member_cell_clicked(self):
-        print("cell_click")
         current_row =self.memberListWidget.currentRow()
         contact = self.api.member_list[current_row]
         self.current_select_contact = contact
+        self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(contact['NickName']))
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
 
@@ -99,7 +99,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         msg = str(self.draft.toPlainText())
         gsm = Msg(1,msg,contact['UserName'])
         print(contact)
-        #self.api.webwx_send_msg(gsm)
+        self.api.webwx_send_msg(gsm)
         self.messages.append(msg)
 
         self.draft.setText("")
@@ -113,9 +113,27 @@ class WeChatSync(threading.Thread):
         self.setDaemon(True)
 
     def run(self):
+        hosts = ['https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck',
+                 'https://webpush.weixin.qq.com/cgi-bin/mmwebwx-bin/synccheck',
+                 'https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck',
+                 'https://webpush.wx8.qq.com/cgi-bin/mmwebwx-bin/synccheck',
+                 'https://webpush.web.wechat.com/cgi-bin/mmwebwx-bin/synccheck',
+                 'https://webpush.web2.wechat.com/cgi-bin/mmwebwx-bin/synccheck'
+                 ]
         while(True):
-            self.api.sync_check()
-            print(str(ctime())+" sync:"+self.api.appid)
+            '''
+            for host in hosts:
+                (code, selector) = self.api.sync_check(host)
+                print("code=%s,selector=%s"%(code,selector))
+            '''
+            (code,selector) = self.api.sync_check()
+            if code == -1 and selector == -1:
+                print("self.api.sync_check() error")
+            else:
+                if code != 0 and selector != 0:
+                    sync_response = self.api.webwx_sync()
+                    print("webwx_sync:")
+                    print(sync_response)
             sleep(5)
 
 ''''''

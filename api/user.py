@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- conding:utf-8 -*-
+# -*- coding:UTF-8 -*-
 
 
 class User(object):
