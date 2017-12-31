@@ -136,7 +136,7 @@ class WeChatSync(threading.Thread):
                     print(sync_response)
             sleep(5)
 
-''''''
+'''
 if __name__ =="__main__":
 
     app = QtGui.QApplication(sys.argv)
@@ -145,4 +145,4 @@ if __name__ =="__main__":
         wechat = WeChat()
         wechat.show()
         sys.exit(app.exec_())
-
+'''
