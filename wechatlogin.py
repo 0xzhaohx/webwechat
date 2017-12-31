@@ -9,7 +9,7 @@ from time import sleep
 
 from PyQt4 import QtGui, uic
 
-from api.urllib2.WeChatAPI import WeChatAPI
+from api.requests.WeChatAPI import WeChatAPI
 from wechat import WeChat
 
 qtCreatorFile = "resource/ui/wechatlogindialog.ui"

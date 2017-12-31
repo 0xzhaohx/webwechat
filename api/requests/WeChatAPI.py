@@ -3,8 +3,6 @@
 
 import random
 import time
-import urllib
-import urllib2,cookielib
 import requests
 import re
 import xml.dom.minidom
@@ -77,7 +75,7 @@ class WeChatAPI(object):
         self.lang = 'zh_TW'
         self.version='0.1'
         self.wxversion = 'v2'
-        self.cookie = cookielib.CookieJar()
+        #self.cookie = cookielib.CookieJar()
         self.user_agent = (
             'Mozilla/5.0 (X11; Linux x86_64) '
             'AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -88,13 +86,13 @@ class WeChatAPI(object):
 
     def get_uuid(self):
         url = "https://login.weixin.qq.com/jslogin";
-        parameters = {
+        params = {
             'appid': self.appid,
             'fun': self.fun,
             'lang': self.lang,
             '_': int(time.time())
         }
-        data = self.post(url,parameters)
+        data = self.post(url,params)
         regx = r'wechat.QRLogin.code = (\d+); wechat.QRLogin.uuid = "(\S+?)"'
         if self.set_uuid(regx,data):
             pass
@@ -123,11 +121,11 @@ class WeChatAPI(object):
 
     def generate_qrcode(self):
         url = "https://login.weixin.qq.com/qrcode/" + self.uuid;
-        parameters = {
+        params = {
             't': 'webwx',
             '_': int(time.time())
         }
-        data = self.post(url,parameters,is_content=True)
+        data = self.post(url, params, stream=True)
 
         image = os.environ['HOME']+"/.wechat/qrcode.jpg"
         with open(image, 'wb') as image:
@@ -211,24 +209,22 @@ class WeChatAPI(object):
         return True
 
     def webwx_init(self):
-        url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxinit'+ \
-            '?pass_ticket=%s&r=%s'%(
-            str(self.pass_ticket), int(time.time())
-        )
-        parameters = {
+        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxinit" + \
+              '?pass_ticket=%s&r=%s&lang=%s' % (
+                  self.pass_ticket, int(time.time()), self.lang
+              )
+        params = {
             'BaseRequest': self.base_request
         }
         headers = {
-            'user-agent': self.user_agent,
-            "content-type": "application/json; charset=UTF-8",
+            'ser-agent': self.user_agent,
+            'content-type': 'application/json; charset=UTF-8',
             'connection': 'keep-alive',
-            "referer": "https://wx.qq.com"
+            'referer': 'https://wx.qq.com'
         }
-        data = self.json_post(url,parameters)
-        dict = data
-        print("init response data")
-        print(dict)
 
+        data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
+        dict = json.loads(data, object_hook=_decode_data)
         self.user = dict['User']
         self.contact_list = dict['ContactList']
         self.sync_key_dic = dict['SyncKey']
@@ -244,7 +240,7 @@ class WeChatAPI(object):
               '?pass_ticket=%s&lang=%s' % (
                   self.pass_ticket, self.lang
               )
-        parameters = {
+        params = {
             'BaseRequest': self.base_request,
             'Code' : 3,
             'FromUserName': self.user['UserName'],
@@ -257,7 +253,7 @@ class WeChatAPI(object):
             'connection': 'keep-alive',
             "referer": "https://wx.qq.com"
         }
-        data = self.json_post(url,parameters)
+        data = self.post_json(url, params)
         return data
 
     def webwx_get_contact(self):
@@ -265,7 +261,7 @@ class WeChatAPI(object):
               '?pass_ticket=%s&lang=%s' % (
                   self.pass_ticket, self.lang
               )
-        parameters = {
+        params = {
             'BaseRequest': self.base_request
         }
         headers = {
@@ -275,11 +271,10 @@ class WeChatAPI(object):
             "referer": "https://wx.qq.com"
         }
 
-        data = self.json_post(url,parameters)
-        dict = data
+        data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
+        dict = json.loads(data, object_hook=_decode_data)
         self.member_list = dict['MemberList']
         self.member_count = dict['MemberCount']
-        
         return dict
 
     '''
@@ -294,13 +289,7 @@ class WeChatAPI(object):
         if not host:
             host = "https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck"
         url = host
-        '''
-        url = host + \
-              '?r=%d&skey=%s&sid=%s&uin=%d&deviceid=%s&synckey=%s&_=%d' % (
-                  int(round(time.time() * 1000)),str(self.skey),str(self.sid),int(self.uin), str(self.device_id),str(self.sync_key),int(round(time.time() * 1000))
-              )
-        '''
-        parameters = {
+        params = {
             'r': int(time.time()),
             'skey': str(self.skey),
             'sid': str(self.sid),
@@ -317,11 +306,8 @@ class WeChatAPI(object):
             "referer": "https://wx.qq.com/?&lang=zh_TW",
             'user-agent': self.user_agent
         }
-        url = url + '?' + urllib.urlencode(parameters)
-        print("URL==:"+url)
 
-        #for head in request.get
-        data = self.get(url)
+        data = self.get(url, data=params)
         print("sync_check:")
         print(data)
         pm = re.search(r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}', data)
@@ -336,7 +322,7 @@ class WeChatAPI(object):
             '?sid=%s&skey=%s&pass_ticket=%s' % (
                 self.sid, self.skey, self.pass_ticket
             )
-        parameters = {
+        params = {
             'BaseRequest': self.base_request,
             'SyncKey':self.sync_key_dic,
             'rr':~int(time.time())
@@ -347,38 +333,10 @@ class WeChatAPI(object):
             "referer": "https://wx.qq.com"
         }
 
-        data = self.json_post(url,parameters)
+        data = self.post_json(url, params)
         return data
 
     def webwx_send_msg(self,msg):
-        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg" + \
-              '?pass_ticket=%s' % (
-                  self.pass_ticket
-              )
-        local_id = client_msg_id = str(int(time.time() * 1000)) + \
-            str(random.random())[:5].replace('.', '')
-
-        parameters = {
-            'BaseRequest': self.base_request,
-            'Msg': {
-                "Type":msg.type,
-                "Content":msg.content,
-                "FromUserName":self.user['UserName'],
-                "ToUserName":msg.to_user_name,
-                "LocalID":local_id,
-                "ClientMsgId":client_msg_id,
-            }
-        }
-        headers = {
-            'User-Agent': "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)",
-            "Content-Type": "application/json; charset=UTF-8",
-            "Referer": "https://wx.qq.com"
-        }
-
-        data = self.json_post(url,parameters)
-        return data
-
-    def webwx_revoke_msg(self,msg):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg" + \
               '?pass_ticket=%s' % (
                   self.pass_ticket
@@ -403,109 +361,80 @@ class WeChatAPI(object):
             "Referer": "https://wx.qq.com"
         }
 
-        request = urllib2.Request(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
-        response = urllib2.urlopen(request, timeout=30)
-        data = response.read()
-        response.close()
-        print(data)
+        data = self.post_json(url, params)
         return data
-    '''
-    def get(self,url):
+
+    def webwx_revoke_msg(self,msg):
+        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg" + \
+              '?pass_ticket=%s' % (
+                  self.pass_ticket
+              )
+        local_id = client_msg_id = str(int(time.time() * 1000)) + \
+            str(random.random())[:5].replace('.', '')
+
+        params = {
+            'BaseRequest': self.base_request,
+            'Msg': {
+                "Type":msg.type,
+                "Content":msg.content,
+                "FromUserName":self.user['UserName'],
+                "ToUserName":msg.to_user_name,
+                "LocalID":local_id,
+                "ClientMsgId":client_msg_id,
+            }
+        }
+        headers = {
+            'Connection':'keep-alive',
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Referer': 'https://wx.qq.com',
+            'User-Agent': self.user_agent
+        }
+
+        response = self.post_json(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
+        data = response.text
+        response.close()
+        return data
+
+    def get(self, url, data ={}):
 
         _headers = {
-            'Connection':'keep-alive',
+            'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
-            'User-Agent':self.user_agent
+            'User-Agent': self.user_agent
         }
-        request = urllib2.Request(url=url,headers=_headers)
 
         while True:
+
+            response = requests.get(url=url, data=data, headers=_headers)
+            response.encoding='utf-8'
+            data = response.text
+            response.close()
+            return data
+            '''
             try:
-                response = urllib2.urlopen(request, timeout=30)
-                data = response.read()
-                print(response.info())
-                response.close()
-                return data
             except (KeyboardInterrupt, SystemExit):
                 print("KeyboardInterrupt SystemExit")
             except:
                 print("except")
+            '''
 
-            time.sleep(1)
-
-    def post(self,url,parameters,):
+    def post(self, url, data, headers={}, stream=False):
         _headers = {
-            'Connection':'keep-alive',
+            'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
-            'User-Agent':self.user_agent
-        }
-        request = urllib2.Request(url=url, data=urllib.urlencode(parameters),headers=_headers)
-
-        while True:
-            try:
-                response = urllib2.urlopen(request, timeout=30)
-                data = response.read()
-                response.close()
-                return data
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
-                #Log.error(traceback.format_exc())
-                pass
-
-            time.sleep(1)
-
-    def json_post(self,url,parameters,headers = {}):
-        request = urllib2.Request(url=url, data=json.dumps(parameters, ensure_ascii=False).encode('utf8'),headers=headers)
-        request.add_header('Content-Type', 'application/json; charset=UTF-8')
-        while True:
-            try:
-                response = urllib2.urlopen(request, timeout=30)
-                data = response.read()
-                response.close()
-                return json.loads(data, object_hook=_decode_data)
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
-                #Log.error(traceback.format_exc())
-                pass
-
-            time.sleep(1)
-    '''
-    ##################################requests#######################################
-    def get(self,url,params ={}):
-
-        _headers = {
-            'Connection':'keep-alive',
-            'Referer': 'https://wx.qq.com/?&lang=zh_TW',
-            'User-Agent':self.user_agent
+            'User-Agent': self.user_agent
         }
 
-        while True:
-            try:
-                response = api.requests.get(url=url, params = params, headers=_headers)
-                data = response.text
-                response.close()
-
-                return data
-            except (KeyboardInterrupt, SystemExit):
-                print("KeyboardInterrupt SystemExit")
-            except:
-                print("except")
-
-    def post(self,url,parameters,is_content = None):
-        _headers = {
-            'Connection':'keep-alive',
-            'Referer': 'https://wx.qq.com/?&lang=zh_TW',
-            'User-Agent':self.user_agent
-        }
+        for (key,value) in headers.items():
+            _headers[key]=value
 
         while True:
             try:
-                response = api.requests.post(url=url, params=parameters, headers=_headers)
-                if is_content:
+                response = requests.post(url=url, data=data, headers=_headers)
+                if stream:
                     data = response.content
                 else:
+                    response.encoding='utf-8'
                     data = response.text
                 response.close()
                 return data
@@ -515,44 +444,30 @@ class WeChatAPI(object):
                 #Log.error(traceback.format_exc())
                 pass
 
-    def json_post(self,url,parameters):
+    def post_json(self, url, data, headers={}):
         _headers = {
-            'Connection':'keep-alive',
+            'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
             'Content-Type': 'application/json; charset=UTF-8',
-            'User-Agent':self.user_agent
+            'User-Agent': self.user_agent
         }
+
+        for (key,value) in headers.items():
+            _headers[key]=value
+
         while True:
             try:
-                response = api.requests.post(url=url, params=json.dumps(parameters, ensure_ascii=False).encode('utf8'), headers=_headers)
+                response = requests.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=_headers)
                 data = response.text
                 response.close()
-                print("=======")
-                print(data)
                 return data
-                #return json.loads(data, object_hook=_decode_data)
             except (KeyboardInterrupt, SystemExit):
                 raise
             except:
-                #Log.error(traceback.format_exc())
                 pass
-    #############################################################################
+
 
 if __name__ =="__main__":
-
-    dd = 'window.synccheck={retcode:"1102",selector:"0"}';
-    pm = re.search(r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}', dd)
-    print("code:%s,selector:%s"%(pm.group(1),pm.group(2)))
-    #sys.exit(0)
-
-    '''
-    dd = 'window.code=200;\nwindow.redirect_uri="https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxnewloginpage?ticket=AX0Rc5T1YmYIooRoxiAzKO-0@qrticket_0&uuid=wY0ILqfpwA==&lang=zh_CN&scan=1514535338";'
-    print(dd)
-    pm = re.search(r'window.redirect_uri="(\S+?)";', dd)
-    print pm.group(1)
-    sys.exit(0)
-    '''
-
     api = WeChatAPI()
     uuid = api.get_uuid()
     print("get uuid success")

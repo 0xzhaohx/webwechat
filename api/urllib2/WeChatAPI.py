@@ -230,10 +230,10 @@ class WeChatAPI(object):
             'BaseRequest': self.base_request
         }
         headers = {
-            'user-agent': self.user_agent,
-            "content-type": "application/json; charset=UTF-8",
+            'ser-agent': self.user_agent,
+            'content-type': 'application/json; charset=UTF-8',
             'connection': 'keep-alive',
-            "referer": "https://wx.qq.com"
+            'referer': 'https://wx.qq.com'
         }
 
         request = urllib2.Request(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
@@ -242,8 +242,6 @@ class WeChatAPI(object):
         data = response.read()
         dict = json.loads(data,object_hook=_decode_data)
         response.close()
-        #print("webwx_init response data:")
-        #print(dict)
         self.user = dict['User']
         self.contact_list = dict['ContactList']
         self.sync_key_dic = dict['SyncKey']
