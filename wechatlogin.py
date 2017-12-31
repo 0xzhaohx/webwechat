@@ -27,7 +27,7 @@ class WeChatLoginDialog(QtGui.QDialog, LoginWindow,threading.Thread):
         threading.Thread.__init__(self,name='wechat login')
         self.setDaemon(True)
         self.api = WeChatAPI()
-        self.logint = WeChatLogint(self.api)
+        self.logint = WeChatLogint(self,self.api)
         self.setupUi(self)
         self.loginButton.clicked.connect(self.login)
         self.generate_qrcode()
@@ -49,6 +49,7 @@ class WeChatLoginDialog(QtGui.QDialog, LoginWindow,threading.Thread):
             pass
 
     def login(self):
+        print("auto login")
         login_state = self.api.wait4login()
         if self.api.redirect_uri:
             login_state = True
@@ -66,27 +67,22 @@ class WeChatLoginDialog(QtGui.QDialog, LoginWindow,threading.Thread):
         uuid = self.api.get_uuid()
         self.api.generate_qrcode()
 
-    def run(self):
-        print('WeChatLogint#run')
-        print(not WeChatLoginDialog.time_out)
-        while(not (True == WeChatLoginDialog.time_out)):
-            print(WeChatLoginDialog.time_out)
-            sleep(1)
-
 
 class WeChatLogint(threading.Thread):
 
-    def __init__(self,api):
+    def __init__(self,logind,api):
         threading.Thread.__init__(self,name='wechat login')
         self.setDaemon(True)
+        self.logind = logind
         self.api = api
-        print("WeChatLogintiiiiiiiiiiiiiiiii")
 
     def run(self):
         print('WeChatLogint#run')
         print(not WeChatLoginDialog.time_out)
+
         while(not (True == WeChatLoginDialog.time_out)):
             print(WeChatLoginDialog.time_out)
+            #self.logind.login()
             sleep(1)
 
 if __name__ =="__main__":
