@@ -130,13 +130,14 @@ class WeChatSync(threading.Thread):
             if code == -1 and selector == -1:
                 print("self.api.sync_check() error")
             else:
-                if code == 0:
-                    break
+                if code == 0 and selector == 0:
+                    sleep(5)
                 else:
                     if code != 0 and selector != 0:
                         sync_response = self.api.webwx_sync()
-                        print("webwx_sync:")
+                        print("WeChatSync.run#webwx_sync:")
                         print(sync_response)
+                        print("WeChatSync.run#webwx_sync end=======================--------------------------======================\n\n")
             sleep(5)
 
 '''

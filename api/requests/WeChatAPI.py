@@ -75,17 +75,15 @@ class WeChatAPI(object):
         self.group_list = []
         self.fun = 'new'
         self.lang = 'zh_TW'
-        self.version='0.1'
-        self.wxversion = 'v2'
-        #self.cookie = cookielib.CookieJar()
+        self.timeout = 30
+        self.session = requests.session()
         self.user_agent = (
             'Mozilla/5.0 (X11; Linux x86_64) '
             'AppleWebKit/537.36 (KHTML, like Gecko) '
             'Chrome/63.0.3239.108 Safari/537.36'
         )
-        self.timeout = 30
-        self.session = None
-        self.cookies = {}
+        self.version='0.1'
+        self.wxversion = 'v2'
 
     def get_uuid(self):
         url = "https://login.wx.qq.com/jslogin";
@@ -96,7 +94,8 @@ class WeChatAPI(object):
             'lang': self.lang,
             '_': int(time.time())
         }
-        data = self.post(url,params)
+        url = url + "?" + urllib.urlencode(params)
+        data = self.get(url)
         regx = r'wechat.QRLogin.code = (\d+); wechat.QRLogin.uuid = "(\S+?)"'
         if self.set_uuid(regx,data):
             pass
@@ -220,10 +219,6 @@ class WeChatAPI(object):
             'Skey': str(self.skey),
             'DeviceID': self.device_id,
         }
-        self.cookies = {
-            'wxsid':self.sid,
-            'wxuin':self.uin
-        }
         return True
 
     def webwx_init(self):
@@ -235,10 +230,10 @@ class WeChatAPI(object):
             'BaseRequest': self.base_request
         }
         headers = {
-            'ser-agent': self.user_agent,
-            'content-type': 'application/json; charset=UTF-8',
-            'connection': 'keep-alive',
-            'referer': 'https://wx.qq.com'
+            'User-Agent': self.user_agent,
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Connection': 'keep-alive',
+            'Referer': 'https://wx.qq.com'
         }
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
@@ -320,14 +315,13 @@ class WeChatAPI(object):
         return wechat.synccheck={retcode:"xxx",selector:"xxx"}
         retcode:
             0:success
-            1100:failed/logout
-            1101:login otherwhere
-            1102:?
+            1100:你在手机上登出了微信
+            1101:你在其他地方登录了 WEB 版微信
+            1102:你在手机上主动退出了
     '''
     def sync_check(self,host=None):
         if not host:
-            host = "https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck"
-        url = host
+            host = 'https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck'
         params = {
             'r': int(time.time()),
             'skey': str(self.skey),
@@ -345,8 +339,8 @@ class WeChatAPI(object):
             "referer": "https://wx.qq.com/?&lang=zh_TW",
             'user-agent': self.user_agent
         }
-
-        data = self.get(url, data=urllib.urlencode(params))
+        url = host + '?' + urllib.urlencode(params)
+        data = self.get(url)
         print("sync_check_response:")
         print(data)
         pm = re.search(r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}', data)
@@ -436,21 +430,26 @@ class WeChatAPI(object):
 
     def get(self, url, data ={}):
 
-        _headers = {
+        default_headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
             'User-Agent': self.user_agent
         }
 
         while True:
-
-            response = requests.get(url=url, data=data, headers=_headers,cookies=self.cookies)
+            print("get~~~~~~"+url)
+            print("request headers:")
+            response = self.session.get(url=url, data=data, headers=default_headers)
             response.encoding='utf-8'
             data = response.text
-            print("get~~~~~~"+url)
+            print(response.request.headers)
+            print("cookie:")
+            cookies = response.cookies
+            for item in cookies.items():
+                print(item)
             print("response headers:")
             print(response.headers)
-            print("end")
+            print("end-------------------------------------------\n")
             response.close()
             return data
             '''
@@ -462,28 +461,34 @@ class WeChatAPI(object):
             '''
 
     def post(self, url, data, headers={}, stream=False):
-        _headers = {
+        default_headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
+            'Content-Type': 'application/json; charset=UTF-8',
             'User-Agent': self.user_agent
         }
 
         for (key,value) in headers.items():
-            _headers[key]=value
+            default_headers[key]=value
 
         while True:
+            print("post~~~~~~"+url)
             try:
-                response = requests.post(url=url, data=data, headers=_headers,cookies=self.cookies)
+                response = self.session.post(url=url, data=data, headers=default_headers)
                 if stream:
                     data = response.content
                 else:
                     response.encoding='utf-8'
                     data = response.text
-
-                print("post~~~~~~"+url)
+                print("request headers:")
+                print(response.request.headers)
+                print("cookie:")
+                cookies = response.cookies
+                for item in cookies.items():
+                    print(item)
                 print("response headers:")
                 print(response.headers)
-                print("end")
+                print("end-------------------------------------------\n")
                 response.close()
                 return data
             except (KeyboardInterrupt, SystemExit):
@@ -493,7 +498,7 @@ class WeChatAPI(object):
                 pass
 
     def post_json(self, url, data, headers={}):
-        _headers = {
+        default_headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
             'Content-Type': 'application/json; charset=UTF-8',
@@ -501,17 +506,23 @@ class WeChatAPI(object):
         }
 
         for (key,value) in headers.items():
-            _headers[key]=value
+            default_headers[key]=value
 
         while True:
+            print("post_json~~~~~~"+url)
+            print("request headers:")
             try:
-                response = requests.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=_headers,cookies=self.cookies)
+                response = self.session.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=default_headers)
                 response.encoding='utf-8'
                 data = response.text
-                print("~~~~~~"+url)
+                print(response.request.headers)
+                print("cookie:")
+                cookies = response.cookies
+                for item in cookies.items():
+                    print(item)
                 print("response headers:")
                 print(response.headers)
-                print("end")
+                print("end-------------------------------------------\n")
                 response.close()
                 return data
             except (KeyboardInterrupt, SystemExit):
