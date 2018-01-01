@@ -43,15 +43,22 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
     def init_contact(self):
         self.api.webwx_init()
+        self.userNameLabel.setText((self.api.user['NickName']))
         for contact in self.api.contact_list:
-            self.contactListWidget.addItem(QtCore.QString.fromUtf8(contact['NickName']))
+            dn = contact['RemarkName']
+            if not dn:
+                dn = contact['NickName']
+            self.contactListWidget.addItem(QtCore.QString.fromUtf8(dn))
         self.contactListWidget.clicked.connect(self.contact_cell_clicked)
         self.contactListWidget.itemSelectionChanged.connect(self.contact_itemSelectionChanged)
 
     def init_member(self):
         self.api.webwx_get_contact()
         for member in self.api.member_list:
-            self.memberListWidget.addItem(QtCore.QString.fromUtf8(member['NickName']))
+            dn = member['RemarkName']
+            if not dn:
+                dn = member['NickName']
+            self.memberListWidget.addItem(QtCore.QString.fromUtf8(dn))
 
         self.memberListWidget.clicked.connect(self.member_cell_clicked)
 
@@ -82,7 +89,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         current_row =self.contactListWidget.currentRow()
         contact = self.api.contact_list[current_row]
         self.current_select_contact = contact
-        self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(contact['NickName']))
+        dn = contact['RemarkName']
+        if not dn:
+            dn = contact['NickName']
+        self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
 
@@ -90,7 +100,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         current_row =self.memberListWidget.currentRow()
         contact = self.api.member_list[current_row]
         self.current_select_contact = contact
-        self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(contact['NickName']))
+        dn = contact['RemarkName']
+        if not dn:
+            dn = contact['NickName']
+        self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
 

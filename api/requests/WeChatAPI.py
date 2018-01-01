@@ -54,8 +54,11 @@ class WeChatAPI(object):
         self.redirect_uri = None
         self.login_icon = True
         self.skey = ''
+        #wxsid:weixin session id
         self.sid = ''
+        #wxuin: weixin user identity number
         self.uin = ''
+        #pass_ticket: 通关文牒
         self.pass_ticket = ''
         self.is_grayscale = 0
         self.base_request = {}
@@ -238,6 +241,7 @@ class WeChatAPI(object):
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
         dict = json.loads(data, object_hook=_decode_data)
+        print(data)
         self.user = dict['User']
         self.contact_list = dict['ContactList']
         self.update_sync_key(dict)
@@ -316,6 +320,36 @@ class WeChatAPI(object):
         self.member_count = dict['MemberCount']
         return dict
 
+    def webwx_batch_get_contact(self):
+        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact" + \
+              '?type=ex&r=%s&pass_ticket=%s&lang=%s' % (
+                  self.pass_ticket, int(time.time()),self.pass_ticket
+              )
+        params = {
+            'BaseRequest': self.base_request,
+            'Count': 1,
+            'List': [
+                {
+
+                    'UserName': '',
+                    'EncryChatRoomId': ''
+                }
+
+            ]
+        }
+        headers = {
+            'User-Agent': self.user_agent,
+            "Content-Type": "application/json; charset=UTF-8",
+            'Connection': 'keep-alive',
+            "Referer": "https://wx.qq.com"
+        }
+
+        data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
+        dict = json.loads(data, object_hook=_decode_data)
+        self.member_list = dict['MemberList']
+        self.member_count = dict['MemberCount']
+        return dict
+
     '''
         return wechat.synccheck={retcode:"xxx",selector:"xxx"}
         retcode:
@@ -357,6 +391,14 @@ class WeChatAPI(object):
         else:
             return (-1,-1)
 
+    '''
+    BaseResponse
+    AddMsgCount:新增消息数
+    AddMsgList：新增消息列表
+    ModContactCount: 变更联系人数目
+    ModContactList: 变更联系人列表
+    SyncKey:新的synckey列表
+    '''
     def webwx_sync(self):
 
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync" + \

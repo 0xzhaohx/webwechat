@@ -34,7 +34,6 @@ class WeChatLoginDialog(QtGui.QDialog, LoginWindow,threading.Thread):
         self.set_qr_code_image()
 
     def qr_time_out(self):
-        print("timeout")
         WeChatLoginDialog.time_out = True
 
     def set_qr_code_image(self):
@@ -49,7 +48,6 @@ class WeChatLoginDialog(QtGui.QDialog, LoginWindow,threading.Thread):
             pass
 
     def login(self):
-        print("auto login")
         login_state = self.api.wait4login()
         if self.api.redirect_uri:
             login_state = True
@@ -77,7 +75,6 @@ class WeChatLogint(threading.Thread):
         self.api = api
 
     def run(self):
-        print('WeChatLogint#run')
         print(not WeChatLoginDialog.time_out)
 
         while(not (True == WeChatLoginDialog.time_out)):
