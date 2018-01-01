@@ -81,7 +81,7 @@ class WeChatLogint(threading.Thread):
         print(not WeChatLoginDialog.time_out)
 
         while(not (True == WeChatLoginDialog.time_out)):
-            print(WeChatLoginDialog.time_out)
+            #print(WeChatLoginDialog.time_out)
             #self.logind.login()
             sleep(1)
 

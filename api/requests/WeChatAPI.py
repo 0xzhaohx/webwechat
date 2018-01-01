@@ -451,9 +451,6 @@ class WeChatAPI(object):
             response = self.session.get(url=url, data=data, headers=default_headers)
             response.encoding='utf-8'
             data = response.text
-            cookies = response.cookies
-            for item in cookies.items():
-                print(item)
             response.close()
             return data
             '''
@@ -483,9 +480,6 @@ class WeChatAPI(object):
                 else:
                     response.encoding='utf-8'
                     data = response.text
-                cookies = response.cookies
-                for item in cookies.items():
-                    print(item)
                 response.close()
                 return data
             except (KeyboardInterrupt, SystemExit):
@@ -510,9 +504,6 @@ class WeChatAPI(object):
                 response = self.session.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=default_headers)
                 response.encoding='utf-8'
                 data = response.text
-                cookies = response.cookies
-                for item in cookies.items():
-                    print(item)
                 response.close()
                 return data
             except (KeyboardInterrupt, SystemExit):
