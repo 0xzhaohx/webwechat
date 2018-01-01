@@ -3,6 +3,7 @@
 
 import random
 import time
+import urllib
 import requests
 import re
 import xml.dom.minidom
@@ -51,9 +52,10 @@ class WeChatAPI(object):
         self.appid = 'wx782c26e4c19acffb'
         self.uuid = ''
         self.redirect_uri = None
+        self.login_icon = True
         self.skey = ''
         self.sid = ''
-        self.uid = ''
+        self.uin = ''
         self.pass_ticket = ''
         self.is_grayscale = 0
         self.base_request = {}
@@ -83,11 +85,13 @@ class WeChatAPI(object):
         )
         self.timeout = 30
         self.session = None
+        self.cookies = {}
 
     def get_uuid(self):
-        url = "https://login.weixin.qq.com/jslogin";
+        url = "https://login.wx.qq.com/jslogin";
         params = {
             'appid': self.appid,
+            'redirect_uri': 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxnewloginpage',
             'fun': self.fun,
             'lang': self.lang,
             '_': int(time.time())
@@ -132,6 +136,16 @@ class WeChatAPI(object):
             image.write(data)
             return image
 
+    def webwx_stat_report(self):
+        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxstatreport?fun=new&lang="+self.lang;
+        params = {
+            'BaseRequest': self.base_request,
+            'Count': 0,
+            'List': []
+        }
+        data = self.post(url, params)
+
+        print(data)
     '''
         tip = 0 已扫描
         tip = 1 未扫描
@@ -141,7 +155,7 @@ class WeChatAPI(object):
         201
     '''
     def wait4login(self,tip=1):
-        url = "https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login" + "?tip=" + str(tip) + "&uuid=" + self.uuid + "&_" + str(int(time.time()))
+        url = "https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login" + "?loginicon="+str(self.login_icon)+"&tip=" + str(tip) + "&uuid=" + self.uuid + "&_" + str(int(time.time()))
         data = self.get(url)
         data = data.replace("\n","")
         data = data.replace("\r","")
@@ -164,7 +178,7 @@ class WeChatAPI(object):
             print("error 408")
         else:
             print("unknow error")
-
+        print("over------------------")
         return False
 
     '''
@@ -206,6 +220,10 @@ class WeChatAPI(object):
             'Skey': str(self.skey),
             'DeviceID': self.device_id,
         }
+        self.cookies = {
+            'wxsid':self.sid,
+            'wxuin':self.uin
+        }
         return True
 
     def webwx_init(self):
@@ -239,6 +257,27 @@ class WeChatAPI(object):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxstatusnotify" + \
               '?pass_ticket=%s&lang=%s' % (
                   self.pass_ticket, self.lang
+              )
+        params = {
+            'BaseRequest': self.base_request,
+            'Code' : 3,
+            'FromUserName': self.user['UserName'],
+            'ToUserName': self.user['UserName'],
+            'ClientMsgId': int(time.time())
+        }
+        headers = {
+            'user-agent': self.user_agent,
+            "content-type": "application/json; charset=UTF-8",
+            'connection': 'keep-alive',
+            "referer": "https://wx.qq.com"
+        }
+        data = self.post_json(url, params)
+        return data
+
+    def webwx_get_icon(self):
+        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgeticon" + \
+              '?seq=%d&username=%s&skey=%s' % (
+                  self.user[''], self.skey
               )
         params = {
             'BaseRequest': self.base_request,
@@ -307,8 +346,8 @@ class WeChatAPI(object):
             'user-agent': self.user_agent
         }
 
-        data = self.get(url, data=params)
-        print("sync_check:")
+        data = self.get(url, data=urllib.urlencode(params))
+        print("sync_check_response:")
         print(data)
         pm = re.search(r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}', data)
         if pm:
@@ -405,9 +444,13 @@ class WeChatAPI(object):
 
         while True:
 
-            response = requests.get(url=url, data=data, headers=_headers)
+            response = requests.get(url=url, data=data, headers=_headers,cookies=self.cookies)
             response.encoding='utf-8'
             data = response.text
+            print("get~~~~~~"+url)
+            print("response headers:")
+            print(response.headers)
+            print("end")
             response.close()
             return data
             '''
@@ -430,12 +473,17 @@ class WeChatAPI(object):
 
         while True:
             try:
-                response = requests.post(url=url, data=data, headers=_headers)
+                response = requests.post(url=url, data=data, headers=_headers,cookies=self.cookies)
                 if stream:
                     data = response.content
                 else:
                     response.encoding='utf-8'
                     data = response.text
+
+                print("post~~~~~~"+url)
+                print("response headers:")
+                print(response.headers)
+                print("end")
                 response.close()
                 return data
             except (KeyboardInterrupt, SystemExit):
@@ -457,8 +505,13 @@ class WeChatAPI(object):
 
         while True:
             try:
-                response = requests.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=_headers)
+                response = requests.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=_headers,cookies=self.cookies)
+                response.encoding='utf-8'
                 data = response.text
+                print("~~~~~~"+url)
+                print("response headers:")
+                print(response.headers)
+                print("end")
                 response.close()
                 return data
             except (KeyboardInterrupt, SystemExit):

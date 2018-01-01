@@ -53,9 +53,10 @@ class WeChatAPI(object):
         self.appid = 'wx782c26e4c19acffb'
         self.uuid = ''
         self.redirect_uri = None
+        self.login_icon = True
         self.skey = ''
         self.sid = ''
-        self.uid = ''
+        self.uin = ''
         self.pass_ticket = ''
         self.is_grayscale = 0
         self.base_request = {}
@@ -85,7 +86,7 @@ class WeChatAPI(object):
         )
 
     def get_uuid(self):
-        url = "https://login.weixin.qq.com/jslogin";
+        url = "https://login.wx.qq.com/jslogin";
         params = {
             'appid': self.appid,
             'fun': self.fun,
@@ -140,6 +141,9 @@ class WeChatAPI(object):
             image.write(data)
             return image
 
+    def webwx_stat_report(self):
+        pass
+
     '''
         tip = 0 已扫描
         tip = 1 未扫描
@@ -149,7 +153,7 @@ class WeChatAPI(object):
         201
     '''
     def wait4login(self,tip=1):
-        url = "https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login" + "?tip=" + str(tip) + "&uuid=" + self.uuid + "&_" + str(int(time.time()))
+        url = "https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login" + "?loginicon=true&tip=" + str(tip) + "&uuid=" + self.uuid + "&_" + str(int(time.time()))
         request = urllib2.Request(url)
         response = urllib2.urlopen(url=request, timeout=30)
         data = response.read()
@@ -341,8 +345,6 @@ class WeChatAPI(object):
             "referer": "https://wx.qq.com/?&lang=zh_TW",
             'user-agent': self.user_agent
         }
-        print("headers:")
-        print(headers)
         url = url + '?' + urllib.urlencode(params)
         print("URL==:"+url)
         request = urllib2.Request(url=url, headers=headers)
