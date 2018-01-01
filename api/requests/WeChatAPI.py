@@ -240,13 +240,18 @@ class WeChatAPI(object):
         dict = json.loads(data, object_hook=_decode_data)
         self.user = dict['User']
         self.contact_list = dict['ContactList']
+        self.update_sync_key(dict)
+
+        return dict
+
+    def update_sync_key(self,dict):
         self.sync_key_dic = dict['SyncKey']
 
         def foo(x):
             return str(x['Key']) + '_' + str(x['Val'])
 
-        self.sync_key = '|'.join([foo(keyVal) for keyVal in self.sync_key_dic['List']])
-        return dict
+        self.sync_key = '|'.join(
+            [foo(keyVal) for keyVal in self.sync_key_dic['List']])
 
     def webwx_status_notify(self):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxstatusnotify" + \
@@ -318,6 +323,9 @@ class WeChatAPI(object):
             1100:你在手机上登出了微信
             1101:你在其他地方登录了 WEB 版微信
             1102:你在手机上主动退出了
+        selector:
+            0:nothing
+            
     '''
     def sync_check(self,host=None):
         if not host:
@@ -367,6 +375,9 @@ class WeChatAPI(object):
         }
 
         data = self.post_json(url, params)
+        dictt = json.loads(data, object_hook=_decode_data)
+        if dictt['BaseResponse']['Ret'] == 0:
+            self.update_sync_key(dictt)
         return data
 
     def webwx_send_msg(self,msg):

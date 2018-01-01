@@ -121,11 +121,6 @@ class WeChatSync(threading.Thread):
                  'https://webpush.web2.wechat.com/cgi-bin/mmwebwx-bin/synccheck'
                  ]
         while(True):
-            '''
-            for host in hosts:
-                (code, selector) = self.api.sync_check(host)
-                print("code=%s,selector=%s"%(code,selector))
-            '''
             (code,selector) = self.api.sync_check()
             if code == -1 and selector == -1:
                 print("self.api.sync_check() error")
@@ -137,8 +132,6 @@ class WeChatSync(threading.Thread):
                         sync_response = self.api.webwx_sync()
                         print("WeChatSync.run#webwx_sync:")
                         print(sync_response)
-                        print("WeChatSync.run#webwx_sync end=======================--------------------------======================\n\n")
-            sleep(5)
 
 '''
 if __name__ =="__main__":
