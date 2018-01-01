@@ -321,7 +321,7 @@ class WeChatAPI(object):
     '''
     def sync_check(self,host=None):
         if not host:
-            host = 'https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck'
+            host = "https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck"
         params = {
             'r': int(time.time()),
             'skey': str(self.skey),
@@ -437,19 +437,12 @@ class WeChatAPI(object):
         }
 
         while True:
-            print("get~~~~~~"+url)
-            print("request headers:")
             response = self.session.get(url=url, data=data, headers=default_headers)
             response.encoding='utf-8'
             data = response.text
-            print(response.request.headers)
-            print("cookie:")
             cookies = response.cookies
             for item in cookies.items():
                 print(item)
-            print("response headers:")
-            print(response.headers)
-            print("end-------------------------------------------\n")
             response.close()
             return data
             '''
@@ -472,7 +465,6 @@ class WeChatAPI(object):
             default_headers[key]=value
 
         while True:
-            print("post~~~~~~"+url)
             try:
                 response = self.session.post(url=url, data=data, headers=default_headers)
                 if stream:
@@ -480,15 +472,9 @@ class WeChatAPI(object):
                 else:
                     response.encoding='utf-8'
                     data = response.text
-                print("request headers:")
-                print(response.request.headers)
-                print("cookie:")
                 cookies = response.cookies
                 for item in cookies.items():
                     print(item)
-                print("response headers:")
-                print(response.headers)
-                print("end-------------------------------------------\n")
                 response.close()
                 return data
             except (KeyboardInterrupt, SystemExit):
@@ -509,20 +495,13 @@ class WeChatAPI(object):
             default_headers[key]=value
 
         while True:
-            print("post_json~~~~~~"+url)
-            print("request headers:")
             try:
                 response = self.session.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=default_headers)
                 response.encoding='utf-8'
                 data = response.text
-                print(response.request.headers)
-                print("cookie:")
                 cookies = response.cookies
                 for item in cookies.items():
                     print(item)
-                print("response headers:")
-                print(response.headers)
-                print("end-------------------------------------------\n")
                 response.close()
                 return data
             except (KeyboardInterrupt, SystemExit):
