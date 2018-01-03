@@ -1,15 +1,16 @@
 #!/usr/bin/python
-# -*- coding:UTF-8 -*-
+# -*- coding: UTF-8 -*-
 
 import sys
 import threading
-from time import sleep,time
+from time import sleep
+import time
 
 from PyQt4 import QtCore, QtGui, uic
 
 from api.msg import Msg
 
-qtCreatorFile = "resource/ui/wechat-0.1.1.ui"
+qtCreatorFile = "resource/ui/wechat-0.1.2.ui"
 
 WeChatWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
@@ -149,7 +150,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 continue
             if from_user_name == self.current_select_contact['UserName']:
                 st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-                formated_msg = ('%s (%s) %s') % (msg['Content'], st, self.api.user['NickName'])
+                formated_msg = ('%s (%s) %s') % (st, self.api.user['NickName'], msg['Content'])
                 item = QtGui.QListWidgetItem()
                 item.setText(QtCore.QString.fromUtf8(formated_msg))
                 item.setTextAlignment(1)
