@@ -3,7 +3,7 @@
 
 import sys
 import threading
-from time import sleep
+from time import sleep,time
 
 from PyQt4 import QtCore, QtGui, uic
 
@@ -35,8 +35,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.memberButton.clicked.connect(self.member_button_clicked)
 
         self.sendButton.clicked.connect(self.send_button_click)
-        self.synct = WeChatSync(self.api)
-        self.synct.start()
+        #self.synct = WeChatSync(self.api)
+        #self.synct.start()
+        timer = threading.Timer(5, self.sync)
+        timer.setDaemon(True)
+        timer.start()
 
     def print_child(self):
         self.children()
@@ -110,14 +113,68 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def send_button_click(self):
         contact = self.current_select_contact
         msg = str(self.draft.toPlainText())
-        gsm = Msg(1,msg,contact['UserName'])
-        print(contact)
+        gsm = Msg(1, msg, self.current_select_contact['UserName'])
         self.api.webwx_send_msg(gsm)
-        self.messages.append(msg)
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        formated_msg = ('%s (%s) %s') % (msg, st, self.api.user['NickName'])
+        item = QtGui.QListWidgetItem()
+        item.setText(QtCore.QString.fromUtf8(formated_msg))
+        item.setTextAlignment(3)
+        self.messages.addItem(item)
 
         self.draft.setText("")
 
+    def webwx_sync_process(self, data):
+        if not data:
+            return False
+        #TODO FIX BUG data['BaseResponse']['Ret'] NOT WORK
+        ret_code = data['BaseResponse']['Ret']
+        add_msg_count = data['AddMsgCount']
 
+        if ret_code == 0:
+            pass
+        else:
+            return False
+
+        if add_msg_count == 0:
+            return True
+
+        msg_list = data['AddMsgList']
+
+        for msg in msg_list:
+            from_user_name = msg['FromUserName']
+            to_user_name = msg['ToUserName']
+            print('from user %s,to user %s', (from_user_name, to_user_name))
+            if not self.current_select_contact:
+                continue
+            if from_user_name == self.current_select_contact['UserName']:
+                st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+                formated_msg = ('%s (%s) %s') % (msg['Content'], st, self.api.user['NickName'])
+                item = QtGui.QListWidgetItem()
+                item.setText(QtCore.QString.fromUtf8(formated_msg))
+                item.setTextAlignment(1)
+                self.messages.addItem(item)
+
+    def sync(self):
+        while (True):
+            print('sync====')
+            (code, selector) = self.api.sync_check()
+            if code == -1 and selector == -1:
+                print("self.api.sync_check() error")
+            else:
+                if code != '0':
+                    pass
+                elif code == '0' and selector == '0':
+                    print("nothing")
+                else:
+                    if selector != '0':
+                        sync_response = self.api.webwx_sync()
+                        print("WeChatSync.run#webwx_sync:")
+                        print(sync_response)
+                        self.webwx_sync_process(sync_response)
+            sleep(8)
+
+'''
 class WeChatSync(threading.Thread):
 
     def __init__(self,api):
@@ -148,7 +205,7 @@ class WeChatSync(threading.Thread):
                         print("WeChatSync.run#webwx_sync:")
                         print(sync_response)
             sleep(10)
-
+'''
 
 '''
 if __name__ =="__main__":

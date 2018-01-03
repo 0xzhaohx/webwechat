@@ -11,6 +11,15 @@ import json
 import os
 import sys
 
+'''
+1.ContactFlag:
+    1是好友，值为3是公众号
+2."UserName" 用户名称:
+    一个"@"为好友，两个"@"为群组
+3."Sex": 
+    性别，0-未设置（公众号、保密），1-男，2-女
+4."StarFriend": 是否为星标朋友  0-否  1-是
+'''
 
 def _decode_data(data):
     """
@@ -359,6 +368,9 @@ class WeChatAPI(object):
             1102:你在手机上主动退出了
         selector:
             0:nothing
+            2:new message
+            6:unknow
+            7:webwxsync? or 进入/离开聊天界面?
             
     '''
     def sync_check(self,host=None):
@@ -420,7 +432,7 @@ class WeChatAPI(object):
         dictt = json.loads(data, object_hook=_decode_data)
         if dictt['BaseResponse']['Ret'] == 0:
             self.update_sync_key(dictt)
-        return data
+        return dictt
 
     def webwx_send_msg(self,msg):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg" + \

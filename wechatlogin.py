@@ -43,6 +43,9 @@ class WeChatLoginDialog(QtGui.QDialog, LoginWindow,threading.Thread):
             self.qrLabel.setPixmap(QtGui.QPixmap.fromImage(image))
             timer = threading.Timer(5, self.qr_time_out)
             timer.start()
+
+            #auto_login_timer = threading.Timer(0, self.login())
+            #auto_login_timer.start()
             self.logint.start()
         else:
             pass
