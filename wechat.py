@@ -33,6 +33,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.memberListWidget.setVisible(False)
         self.readerListWidget.setVisible(False)
         self.current_select_contact = None
+        self.contact_map = {}
+        self.member_map = {}
 
         #self.chatWidget.setVisible(False)
 
@@ -52,11 +54,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def init_contact(self):
         self.api.webwx_init()
         self.userNameLabel.setText((self.api.user['NickName']))
-        for contact in self.api.contact_list:
+        for index,contact in enumerate(self.api.contact_list):
+            print(index)
             dn = contact['RemarkName']
             if not dn:
                 dn = contact['NickName']
             self.contactListWidget.addItem(QtCore.QString.fromUtf8(dn))
+            #self.contact_map[contact['UserName']]=index
         self.contactListWidget.clicked.connect(self.contact_cell_clicked)
         self.contactListWidget.itemSelectionChanged.connect(self.contact_itemSelectionChanged)
 
@@ -103,9 +107,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
-        counter = self.messages.count()
-        for index in range(counter):
-            item = self.messages.takeItem(0)
+        self.messages.setText("")
+        #counter = self.messages.count()
+        #for index in range(counter):
+            #item = self.messages.takeItem(0)
             #delete item
 
     def member_cell_clicked(self):
@@ -116,9 +121,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not dn:
             dn = contact['NickName']
         self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
+        self.messages.setText("")
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
-
+    '''
+        messages widget is a list-widget
     def send_button_click(self):
         contact = self.current_select_contact
         msg = str(self.draft.toPlainText())
@@ -130,6 +137,17 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         item.setText(QtCore.QString.fromUtf8(formated_msg))
         item.setTextAlignment(3)
         self.messages.addItem(item)
+
+        self.draft.setText("")
+    '''
+    def send_button_click(self):
+        contact = self.current_select_contact
+        msg = str(self.draft.toPlainText())
+        gsm = Msg(1, msg, self.current_select_contact['UserName'])
+        self.api.webwx_send_msg(gsm)
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'],msg)
+        self.messages.append(QtCore.QString.fromUtf8(format_msg))
 
         self.draft.setText("")
 
@@ -158,11 +176,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 continue
             if from_user_name == self.current_select_contact['UserName']:
                 st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-                formated_msg = ('%s (%s) %s') % (st, self.api.user['NickName'], msg['Content'])
+                format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'], msg['Content'])
+                '''
                 item = QtGui.QListWidgetItem()
-                item.setText(QtCore.QString.fromUtf8(formated_msg))
+                item.setText(QtCore.QString.fromUtf8(format_msg))
                 item.setTextAlignment(1)
                 self.messages.addItem(item)
+                '''
+                self.messages.append(QtCore.QString.fromUtf8(format_msg))
 
     def sync(self):
         while (True):

@@ -11,6 +11,8 @@ class BubbleList(QtGui.QWidget):
 class BubbleListPrivate(QtGui.QWidget):
 
     def __init__(self):
+        QtGui.QWidget.__init__(self)
+
         self.m_item_vector = None
         self.m_current_index = 0
         self.m_selected_index = 0
@@ -89,10 +91,12 @@ class BubbleListPrivate(QtGui.QWidget):
     def itemCount(self):
         return 0
 
+
 class ItemInfo(object):
     ITEM_START_ANGLE=270
     ITEM_D_ANGLE = 2
     ITEM_D_ZOOMING_FACTOR = 0.05
+
     def __init__(self,str,orientation=1,angle=270,zooming_factor=0):
         self.m_str_data = str
         self.m_orientation = orientation
