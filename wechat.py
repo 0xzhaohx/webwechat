@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 # -*- coding: UTF-8 -*-
 
 import sys
@@ -9,6 +9,10 @@ import time
 from PyQt4 import QtCore, QtGui, uic
 
 from api.msg import Msg
+
+reload(sys)
+
+sys.setdefaultencoding('utf-8')
 
 qtCreatorFile = "resource/ui/wechat-0.1.2.ui"
 
@@ -99,6 +103,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
+        counter = self.messages.count()
+        for index in range(counter):
+            item = self.messages.takeItem(0)
+            #delete item
 
     def member_cell_clicked(self):
         current_row =self.memberListWidget.currentRow()
@@ -158,7 +166,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
     def sync(self):
         while (True):
-            print('sync====')
+            st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+            print('sync %s' %(st))
             (code, selector) = self.api.sync_check()
             if code == -1 and selector == -1:
                 print("self.api.sync_check() error")
@@ -170,8 +179,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 else:
                     if selector != '0':
                         sync_response = self.api.webwx_sync()
-                        print("WeChatSync.run#webwx_sync:")
-                        print(sync_response)
+                        #print("WeChatSync.run#webwx_sync:")
+                        #print(sync_response)
                         self.webwx_sync_process(sync_response)
             sleep(8)
 

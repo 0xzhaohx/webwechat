@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 # -*- coding: UTF-8 -*-
 
 import random
@@ -156,7 +156,7 @@ class WeChatAPI(object):
         }
         data = self.post(url, params)
 
-        print(data)
+        #print(data)
     '''
         tip = 0 已扫描
         tip = 1 未扫描
@@ -250,7 +250,7 @@ class WeChatAPI(object):
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
         dict = json.loads(data, object_hook=_decode_data)
-        print(data)
+        #print(data)
         self.user = dict['User']
         self.contact_list = dict['ContactList']
         self.update_sync_key(dict)
@@ -395,8 +395,8 @@ class WeChatAPI(object):
         }
         url = host + '?' + urllib.urlencode(params)
         data = self.get(url)
-        print("sync_check_response:")
-        print(data)
+        #print("sync_check_response:")
+        #print(data)
         pm = re.search(r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}', data)
         if pm:
             return (pm.group(1), pm.group(2))
