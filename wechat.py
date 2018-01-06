@@ -15,7 +15,7 @@ reload(sys)
 
 sys.setdefaultencoding('utf-8')
 
-qtCreatorFile = "resource/ui/wechat-0.1.2.ui"
+qtCreatorFile = "resource/ui/wechat-0.1.3.ui"
 
 WeChatWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
@@ -33,8 +33,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.init_contact()
         self.init_member()
         self.init_reader()
-        self.memberListWidget.setVisible(False)
-        self.readerListWidget.setVisible(False)
+        self.memberWidget.setVisible(False)
+        self.readerWidget.setVisible(False)
         self.current_select_contact = None
 
         #self.chatWidget.setVisible(False)
@@ -55,79 +55,98 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def init_contact(self):
         self.api.webwx_init()
         self.userNameLabel.setText((self.api.user['NickName']))
-        for index,contact in enumerate(self.api.contact_list):
+        self.contactWidget.setColumnCount(2)
+        for contact in self.api.contact_list:
             dn = contact['RemarkName']
             if not dn:
                 dn = contact['NickName']
-            self.contactListWidget.addItem(QtCore.QString.fromUtf8(dn))
+            #self.contactListWidget.addItem(QtCore.QString.fromUtf8(dn))
             user_name = contact['UserName']
-            self.contact_map[user_name] = index
-        self.contactListWidget.clicked.connect(self.contact_cell_clicked)
-        self.contactListWidget.itemSelectionChanged.connect(self.contact_itemSelectionChanged)
+            user_name_item = QtGui.QTableWidgetItem()
+            user_name_item.setText(QtCore.QString.fromUtf8(user_name))
+            currentRow = self.contactWidget.rowCount()
+            self.contactWidget.insertRow(currentRow)
+            self.contactWidget.setItem(currentRow,0,user_name_item)
+            remark_nick_name_item = QtGui.QTableWidgetItem()
+            remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
+            self.contactWidget.setItem(currentRow,1,remark_nick_name_item)
+        self.contactWidget.itemClicked.connect(self.contact_item_clicked)
 
     def init_member(self):
         self.api.webwx_get_contact()
-        for index,member in enumerate(self.api.member_list):
+        self.memberWidget.setColumnCount(2)
+        for member in self.api.member_list:
             dn = member['RemarkName']
             if not dn:
                 dn = member['NickName']
-            self.memberListWidget.addItem(QtCore.QString.fromUtf8(dn))
 
             user_name = member['UserName']
-            self.member_map[user_name] = index
+            user_name_item = QtGui.QTableWidgetItem()
+            user_name_item.setText(QtCore.QString.fromUtf8(user_name))
+            currentRow = self.memberWidget.rowCount()
+            self.memberWidget.insertRow(currentRow)
+            self.memberWidget.setItem(currentRow, 0, user_name_item)
+            remark_nick_name_item = QtGui.QTableWidgetItem()
+            remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
+            self.memberWidget.setItem(currentRow,1,remark_nick_name_item)
 
-        self.memberListWidget.clicked.connect(self.member_cell_clicked)
+        self.memberWidget.itemClicked.connect(self.member_item_clicked)
 
     def init_reader(self):
-        self.readerListWidget.addItem("readers")
-        self.readerListWidget.clicked.connect(self.contact_cell_clicked)
+        pass
+        #self.readerListWidget.addItem("readers")
+        #self.readerListWidget.clicked.connect(self.contact_cell_clicked)
 
     def contact_button_clicked(self):
-        self.memberListWidget.setVisible(False)
-        self.contactListWidget.setVisible(True)
+        self.memberWidget.setVisible(False)
+        self.contactWidget.setVisible(True)
 
     def contact_itemSelectionChanged(self):
         print("changed")
 
     def read_button_clicked(self):
-        self.memberListWidget.setVisible(False)
-        self.contactListWidget.setVisible(False)
-        self.readListWidget.setVisible(True)
+        self.memberWidget.setVisible(False)
+        self.contactWidget.setVisible(False)
+        self.readerWidget.setVisible(True)
 
     def member_button_clicked(self):
-        self.memberListWidget.setVisible(True)
-        self.contactListWidget.setVisible(False)
+        self.memberWidget.setVisible(True)
+        self.contactWidget.setVisible(False)
 
     def read_button_clicked(self):
         pass
 
-    def contact_cell_clicked(self):
-        current_row =self.contactListWidget.currentRow()
-        current_item = self.contactListWidget.currentItem()
-        text = current_item.text()
-        pm = re.search(r'(\S+)(\s+?)([(])(\d+)([)])', text)
-        if not pm:
-            text = text + ' (1)'
-        else:
-            text = ('%s (%d)') %(pm.group(1),int(pm.group(4))+1)
-        current_item.setText(text)
-        contact = self.api.contact_list[current_row]
+    def get_contact(self,user_name):
+        for contact in self.api.contact_list:
+            if user_name == contact['UserName']:
+                return contact
+
+    def get_member(self,user_name):
+        for member in self.api.member_list:
+            if user_name == member['UserName']:
+                return member
+
+    def contact_item_clicked(self):
+        current_row = self.contactWidget.currentRow()
+        curuent_item = self.contactWidget.currentItem()
+        #curuent_item.setItem()
+        user_name = self.contactWidget.item(current_row, 0).text();
+
+        contact = self.get_contact(user_name)
         self.current_select_contact = contact
         dn = contact['RemarkName']
         if not dn:
             dn = contact['NickName']
+
         self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
-        self.messages.setText("")
-        #counter = self.messages.count()
-        #for index in range(counter):
-            #item = self.messages.takeItem(0)
-            #delete item
+        self.messages.setText('')
 
-    def member_cell_clicked(self):
-        current_row =self.memberListWidget.currentRow()
-        contact = self.api.member_list[current_row]
+    def member_item_clicked(self):
+        current_row =self.memberWidget.currentRow()
+        user_name = self.memberWidget.item(current_row,0).text();
+        contact = self.get_member(user_name)
         self.current_select_contact = contact
         dn = contact['RemarkName']
         if not dn:
@@ -161,12 +180,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'],msg)
         self.messages.append(QtCore.QString.fromUtf8(format_msg))
 
-        self.draft.setText("")
+        self.draft.setText('')
 
     def webwx_sync_process(self, data):
         if not data:
             return False
-        #TODO FIX BUG data['BaseResponse']['Ret'] NOT WORK
         ret_code = data['BaseResponse']['Ret']
         add_msg_count = data['AddMsgCount']
 
@@ -197,6 +215,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 '''
                 self.messages.append(QtCore.QString.fromUtf8(format_msg))
             else:
+                #TODO ADD TIPS
                 pass
 
     def sync(self):
@@ -217,7 +236,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         #print("WeChatSync.run#webwx_sync:")
                         #print(sync_response)
                         self.webwx_sync_process(sync_response)
-            sleep(8)
+            sleep(11)
 
 '''
 class WeChatSync(threading.Thread):

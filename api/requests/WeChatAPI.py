@@ -253,6 +253,17 @@ class WeChatAPI(object):
         #print(data)
         self.user = dict['User']
         self.contact_list = dict['ContactList']
+        for contact in self.contact_list:
+            user_name = contact['UserName']
+            head_img_url = contact['HeadImgUrl']
+            if not user_name or not head_img_url:
+                continue
+            if user_name.startswith('@'):
+                self.webwx_get_icon(user_name,head_img_url)
+            elif user_name.startswith('@@'):
+                self.webwx_get_head_img(user_name,head_img_url)
+            else:
+                pass
         self.update_sync_key(dict)
 
         return dict
@@ -287,26 +298,31 @@ class WeChatAPI(object):
         data = self.post_json(url, params)
         return data
 
-    def webwx_get_icon(self):
-        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgeticon" + \
-              '?seq=%d&username=%s&skey=%s' % (
-                  self.user[''], self.skey
-              )
-        params = {
-            'BaseRequest': self.base_request,
-            'Code' : 3,
-            'FromUserName': self.user['UserName'],
-            'ToUserName': self.user['UserName'],
-            'ClientMsgId': int(time.time())
-        }
-        headers = {
-            'user-agent': self.user_agent,
-            "content-type": "application/json; charset=UTF-8",
-            'connection': 'keep-alive',
-            "referer": "https://wx.qq.com"
-        }
-        data = self.post_json(url, params)
-        return data
+    def webwx_get_icon(self,user_name,head_img_url):
+        url = 'https://wx.qq.com' + head_img_url
+        data = self.get(url)
+        if not data:
+            pass
+        img_folder = ('%s/.wechat/heads/'%(os.environ['HOME']))
+        if not os.path.exists(img_folder):
+            os.mkdir(img_folder)
+        image = os.environ['HOME'] + '/.wechat/heads/'+user_name+'.png'
+        with open(image, 'wb') as image:
+            image.write(data)
+    '''
+    用於取群
+    '''
+    def webwx_get_head_img(self,user_name,head_img_url):
+        url = 'https://wx.qq.com/'+((head_img_url))
+        data = self.get(url)
+        if not data:
+            pass
+        img_folder = ('%s/.wechat/heads/'%(os.environ['HOME']))
+        if not os.path.exists(img_folder):
+            os.mkdir(img_folder)
+        image = img_folder+user_name+'.png'
+        with open(image, 'wb') as image:
+            image.write(data)
 
     def webwx_get_contact(self):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact" + \
@@ -328,12 +344,10 @@ class WeChatAPI(object):
         self.member_list = dict['MemberList']
         self.member_count = dict['MemberCount']
         return dict
-
-    def webwx_batch_get_contact(self):
-        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact" + \
-              '?type=ex&r=%s&pass_ticket=%s&lang=%s' % (
-                  self.pass_ticket, int(time.time()),self.pass_ticket
-              )
+    '''
+    調用完webwx_init得到部分的有過聯天記錄的用户，再調用webwx_batch_get_contact可以護得完整的有過聯天記錄的用户列表
+    params:
+    1.
         params = {
             'BaseRequest': self.base_request,
             'Count': 1,
@@ -346,14 +360,28 @@ class WeChatAPI(object):
 
             ]
         }
-        headers = {
-            'User-Agent': self.user_agent,
-            "Content-Type": "application/json; charset=UTF-8",
-            'Connection': 'keep-alive',
-            "Referer": "https://wx.qq.com"
-        }
+    ###################################################
+    2.
+        params = {
+            'BaseRequest': self.base_request,
+            'Count': 1,
+            'List': [
+                {
 
-        data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
+                    'UserName': '',#群name.如：@@xxxxxx
+                    'ChatRoomId': ''
+                }
+
+            ]
+        }
+    '''
+    def webwx_batch_get_contact(self,params):
+        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact" + \
+              '?type=ex&r=%s&pass_ticket=%s&lang=%s' % (
+                  self.pass_ticket, int(time.time()),self.pass_ticket
+              )
+
+        data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'))
         dict = json.loads(data, object_hook=_decode_data)
         self.member_list = dict['MemberList']
         self.member_count = dict['MemberCount']
