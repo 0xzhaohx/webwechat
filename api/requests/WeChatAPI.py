@@ -301,6 +301,8 @@ class WeChatAPI(object):
     def webwx_get_icon(self,user_name,head_img_url):
         url = 'https://wx.qq.com' + head_img_url
         data = self.get(url)
+        print('image data:')
+        print(data)
         if not data:
             pass
         img_folder = ('%s/.wechat/heads/'%(os.environ['HOME']))
@@ -315,6 +317,8 @@ class WeChatAPI(object):
     def webwx_get_head_img(self,user_name,head_img_url):
         url = 'https://wx.qq.com/'+((head_img_url))
         data = self.get(url)
+        print('image data:')
+        print(data)
         if not data:
             pass
         img_folder = ('%s/.wechat/heads/'%(os.environ['HOME']))
@@ -375,17 +379,15 @@ class WeChatAPI(object):
             ]
         }
     '''
-    def webwx_batch_get_contact(self,params):
+    def webwx_batch_get_contact(self, params):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact" + \
-              '?type=ex&r=%s&pass_ticket=%s&lang=%s' % (
-                  self.pass_ticket, int(time.time()),self.pass_ticket
+              '?type=ex&r=%s&pass_ticket=%s' % (
+                  int(time.time()),self.pass_ticket
               )
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'))
-        dict = json.loads(data, object_hook=_decode_data)
-        self.member_list = dict['MemberList']
-        self.member_count = dict['MemberCount']
-        return dict
+        dictt = json.loads(data, object_hook=_decode_data)
+        return dictt
 
     '''
         return wechat.synccheck={retcode:"xxx",selector:"xxx"}
@@ -521,7 +523,7 @@ class WeChatAPI(object):
         response.close()
         return data
 
-    def get(self, url, data ={}):
+    def get(self, url, data= {}):
 
         default_headers = {
             'Connection': 'keep-alive',
@@ -533,6 +535,10 @@ class WeChatAPI(object):
             response = self.session.get(url=url, data=data, headers=default_headers)
             response.encoding='utf-8'
             data = response.text
+            if url.find('webwxgeticon') > 0:
+                pass
+                #print(response.request.headers)
+                #print(response.request.cookies)
             response.close()
             return data
             '''

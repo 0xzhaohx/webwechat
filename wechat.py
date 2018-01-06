@@ -36,7 +36,39 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.memberWidget.setVisible(False)
         self.readerWidget.setVisible(False)
         self.current_select_contact = None
+        '''
+        first invoke
+        '''
+        group_contact_list = []
+        for contact in self.api.contact_list:
+            if contact['UserName'].find('@@') >= 0:
+                group = {}
+                group['UserName'] = contact['UserName']
+                group['ChatRoomId'] = ''
+                group_contact_list.append(group)
 
+        params = {
+            'BaseRequest': self.api.base_request,
+            'Count': len(group_contact_list),
+            'List': group_contact_list
+        }
+        self.api.webwx_batch_get_contact(params)
+        '''
+        second invoke
+        '''
+        for contact in self.api.contact_list:
+            if contact['UserName'].find('@@') > 0:
+                group = {}
+                group['UserName'] = contact['UserName']
+                group['EncryChatRoomId'] = ''
+                group_contact_list.append(group)
+
+        params = {
+            'BaseRequest': self.api.base_request,
+            'Count': len(group_contact_list),
+            'List': group_contact_list
+        }
+        self.api.webwx_batch_get_contact(params)
         #self.chatWidget.setVisible(False)
 
         self.contactButton.clicked.connect(self.contact_button_clicked)
@@ -48,9 +80,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer = threading.Timer(5, self.sync)
         timer.setDaemon(True)
         timer.start()
-
-    def print_child(self):
-        self.children()
 
     def init_contact(self):
         self.api.webwx_init()
@@ -157,22 +186,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.messages.setText("")
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
-    '''
-        messages widget is a list-widget
-    def send_button_click(self):
-        contact = self.current_select_contact
-        msg = str(self.draft.toPlainText())
-        gsm = Msg(1, msg, self.current_select_contact['UserName'])
-        self.api.webwx_send_msg(gsm)
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        formated_msg = ('%s (%s) %s') % (msg, st, self.api.user['NickName'])
-        item = QtGui.QListWidgetItem()
-        item.setText(QtCore.QString.fromUtf8(formated_msg))
-        item.setTextAlignment(3)
-        self.messages.addItem(item)
 
-        self.draft.setText("")
-    '''
     def send_button_click(self):
         contact = self.current_select_contact
         msg = str(self.draft.toPlainText())
