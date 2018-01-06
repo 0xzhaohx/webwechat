@@ -55,7 +55,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def init_contact(self):
         self.api.webwx_init()
         self.userNameLabel.setText((self.api.user['NickName']))
-        self.contactWidget.setColumnCount(2)
+        self.contactWidget.setColumnCount(4)
         for contact in self.api.contact_list:
             dn = contact['RemarkName']
             if not dn:
@@ -74,7 +74,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
     def init_member(self):
         self.api.webwx_get_contact()
-        self.memberWidget.setColumnCount(2)
+        self.memberWidget.setColumnCount(4)
         for member in self.api.member_list:
             dn = member['RemarkName']
             if not dn:
@@ -129,8 +129,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def contact_item_clicked(self):
         current_row = self.contactWidget.currentRow()
         curuent_item = self.contactWidget.currentItem()
-        #curuent_item.setItem()
         user_name = self.contactWidget.item(current_row, 0).text();
+        #message_count = self.contactWidget.item(current_row, 3).text();
+        #if message_count:
+        #    count = int(message_count)
 
         contact = self.get_contact(user_name)
         self.current_select_contact = contact
