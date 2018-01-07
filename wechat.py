@@ -36,6 +36,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.memberWidget.setVisible(False)
         self.readerWidget.setVisible(False)
         self.current_select_contact = None
+        self.messages_cache = {}
         '''
         first invoke
         '''
@@ -99,6 +100,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.api.webwx_init()
         self.userNameLabel.setText((self.api.user['NickName']))
         self.contactWidget.setColumnCount(4)
+        self.contactWidget.setColumnHidden(0,True)
         llist = self.api.chat_set
         for contact in self.api.contact_list:
             dn = contact['RemarkName']
@@ -118,7 +120,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def init_member(self):
         self.api.webwx_get_contact()
         self.memberWidget.setColumnCount(4)
+        self.memberWidget.setColumnHidden(0,True)
+
+        group_contact_list = []
         for member in self.api.member_list:
+            group_contact_list.append(member)
+        group_contact_list.sort(key=lambda mm: mm['PYInitial'])
+
+        for member in group_contact_list:#.sort(key=lambda m: m['PYInitial'])
             dn = member['RemarkName']
             if not dn:
                 dn = member['NickName']
@@ -172,9 +181,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def contact_item_clicked(self):
         current_row = self.contactWidget.currentRow()
         curuent_item = self.contactWidget.currentItem()
-        user_name = self.contactWidget.item(current_row, 0).text();
+        user_name = str(self.contactWidget.item(current_row, 0).text())
 
-        tips_item = self.contactWidget.item(current_row, 2);
+        tips_item = self.contactWidget.item(current_row, 2)
         if tips_item:
             tips_item.setText('')
         #message_count = self.contactWidget.item(current_row, 3).text();
@@ -190,20 +199,29 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             dn = contact['NickName']
 
         self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
-        #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
-        self.messages.setText('')
+        if self.messages_cache.has_key(user_name):
+            messages_list = self.messages_cache[user_name]
+            for message in messages_list:
+                self.messages.append(QtCore.QString.fromUtf8(message))
+        else:
+            self.messages.setText('')
 
     def member_item_clicked(self):
         current_row =self.memberWidget.currentRow()
-        user_name = self.memberWidget.item(current_row,0).text();
+        user_name = self.memberWidget.item(current_row,0).text()
         contact = self.get_member(user_name)
         self.current_select_contact = contact
         dn = contact['RemarkName']
         if not dn:
             dn = contact['NickName']
         self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
-        self.messages.setText("")
+        if self.messages_cache.has_key(user_name):
+            messages_list = self.messages_cache[user_name]
+            for message in messages_list:
+                self.messages.append(QtCore.QString.fromUtf8(message))
+        else:
+            self.messages.setText('')
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
 
@@ -274,9 +292,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             print('from user %s,to user %s', (from_user_name, to_user_name))
             if not self.current_select_contact:
                 continue
+
+            st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+            format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'], msg['Content'])
+            if self.messages_cache.has_key(from_user_name):
+                messages_list = self.messages_cache[from_user_name]
+            else:
+                messages_list = []
+            messages_list.append(format_msg)
+            self.messages_cache[from_user_name] = messages_list
             if from_user_name == self.current_select_contact['UserName']:
-                st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-                format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'], msg['Content'])
                 self.messages.append(QtCore.QString.fromUtf8(format_msg))
             else:
                 #TODO ADD TIPS
@@ -287,7 +312,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         tips_item = self.contactWidget.item(i, 2)
                         if tips_item:
                             tips = tips_item.text()
-                            tips_item.setText(str(int(tips)+1))
+                            if tips:
+                                tips_item.setText(str(int(tips)+1))
+                            else:
+                                tips_item.setText('0')
                         else:
                             tips_item = QtGui.QTableWidgetItem()
                             tips_item.setText('1')

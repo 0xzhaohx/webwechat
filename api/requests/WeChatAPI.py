@@ -303,8 +303,8 @@ class WeChatAPI(object):
     def webwx_get_icon(self,user_name,head_img_url):
         url = 'https://wx.qq.com' + head_img_url
         data = self.get(url)
-        print('image data:')
-        print(data)
+        #print('image data:')
+        #print(data)
         if not data:
             pass
         img_folder = ('%s/.wechat/heads/'%(os.environ['HOME']))
@@ -319,8 +319,8 @@ class WeChatAPI(object):
     def webwx_get_head_img(self,user_name,head_img_url):
         url = 'https://wx.qq.com/'+((head_img_url))
         data = self.get(url)
-        print('image data:')
-        print(data)
+        #print('image data:')
+        #print(data)
         if not data:
             pass
         img_folder = ('%s/.wechat/heads/'%(os.environ['HOME']))
