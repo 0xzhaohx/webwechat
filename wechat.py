@@ -56,19 +56,33 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         second invoke
         '''
-        for contact in self.api.contact_list:
-            if contact['UserName'].find('@@') > 0:
-                group = {}
-                group['UserName'] = contact['UserName']
-                group['EncryChatRoomId'] = ''
-                group_contact_list.append(group)
-
+        group_contact_list = []
+        for member in self.api.member_list:
+            snsf = member['SnsFlag']
+            if snsf and snsf > 0:
+                group_contact_list.append(member)
+        group_contact_list.sort(key=lambda member: member['SnsFlag'])
         params = {
             'BaseRequest': self.api.base_request,
             'Count': len(group_contact_list),
             'List': group_contact_list
         }
-        self.api.webwx_batch_get_contact(params)
+        dictt = self.api.webwx_batch_get_contact(params)
+        '''        '''
+        for contact in dictt['ContactList']:
+            dn = contact['RemarkName']
+            if not dn:
+                dn = contact['NickName']
+            user_name = contact['UserName']
+            user_name_item = QtGui.QTableWidgetItem()
+            user_name_item.setText(QtCore.QString.fromUtf8(user_name))
+            currentRow = self.contactWidget.rowCount()
+            self.contactWidget.insertRow(currentRow)
+            self.contactWidget.setItem(currentRow,0,user_name_item)
+            remark_nick_name_item = QtGui.QTableWidgetItem()
+            remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
+            self.contactWidget.setItem(currentRow,1,remark_nick_name_item)
+
         #self.chatWidget.setVisible(False)
 
         self.contactButton.clicked.connect(self.contact_button_clicked)
@@ -85,11 +99,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.api.webwx_init()
         self.userNameLabel.setText((self.api.user['NickName']))
         self.contactWidget.setColumnCount(4)
+        llist = self.api.chat_set
         for contact in self.api.contact_list:
             dn = contact['RemarkName']
             if not dn:
                 dn = contact['NickName']
-            #self.contactListWidget.addItem(QtCore.QString.fromUtf8(dn))
             user_name = contact['UserName']
             user_name_item = QtGui.QTableWidgetItem()
             user_name_item.setText(QtCore.QString.fromUtf8(user_name))
@@ -164,6 +178,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #    count = int(message_count)
 
         contact = self.get_contact(user_name)
+        if not contact:
+            contact = self.get_member(user_name)
         self.current_select_contact = contact
         dn = contact['RemarkName']
         if not dn:
@@ -195,8 +211,41 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
         format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'],msg)
         self.messages.append(QtCore.QString.fromUtf8(format_msg))
-
         self.draft.setText('')
+        '''
+        '''
+        row_count = self.contactWidget.rowCount()
+        find = False
+        for i in range(row_count):
+            user_name = self.contactWidget.item(i, 0).text()
+            if user_name and user_name == contact['UserName']:
+                find = True
+                tips_item = self.contactWidget.item(i, 2)
+                if tips_item:
+                    tips = tips_item.text()
+                    tips_item.setText(str(int(tips) + 1))
+                else:
+                    tips_item = QtGui.QTableWidgetItem()
+                    tips_item.setText('1')
+                    self.contactWidget.setItem(i, 2, tips_item)
+                break;
+        if find == False:
+            self.contactWidget.insertRow(row_count+1)
+            user_name_item = QtGui.QTableWidgetItem()
+            user_name_item.setText(contact['UserName'])
+            self.contactWidget.setItem(i, 0, user_name_item)
+            #
+            remark_nick_name_item = QtGui.QTableWidgetItem()
+            dn = contact['RemarkName']
+            if not dn:
+                dn = contact['NickName']
+            remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
+            self.contactWidget.setItem(row_count+1, 1, remark_nick_name_item)
+            #tips
+            tips_item = QtGui.QTableWidgetItem()
+            tips_item.setText('1')
+            self.contactWidget.setItem(row_count+1, 2, tips_item)
+
 
     def webwx_sync_process(self, data):
         if not data:
@@ -223,14 +272,22 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if from_user_name == self.current_select_contact['UserName']:
                 st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
                 format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'], msg['Content'])
-                '''
-                item = QtGui.QListWidgetItem()
-                item.setText(QtCore.QString.fromUtf8(format_msg))
-                item.setTextAlignment(1)
-                self.messages.addItem(item)
-                '''
                 self.messages.append(QtCore.QString.fromUtf8(format_msg))
             else:
+                row_count = self.contactWidget.rowCount()
+                for i in range(row_count):
+                    user_name = self.contactWidget.item(i,0).text()
+                    if user_name and user_name == from_user_name:
+                        tips_item = self.contactWidget.item(i, 2)
+                        if tips_item:
+                            tips = tips_item.text()
+                            tips_item.setText(str(int(tips)+1))
+                        else:
+                            tips_item = QtGui.QTableWidgetItem()
+                            tips_item.setText('1')
+                            self.contactWidget.setItem(i, 2, tips_item)
+                        break;
+
                 #TODO ADD TIPS
                 pass
 
