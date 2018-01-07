@@ -15,7 +15,7 @@ reload(sys)
 
 sys.setdefaultencoding('utf-8')
 
-qtCreatorFile = "resource/ui/wechat-0.1.3.ui"
+qtCreatorFile = "resource/ui/wechat-0.3.ui"
 
 WeChatWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
@@ -99,7 +99,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def init_contact(self):
         self.api.webwx_init()
         self.userNameLabel.setText((self.api.user['NickName']))
-        self.contactWidget.setColumnCount(4)
+        #self.contactWidget.setColumnCount(4)
         self.contactWidget.setColumnHidden(0,True)
         llist = self.api.chat_set
         for contact in self.api.contact_list:
@@ -119,7 +119,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
     def init_member(self):
         self.api.webwx_get_contact()
-        self.memberWidget.setColumnCount(4)
+        #self.memberWidget.setColumnCount(4)
         self.memberWidget.setColumnHidden(0,True)
 
         group_contact_list = []
