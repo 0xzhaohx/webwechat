@@ -400,8 +400,9 @@ class WeChatAPI(object):
             1102:你在手机上主动退出了
         selector:
             0:nothing
-            2:new message
-            6:unknow
+            2:new message?发送消息返回结果
+            4:朋友圈有动态
+            6:有消息返回结果
             7:webwxsync? or 进入/离开聊天界面?
             
     '''

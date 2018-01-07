@@ -173,6 +173,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         current_row = self.contactWidget.currentRow()
         curuent_item = self.contactWidget.currentItem()
         user_name = self.contactWidget.item(current_row, 0).text();
+
+        tips_item = self.contactWidget.item(current_row, 2);
+        if tips_item:
+            tips_item.setText('')
         #message_count = self.contactWidget.item(current_row, 3).text();
         #if message_count:
         #    count = int(message_count)
@@ -213,7 +217,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.messages.append(QtCore.QString.fromUtf8(format_msg))
         self.draft.setText('')
         '''
-        '''
+        
         row_count = self.contactWidget.rowCount()
         find = False
         for i in range(row_count):
@@ -246,6 +250,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             tips_item.setText('1')
             self.contactWidget.setItem(row_count+1, 2, tips_item)
 
+        '''
 
     def webwx_sync_process(self, data):
         if not data:
@@ -274,6 +279,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'], msg['Content'])
                 self.messages.append(QtCore.QString.fromUtf8(format_msg))
             else:
+                #TODO ADD TIPS
                 row_count = self.contactWidget.rowCount()
                 for i in range(row_count):
                     user_name = self.contactWidget.item(i,0).text()
@@ -287,9 +293,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                             tips_item.setText('1')
                             self.contactWidget.setItem(i, 2, tips_item)
                         break;
-
-                #TODO ADD TIPS
-                pass
 
     def sync(self):
         while (True):
