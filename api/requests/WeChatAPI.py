@@ -251,10 +251,12 @@ class WeChatAPI(object):
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
         dict = json.loads(data, object_hook=_decode_data)
-        #print(data)
         self.user = dict['User']
         self.contact_list = dict['ContactList']
         self.chat_set = dict['ChatSet']
+        #download and setup user head img
+        self.webwx_get_icon(self.user['UserName'], self.user['HeadImgUrl'])
+        #TODO download the user head icon
         for contact in self.contact_list:
             user_name = contact['UserName']
             head_img_url = contact['HeadImgUrl']
@@ -310,7 +312,7 @@ class WeChatAPI(object):
         img_folder = ('%s/.wechat/heads/'%(os.environ['HOME']))
         if not os.path.exists(img_folder):
             os.mkdir(img_folder)
-        image = os.environ['HOME'] + '/.wechat/heads/'+user_name+'.png'
+        image = os.environ['HOME'] + '/.wechat/heads/'+user_name+'.jpg'
         with open(image, 'wb') as image:
             image.write(data)
     '''
@@ -326,7 +328,7 @@ class WeChatAPI(object):
         img_folder = ('%s/.wechat/heads/'%(os.environ['HOME']))
         if not os.path.exists(img_folder):
             os.mkdir(img_folder)
-        image = img_folder+user_name+'.png'
+        image = img_folder+user_name+'.jpg'
         with open(image, 'wb') as image:
             image.write(data)
 

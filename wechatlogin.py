@@ -26,6 +26,7 @@ class WeChatLoginDialog(QtGui.QDialog, LoginWindow,threading.Thread):
         LoginWindow.__init__(self)
         threading.Thread.__init__(self,name='wechat login')
         self.setDaemon(True)
+        self.user_home = os.environ['HOME'] + '/.wechat/'
         self.api = WeChatAPI()
         self.logint = WeChatLogint(self,self.api)
         self.setupUi(self)
@@ -37,7 +38,7 @@ class WeChatLoginDialog(QtGui.QDialog, LoginWindow,threading.Thread):
         WeChatLoginDialog.time_out = True
 
     def set_qr_code_image(self):
-        file = os.environ['HOME']+"/.wechat/qrcode.jpg"
+        file = self.user_home+"/qrcode.jpg"
         image = QtGui.QImage()
         if image.load(file):
             self.qrLabel.setPixmap(QtGui.QPixmap.fromImage(image))

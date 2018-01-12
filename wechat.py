@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import sys
+import os
 import re
 import threading
 from time import sleep
@@ -25,11 +26,15 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def __init__(self,api):
         QtGui.QMainWindow.__init__(self)
         WeChatWindow.__init__(self)
+        self.user_home = os.environ['HOME'] + '/.wechat/'
+        self.default_head_icon = 'default.png'
         self.api = api
         self.setupUi(self)
         self.contact_map = {'-1':-1}
         self.member_map = {'-1':-1}
         self.api.login()
+        self.api.webwx_init()
+        self.setup_user_head_img()
         self.init_contact()
         self.init_member()
         self.init_reader()
@@ -96,8 +101,24 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer.setDaemon(True)
         timer.start()
 
+    def setup_user_head_img(self):
+        user_icon_file = self.user_home + "/heads/" + self.api.user['UserName'] + ".jpg"
+        user_head_image = QtGui.QImage()
+        if user_head_image.load(user_icon_file):
+            self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
+        else:
+            if user_head_image.load(self.user_home + "/heads/" +self.default_head_icon):
+                self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
+
     def init_contact(self):
-        self.api.webwx_init()
+        '''
+        contact table (5 columns)
+        column 1:user name(will be hidden)
+        column 2:head icon
+        column 3:remark or nick name
+        column 4:message count tips
+        :return:
+        '''
         self.userNameLabel.setText((self.api.user['NickName']))
         #self.contactWidget.setColumnCount(4)
         self.contactWidget.setColumnHidden(0,True)
@@ -107,21 +128,40 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if not dn:
                 dn = contact['NickName']
             user_name = contact['UserName']
-            user_name_item = QtGui.QTableWidgetItem()
-            user_name_item.setText(QtCore.QString.fromUtf8(user_name))
             currentRow = self.contactWidget.rowCount()
             self.contactWidget.insertRow(currentRow)
+            #user name item
+            user_name_item = QtGui.QTableWidgetItem()
+            user_name_item.setText(QtCore.QString.fromUtf8(user_name))
             self.contactWidget.setItem(currentRow,0,user_name_item)
+            #head icon
+            icon_label = QtGui.QLabel("");
+            icon_file = self.user_home +"/heads/"+contact['UserName']+".jpg"
+            #icon_file = os.environ['HOME'] +"/.wechat/heads/icon.jpg"
+            #self.qrLabel.setPixmap(QtGui.QPixmap.fromImage(image))
+            icon = QtGui.QImage()
+            if icon.load(icon_file):
+                icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
+                self.contactWidget.setCellWidget(currentRow,1,icon_label)
+            else:
+                print('warning icon load failed')
+            #user remark or nick name
             remark_nick_name_item = QtGui.QTableWidgetItem()
             remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
-            self.contactWidget.setItem(currentRow,1,remark_nick_name_item)
+            self.contactWidget.setItem(currentRow,2,remark_nick_name_item)
+
         self.contactWidget.itemClicked.connect(self.contact_item_clicked)
 
     def init_member(self):
+        ''''''
         self.api.webwx_get_contact()
         #self.memberWidget.setColumnCount(4)
         self.memberWidget.setColumnHidden(0,True)
-
+        '''
+        /*去掉每行的行号*/ 
+        QHeaderView *headerView = table->verticalHeader();  
+        headerView->setHidden(true);  
+        '''
         group_contact_list = []
         for member in self.api.member_list:
             group_contact_list.append(member)
@@ -183,7 +223,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         curuent_item = self.contactWidget.currentItem()
         user_name = str(self.contactWidget.item(current_row, 0).text())
 
-        tips_item = self.contactWidget.item(current_row, 2)
+        tips_item = self.contactWidget.item(current_row, 3)
         if tips_item:
             tips_item.setText('')
         #message_count = self.contactWidget.item(current_row, 3).text();
@@ -234,8 +274,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'],msg)
         self.messages.append(QtCore.QString.fromUtf8(format_msg))
         self.draft.setText('')
-        '''
-        
+        ''''''
         row_count = self.contactWidget.rowCount()
         find = False
         for i in range(row_count):
@@ -267,8 +306,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             tips_item = QtGui.QTableWidgetItem()
             tips_item.setText('1')
             self.contactWidget.setItem(row_count+1, 2, tips_item)
-
-        '''
+        else:
+            pass
 
     def webwx_sync_process(self, data):
         if not data:

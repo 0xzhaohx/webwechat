@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>WeChat 0.3</string>
+   <string>WeChat網頁版 0.3</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_10" stretch="0,0">
@@ -35,7 +35,7 @@
             </size>
            </property>
            <property name="text">
-            <string>TextLabel</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -110,6 +110,9 @@
          <attribute name="horizontalHeaderVisible">
           <bool>false</bool>
          </attribute>
+         <attribute name="verticalHeaderDefaultSectionSize">
+          <number>40</number>
+         </attribute>
          <column/>
          <column/>
          <column/>
@@ -139,6 +142,9 @@
          <attribute name="horizontalHeaderVisible">
           <bool>false</bool>
          </attribute>
+         <attribute name="verticalHeaderDefaultSectionSize">
+          <number>40</number>
+         </attribute>
          <column/>
          <column/>
          <column/>
@@ -167,6 +173,9 @@
          </property>
          <attribute name="horizontalHeaderVisible">
           <bool>false</bool>
+         </attribute>
+         <attribute name="verticalHeaderDefaultSectionSize">
+          <number>40</number>
          </attribute>
          <column/>
          <column/>
