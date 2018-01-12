@@ -300,9 +300,9 @@ class WeChatAPI(object):
         data = self.post_json(url, params)
         return data
 
-    def webwx_get_icon(self,user_name,head_img_url):
+    def webwx_get_icon(self, user_name, head_img_url):
         url = 'https://wx.qq.com' + head_img_url
-        data = self.get(url)
+        data = self.get(url,stream=True)
         #print('image data:')
         #print(data)
         if not data:
@@ -318,7 +318,7 @@ class WeChatAPI(object):
     '''
     def webwx_get_head_img(self,user_name,head_img_url):
         url = 'https://wx.qq.com/'+((head_img_url))
-        data = self.get(url)
+        data = self.get(url,stream=True)
         #print('image data:')
         #print(data)
         if not data:
@@ -526,7 +526,7 @@ class WeChatAPI(object):
         response.close()
         return data
 
-    def get(self, url, data= {}):
+    def get(self, url, data= {},stream=False):
 
         default_headers = {
             'Connection': 'keep-alive',
@@ -536,12 +536,11 @@ class WeChatAPI(object):
 
         while True:
             response = self.session.get(url=url, data=data, headers=default_headers)
-            response.encoding='utf-8'
-            data = response.text
-            if url.find('webwxgeticon') > 0:
-                pass
-                #print(response.request.headers)
-                #print(response.request.cookies)
+            if stream:
+                data = response.content
+            else:
+                response.encoding = 'utf-8'
+                data = response.text
             response.close()
             return data
             '''
