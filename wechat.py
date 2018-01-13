@@ -56,19 +56,22 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer.setDaemon(True)
         timer.start()
 
-    def load_image(self, file):
+    def load_image(self, file,use_default=True):
         image = QtGui.QImage()
         if image.load(file):
             return image
+        else:
+            if use_default:
+                image.load(self.user_home)
 
     def setup_user(self):
         self.userNameLabel.setText((self.api.user['NickName']))
-        user_icon_file = self.user_home + "/heads/" + self.api.user['UserName'] + ".jpg"
+        user_icon_file = self.user_home + "/heads/contact/" + self.api.user['UserName'] + ".jpg"
         user_head_image = QtGui.QImage()
         if user_head_image.load(user_icon_file):
             self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
         else:
-            if user_head_image.load(self.user_home + "/heads/" +self.default_head_icon):
+            if user_head_image.load(self.user_home + "/heads/default/" +self.default_head_icon):
                 self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
 
     def init_contact(self):
@@ -143,7 +146,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.contactWidget.setItem(currentRow,0,user_name_item)
             #head icon
             icon_label = QtGui.QLabel("");
-            icon_file = self.user_home +"/heads/"+contact['UserName']+".jpg"
+            icon_file = self.user_home +"/heads/contact/"+contact['UserName']+".jpg"
             icon = QtGui.QImage()
             if icon.load(icon_file):
                 icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
@@ -183,7 +186,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.memberWidget.setItem(currentRow, 0, user_name_item)
             # head icon
             icon_label = QtGui.QLabel("");
-            icon_file = self.user_home + "/heads/" + member['UserName'] + ".jpg"
+            icon_file = self.user_home + "/heads/contact/" + member['UserName'] + ".jpg"
             icon = QtGui.QImage()
             if icon.load(icon_file):
                 icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
@@ -395,7 +398,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     self.contactWidget.setItem(currentRow, 0, user_name_item)
                     # head icon
                     icon_label = QtGui.QLabel("");
-                    icon_file = self.user_home + "/heads/" + contact['UserName'] + ".jpg"
+                    icon_file = self.user_home + "/heads/contact/" + contact['UserName'] + ".jpg"
                     icon = QtGui.QImage()
                     if icon.load(icon_file):
                         icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
@@ -410,7 +413,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     tips_item = QtGui.QTableWidgetItem()
                     tips_item.setText('1')
                     self.contactWidget.setItem(currentRow, 3, tips_item)
-
 
 
     def sync(self):

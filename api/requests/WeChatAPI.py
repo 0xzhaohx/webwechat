@@ -313,7 +313,7 @@ class WeChatAPI(object):
         img_folder = ('%s/.wechat/heads/'%(os.environ['HOME']))
         if not os.path.exists(img_folder):
             os.mkdir(img_folder)
-        image = os.environ['HOME'] + '/.wechat/heads/'+user_name+'.jpg'
+        image = os.environ['HOME'] + '/.wechat/heads/contact/'+user_name+'.jpg'
         with open(image, 'wb') as image:
             image.write(data)
     '''
@@ -326,7 +326,7 @@ class WeChatAPI(object):
         #print(data)
         if not data:
             pass
-        img_folder = ('%s/.wechat/heads/'%(os.environ['HOME']))
+        img_folder = ('%s/.wechat/heads/contact/'%(os.environ['HOME']))
         if not os.path.exists(img_folder):
             os.mkdir(img_folder)
         image = img_folder+user_name+'.jpg'
