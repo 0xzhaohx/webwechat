@@ -82,6 +82,7 @@ class WeChatAPI(object):
         self.user = []
         #contacts
         self.contact_list = []
+        self.contacts_extension = []
         self.member_count = 0
         self.member_list = []
         #groups
@@ -351,6 +352,18 @@ class WeChatAPI(object):
         dict = json.loads(data, object_hook=_decode_data)
         self.member_list = dict['MemberList']
         self.member_count = dict['MemberCount']
+        # TODO download the user head icon
+        for member in self.member_list:
+            user_name = member['UserName']
+            head_img_url = member['HeadImgUrl']
+            if not user_name or not head_img_url:
+                continue
+            if user_name.startswith('@'):
+                self.webwx_get_icon(user_name, head_img_url)
+            elif user_name.startswith('@@'):
+                self.webwx_get_head_img(user_name, head_img_url)
+            else:
+                pass
         return dict
     '''
     調用完webwx_init得到部分的有過聯天記錄的用户，再調用webwx_batch_get_contact可以護得完整的有過聯天記錄的用户列表
