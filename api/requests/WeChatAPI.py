@@ -80,12 +80,12 @@ class WeChatAPI(object):
         self.device_id = 'e' + repr(random.random())[2:17]
         #the user had login
         self.user = []
-        #contacts
-        self.contact_list = []
+        #會話列表
+        self.session_list = []
         self.contacts_extension = []
         self.member_count = 0
         self.member_list = []
-        #groups
+        #群組列表
         self.group_list = []
         self.fun = 'new'
         self.lang = 'zh_TW'
@@ -253,12 +253,12 @@ class WeChatAPI(object):
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
         dict = json.loads(data, object_hook=_decode_data)
         self.user = dict['User']
-        self.contact_list = dict['ContactList']
+        self.session_list = dict['ContactList']
         self.chat_set = dict['ChatSet']
         #download and setup user head img
         self.webwx_get_icon(self.user['UserName'], self.user['HeadImgUrl'])
         #TODO download the user head icon
-        for contact in self.contact_list:
+        for contact in self.session_list:
             user_name = contact['UserName']
             head_img_url = contact['HeadImgUrl']
             if not user_name or not head_img_url:

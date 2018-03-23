@@ -69,7 +69,7 @@ class WeChatAPI(object):
         #the user had login
         self.user = []
         #contacts
-        self.contact_list = []
+        self.session_list = []
         self.member_count = 0
         self.member_list = []
         #groups
@@ -247,7 +247,7 @@ class WeChatAPI(object):
         dict = json.loads(data,object_hook=_decode_data)
         response.close()
         self.user = dict['User']
-        self.contact_list = dict['ContactList']
+        self.session_list = dict['ContactList']
         self.sync_key_dic = dict['SyncKey']
 
         def foo(x):
