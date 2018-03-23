@@ -91,7 +91,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         group_contact_list = []
         for contact in self.api.contact_list:
-            if contact['UserName'].find('@@') >= 0:
+            if contact['AttrStatus'] and contact['AttrStatus'] > 0:
                 group = {}
                 group['UserName'] = contact['UserName']
                 group['ChatRoomId'] = ''
@@ -102,7 +102,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             'Count': len(group_contact_list),
             'List': group_contact_list
         }
-        self.api.webwx_batch_get_contact(params)
+        session_list = self.api.webwx_batch_get_contact(params)
         '''
         second invoke
         '''
@@ -132,6 +132,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             remark_nick_name_item = QtGui.QTableWidgetItem()
             remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
             self.contactWidget.setItem(currentRow, 1, remark_nick_name_item)
+        ''''''
         ''''''
         for contact in self.api.contact_list:
             dn = contact['RemarkName']
