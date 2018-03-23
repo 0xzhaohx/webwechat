@@ -37,8 +37,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.api.login()
         self.api.webwx_init()
         self.setup_user()
-        self.init_session()
         self.api.webwx_get_contact()
+        self.init_session()
         self.init_member()
         self.init_reader()
         self.memberWidget.setVisible(False)
@@ -103,36 +103,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             'List': group_contact_list
         }
         session_list = self.api.webwx_batch_get_contact(params)
-        '''
-        second invoke
-        '''
-        group_contact_list = []
-        for member in self.api.member_list:
-            snsf = member['SnsFlag']
-            if snsf and snsf > 0:
-                group_contact_list.append(member)
-        group_contact_list.sort(key=lambda member: member['SnsFlag'])
-        params = {
-            'BaseRequest': self.api.base_request,
-            'Count': len(group_contact_list),
-            'List': group_contact_list
-        }
-        dictt = self.api.webwx_batch_get_contact(params)
-        '''        '''
-        for contact in dictt['ContactList']:
-            dn = contact['RemarkName']
-            if not dn:
-                dn = contact['NickName']
-            user_name = contact['UserName']
-            user_name_item = QtGui.QTableWidgetItem()
-            user_name_item.setText(QtCore.QString.fromUtf8(user_name))
-            currentRow = self.sessionsWidget.rowCount()
-            self.sessionsWidget.insertRow(currentRow)
-            self.sessionsWidget.setItem(currentRow, 0, user_name_item)
-            remark_nick_name_item = QtGui.QTableWidgetItem()
-            remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
-            self.sessionsWidget.setItem(currentRow, 1, remark_nick_name_item)
-        ''''''
+        if session_list['Count'] and session_list['Count'] > 0:
+            self.api.session_list.extend(session_list['ContactList'])
+       
         ''''''
         for contact in self.api.session_list:
             dn = contact['RemarkName']
