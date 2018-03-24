@@ -9,6 +9,8 @@ from time import sleep
 import time
 
 from PyQt4 import QtCore, QtGui, uic
+from xml.dom.minidom import parse
+import xml.dom.minidom
 
 from api.msg import Msg
 
@@ -239,8 +241,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         pass
                     elif msg_type == 2:
                         pass
+                    elif msg_type == 49:
+                        self.app_msg_handler(message)
                     else:
-                        pass
+                        self.default_msg_handler(message)
                 #self.messages.append(QtCore.QString.fromUtf8(message))
         else:
             self.messages.setText('')
@@ -312,7 +316,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             pass
     '''
-        把文本消息加入到聊天記錄裏?
+        默認的消息處理handler
+    '''
+    def default_msg_handler(self,msg):
+        self.text_msg_handler(msg)
+    '''
+        把文本消息加入到聊天記錄裏
     '''
     def text_msg_handler(self,msg):
         from_user_name = msg['FromUserName']
@@ -328,6 +337,40 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         messages_list.append(format_msg)
         self.messages_cache[from_user_name] = messages_list
         '''
+        '''
+            如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+        '''
+        if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
+            self.messages.append(QtCore.QString.fromUtf8(format_msg))
+        else:
+            pass
+        
+    '''
+        把應用消息加入到聊天記錄裏，應該指的是由其他應用分享的消息
+    '''
+    def app_msg_handler(self,msg):
+        from_user_name = msg['FromUserName']
+        if not self.current_select_contact:
+            pass
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        xml_content = msg['Content']
+        if xml_content:
+            xml_content = xml_content.replace("&gt;",">")
+            xml_content = xml_content.replace("&lt;","<")
+            xml_content = xml_content.replace("<br/>","")
+        
+        doc = xml.dom.minidom.parseString(xml_content)
+        title_nodes = doc.getElementsByTagName("title")
+        desc_nodes = doc.getElementsByTagName("des")
+        app_url_nodes = doc.getElementsByTagName("url")
+        if title_nodes:
+            title = title_nodes[0].firstChild.data
+        if desc_nodes:
+            desc = desc_nodes[0].firstChild.data
+        if app_url_nodes:
+            app_url = app_url_nodes[0].firstChild.data
+        format_msg = ('(%s) %s: %s %s %s') % (st, self.api.user['NickName'], title,desc,app_url)
+        
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
@@ -470,6 +513,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.text_msg_handler(msg)
                     elif msg_type == 2:
                         pass
+                    elif msg_type == 49:
+                        self.app_msg_handler(msg)
+                    else:
+                        self.default_msg_handler(msg)
 
     def sync(self):
         while (True):
