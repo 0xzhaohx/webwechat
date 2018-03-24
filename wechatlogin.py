@@ -79,7 +79,6 @@ class WeChatLogint(threading.Thread):
         self.api = api
 
     def run(self):
-        print(not WeChatLoginDialog.time_out)
 
         while(not (True == WeChatLoginDialog.time_out)):
             #print(WeChatLoginDialog.time_out)

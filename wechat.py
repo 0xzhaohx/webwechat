@@ -86,9 +86,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #self.sessionsWidget.setColumnCount(4)
         self.sessionsWidget.setColumnHidden(0,True)
         ''''''
-        '''
-        first invoke
-        '''
         group_contact_list = []
         for contact in self.api.member_list:
             if contact['AttrStatus'] and contact['AttrStatus'] > 0:
@@ -126,7 +123,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
                 self.sessionsWidget.setCellWidget(currentRow,1,icon_label)
             else:
-                print('warning icon load failed')
+                icon_file = self.user_home +"/heads/default/default.png"
+                if icon.load(icon_file):
+                    icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
+                    self.sessionsWidget.setCellWidget(currentRow,1,icon_label)
             #user remark or nick name
             remark_nick_name_item = QtGui.QTableWidgetItem()
             remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
