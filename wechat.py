@@ -55,7 +55,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer = threading.Timer(5, self.sync)
         timer.setDaemon(True)
         timer.start()
-
+        
     def load_image(self, file,use_default=True):
         image = QtGui.QImage()
         if image.load(file):
@@ -231,7 +231,17 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.messages_cache.has_key(user_name):
             messages_list = self.messages_cache[user_name]
             for message in messages_list:
-                self.messages.append(QtCore.QString.fromUtf8(message))
+                msg_type = message['MsgType']
+                if msg_type:
+                    if msg_type == 1:
+                        self.text_msg_handler(message)
+                    elif msg_type == 52:
+                        pass
+                    elif msg_type == 2:
+                        pass
+                    else:
+                        pass
+                #self.messages.append(QtCore.QString.fromUtf8(message))
         else:
             self.messages.setText('')
 
@@ -252,9 +262,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.messages.setText('')
         #self.widget.setVisible(True)
         #self.label_2.setVisible(False)
-
+    '''
+        把消息發送出去
+    '''
     def send_button_click(self):
-        contact = self.current_select_contact
         msg = str(self.draft.toPlainText())
         gsm = Msg(1, msg, self.current_select_contact['UserName'])
         self.api.webwx_send_msg(gsm)
@@ -263,20 +274,21 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.messages.append(QtCore.QString.fromUtf8(format_msg))
         self.draft.setText('')
         ''''''
+        contact = self.current_select_contact
         row_count = self.sessionsWidget.rowCount()
         find = False
         for i in range(row_count):
             user_name = self.sessionsWidget.item(i, 0).text()
             if user_name and user_name == contact['UserName']:
                 find = True
-                tips_item = self.sessionsWidget.item(i, 2)
+                tips_item = self.sessionsWidget.item(i, 3)
                 if tips_item:
                     tips = tips_item.text()
                     tips_item.setText(str(int(tips) + 1))
                 else:
                     tips_item = QtGui.QTableWidgetItem()
                     tips_item.setText('1')
-                    self.sessionsWidget.setItem(i, 2, tips_item)
+                    self.sessionsWidget.setItem(i, 3, tips_item)
                 break;
         if find == False:
             self.sessionsWidget.insertRow(row_count+1)
@@ -296,95 +308,150 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.sessionsWidget.setItem(row_count+1, 2, tips_item)
         else:
             pass
-
+    '''
+        把文本消息加入到聊天記錄裏?
+    '''
+    def text_msg_handler(self,msg):
+        from_user_name = msg['FromUserName']
+        if not self.current_select_contact:
+            pass
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'], msg['Content'])
+        '''
+        if self.messages_cache.has_key(from_user_name):
+            messages_list = self.messages_cache[from_user_name]
+        else:
+            messages_list = []
+        messages_list.append(format_msg)
+        self.messages_cache[from_user_name] = messages_list
+        '''
+        '''
+            如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+        '''
+        if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
+            self.messages.append(QtCore.QString.fromUtf8(format_msg))
+        else:
+            pass
+    '''
+    '''       
+    def put_msg_cache(self,msg):
+        from_user_name = msg['FromUserName']
+        if self.messages_cache.has_key(from_user_name):
+            messages_list = self.messages_cache[from_user_name]
+        else:
+            messages_list = []
+        messages_list.append(msg)
+        self.messages_cache[from_user_name] = messages_list
+        
+        #TODO ADD TIPS
+        '''
+            增加消息數量提示（提昇此人在會話列表中的位置）
+        '''
+        exist = False#此人是否在會話列表中
+        row_count = self.sessionsWidget.rowCount()
+        for i in range(row_count):
+            user_name = self.sessionsWidget.item(i,0).text()
+            if user_name and user_name == from_user_name:
+                exist = True
+                count_tips_item = self.sessionsWidget.item(i, 3)
+                if count_tips_item:
+                    count_tips = count_tips_item.text()
+                    if count_tips:
+                        count_tips_item.setText(str(int(count_tips)+1))
+                    else:
+                        count_tips_item.setText('1')
+                else:
+                    count_tips_item = QtGui.QTableWidgetItem()
+                    count_tips_item.setText('1')
+                    self.sessionsWidget.setItem(i, 3, count_tips_item)
+                break;
+        #have not received a message before（如果此人没有在會話列表中，則加入之）
+        if not exist:
+            contact = {}
+            for member in self.api.member_list:
+                if member['UserName'] == from_user_name:
+                    contact = member
+                    break
+            dn = contact['RemarkName']
+            if not dn:
+                dn = contact['NickName']
+            user_name = contact['UserName']
+            currentRow = self.sessionsWidget.rowCount()
+            self.sessionsWidget.insertRow(currentRow)
+            # user name item
+            user_name_item = QtGui.QTableWidgetItem()
+            user_name_item.setText(QtCore.QString.fromUtf8(user_name))
+            self.sessionsWidget.setItem(currentRow, 0, user_name_item)
+            # head icon
+            icon_label = QtGui.QLabel("");
+            icon_file = self.user_home + "/heads/contact/" + contact['UserName'] + ".jpg"
+            icon = QtGui.QImage()
+            if icon.load(icon_file):
+                icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
+                self.sessionsWidget.setCellWidget(currentRow, 1, icon_label)
+            else:
+                print('warning icon load failed')
+            # user remark or nick name
+            remark_nick_name_item = QtGui.QTableWidgetItem()
+            remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
+            self.sessionsWidget.setItem(currentRow, 2, remark_nick_name_item)
+            # message count_tips
+            count_tips_item = QtGui.QTableWidgetItem()
+            count_tips_item.setText('1')
+            self.sessionsWidget.setItem(currentRow, 3, count_tips_item)
+    '''
+    MSGTYPE_TEXT: 1,
+    MSGTYPE_IMAGE: 3,
+    MSGTYPE_VOICE: 34,
+    MSGTYPE_VIDEO: 43,
+    MSGTYPE_MICROVIDEO: 62,
+    MSGTYPE_EMOTICON: 47,
+    MSGTYPE_APP: 49,
+    MSGTYPE_VOIPMSG: 50,
+    MSGTYPE_VOIPNOTIFY: 52,
+    MSGTYPE_VOIPINVITE: 53,
+    MSGTYPE_LOCATION: 48,
+    MSGTYPE_STATUSNOTIFY: 51,
+    MSGTYPE_SYSNOTICE: 9999,
+    MSGTYPE_POSSIBLEFRIEND_MSG: 40,
+    MSGTYPE_VERIFYMSG: 37,
+    MSGTYPE_SHARECARD: 42,
+    MSGTYPE_SYS: 10000,
+    MSGTYPE_RECALLED: 10002,  // 撤销消息
+    '''
     def webwx_sync_process(self, data):
         if not data:
             return False
         ret_code = data['BaseResponse']['Ret']
-        add_msg_count = data['AddMsgCount']
 
         if ret_code == 0:
             pass
         else:
             return False
 
+        add_msg_count = data['AddMsgCount']
         if add_msg_count == 0:
             return True
 
         msg_list = data['AddMsgList']
 
         for msg in msg_list:
+            msg_type = msg['MsgType']
             from_user_name = msg['FromUserName']
-            to_user_name = msg['ToUserName']
-            print('from user %s,to user %s', (from_user_name, to_user_name))
-            if not self.current_select_contact:
-                pass
-
-            st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-            format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'], msg['Content'])
-            if self.messages_cache.has_key(from_user_name):
-                messages_list = self.messages_cache[from_user_name]
+            '''
+            没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中
+            '''
+            if (not self.current_select_contact) or from_user_name != self.current_select_contact['UserName']:
+                self.put_msg_cache(msg)
             else:
-                messages_list = []
-            messages_list.append(format_msg)
-            self.messages_cache[from_user_name] = messages_list
-            if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
-                self.messages.append(QtCore.QString.fromUtf8(format_msg))
-            else:
-                #TODO ADD TIPS
-                exist = False
-                row_count = self.sessionsWidget.rowCount()
-                for i in range(row_count):
-                    user_name = self.sessionsWidget.item(i,0).text()
-                    if user_name and user_name == from_user_name:
-                        exist = True
-                        tips_item = self.sessionsWidget.item(i, 3)
-                        if tips_item:
-                            tips = tips_item.text()
-                            if tips:
-                                tips_item.setText(str(int(tips)+1))
-                            else:
-                                tips_item.setText('1')
-                        else:
-                            tips_item = QtGui.QTableWidgetItem()
-                            tips_item.setText('1')
-                            self.sessionsWidget.setItem(i, 3, tips_item)
-                        break;
-                #have not received a message before
-                if not exist:
-                    contact = {}
-                    for member in self.api.member_list:
-                        if member['UserName'] == from_user_name:
-                            contact = member
-                            break
-                    dn = contact['RemarkName']
-                    if not dn:
-                        dn = contact['NickName']
-                    user_name = contact['UserName']
-                    currentRow = self.sessionsWidget.rowCount()
-                    self.sessionsWidget.insertRow(currentRow)
-                    # user name item
-                    user_name_item = QtGui.QTableWidgetItem()
-                    user_name_item.setText(QtCore.QString.fromUtf8(user_name))
-                    self.sessionsWidget.setItem(currentRow, 0, user_name_item)
-                    # head icon
-                    icon_label = QtGui.QLabel("");
-                    icon_file = self.user_home + "/heads/contact/" + contact['UserName'] + ".jpg"
-                    icon = QtGui.QImage()
-                    if icon.load(icon_file):
-                        icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
-                        self.sessionsWidget.setCellWidget(currentRow, 1, icon_label)
-                    else:
-                        print('warning icon load failed')
-                    # user remark or nick name
-                    remark_nick_name_item = QtGui.QTableWidgetItem()
-                    remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
-                    self.sessionsWidget.setItem(currentRow, 2, remark_nick_name_item)
-                    # message tips
-                    tips_item = QtGui.QTableWidgetItem()
-                    tips_item.setText('1')
-                    self.sessionsWidget.setItem(currentRow, 3, tips_item)
-
+                '''
+                    如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+                '''
+                if msg_type:
+                    if msg_type == 1:
+                        self.text_msg_handler(msg)
+                    elif msg_type == 2:
+                        pass
 
     def sync(self):
         while (True):
@@ -402,7 +469,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     if selector != '0':
                         sync_response = self.api.webwx_sync()
                         #print("WeChatSync.run#webwx_sync:")
-                        #print(sync_response)
+                        print(sync_response)
                         self.webwx_sync_process(sync_response)
             sleep(11)
 
