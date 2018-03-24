@@ -320,8 +320,6 @@ class WeChatAPI(object):
     def webwx_get_head_img(self,user_name,head_img_url):
         url = 'https://wx.qq.com/'+((head_img_url))
         data = self.get(url,stream=True)
-        #print('image data:')
-        #print(data)
         if not data:
             pass
         img_folder = ('%s/.wechat/heads/contact/'%(os.environ['HOME']))
@@ -538,9 +536,25 @@ class WeChatAPI(object):
         data = response.text
         response.close()
         return data
+    '''
+    根据MSG_ID下載圖片
+    '''
+    def webwx_get_msg_img(self,msg_id):
+        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg" + \
+              '?MsgID=%s&skey=%s&type=slave' % (
+                  msg_id,self.skey
+              )
+        data = self.get(url,stream=True)
+        if not data:
+            pass
+        img_folder = ('%s/.wechat/cache/img/'%(os.environ['HOME']))
+        if not os.path.exists(img_folder):
+            os.mkdir(img_folder)
+        msg_img = img_folder+msg_id+'.jpg'
+        with open(msg_img, 'wb') as image:
+            image.write(data)
 
     def get(self, url, data= {},stream=False):
-
         default_headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',

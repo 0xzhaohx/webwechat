@@ -241,11 +241,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         pass
                     elif msg_type == 2:
                         pass
+                    elif msg_type == 3:
+                        self.image_msg_handler(message)
+                    elif msg_type == 34:
+                        self.voice_msg_handler(message)
                     elif msg_type == 49:
                         self.app_msg_handler(message)
                     else:
                         self.default_msg_handler(message)
-                #self.messages.append(QtCore.QString.fromUtf8(message))
         else:
             self.messages.setText('')
 
@@ -320,6 +323,39 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     '''
     def default_msg_handler(self,msg):
         self.text_msg_handler(msg)
+    
+    '''
+        把語音消息加入到聊天記錄裏
+    '''
+    def voice_msg_handler(self,msg):
+        from_user_name = msg['FromUserName']
+        if not self.current_select_contact:
+            pass
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'], "請在手機端收聽語音")
+        '''
+            如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+        '''
+        if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
+            self.messages.append(QtCore.QString.fromUtf8(format_msg))
+        else:
+            pass
+    '''
+        把語音消息加入到聊天記錄裏
+    '''
+    def video_msg_handler(self,msg):
+        from_user_name = msg['FromUserName']
+        if not self.current_select_contact:
+            pass
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'], "請在手機端觀看視頻")
+        '''
+            如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+        '''
+        if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
+            self.messages.append(QtCore.QString.fromUtf8(format_msg))
+        else:
+            pass
     '''
         把文本消息加入到聊天記錄裏
     '''
@@ -330,18 +366,31 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
         format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'], msg['Content'])
         '''
-        if self.messages_cache.has_key(from_user_name):
-            messages_list = self.messages_cache[from_user_name]
-        else:
-            messages_list = []
-        messages_list.append(format_msg)
-        self.messages_cache[from_user_name] = messages_list
+            如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
+        if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
+            self.messages.append(QtCore.QString.fromUtf8(format_msg))
+        else:
+            pass
+    '''
+        把文本消息加入到聊天記錄裏
+    '''
+    def image_msg_handler(self,msg):
+        from_user_name = msg['FromUserName']
+        if not self.current_select_contact:
+            pass
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        format_msg = ('(%s) %s:') % (st, self.api.user['NickName'])
+        msg_id = msg['MsgId']
+        self.api.webwx_get_msg_img(msg_id)
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
+            
+            msg_img = ('<img src=%s/.wechat/cache/img/%s.jpg>'%(os.environ['HOME'],msg_id))
+            self.messages.append(msg_img)
         else:
             pass
         
@@ -513,6 +562,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.text_msg_handler(msg)
                     elif msg_type == 2:
                         pass
+                    elif msg_type == 3:
+                        self.image_msg_handler(msg) 
+                    elif msg_type == 34:
+                        self.voice_msg_handler(msg)
                     elif msg_type == 49:
                         self.app_msg_handler(msg)
                     else:
