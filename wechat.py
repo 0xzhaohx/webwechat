@@ -273,7 +273,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         format_msg = ('(%s) %s: %s') % (st, self.api.user['NickName'],msg)
         self.messages.append(QtCore.QString.fromUtf8(format_msg))
         self.draft.setText('')
-        ''''''
+        '''
+        '''
         contact = self.current_select_contact
         row_count = self.sessionsWidget.rowCount()
         find = False
@@ -281,6 +282,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             user_name = self.sessionsWidget.item(i, 0).text()
             if user_name and user_name == contact['UserName']:
                 find = True
+                '''
                 tips_item = self.sessionsWidget.item(i, 3)
                 if tips_item:
                     tips = tips_item.text()
@@ -289,6 +291,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     tips_item = QtGui.QTableWidgetItem()
                     tips_item.setText('1')
                     self.sessionsWidget.setItem(i, 3, tips_item)
+                '''
                 break;
         if find == False:
             self.sessionsWidget.insertRow(row_count+1)
@@ -332,9 +335,24 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
         else:
             pass
+        
+    '''
+    提昇from_user_name在會話列表中的位置
+    '''
+    def up_session_position(self,from_user_name):
+        row_count = self.sessionsWidget.rowCount()
+        for i in range(row_count):
+            user_name = self.sessionsWidget.item(i,0).text()
+            #在會話列表中找到此人
+            if user_name and user_name == from_user_name:
+                
+                #刪除此行
+                #self.sessionsWidget.removeRow(i)
+                break;
+        return True
     '''
     '''       
-    def put_msg_cache(self,msg):
+    def put_msgcache(self,msg):
         from_user_name = msg['FromUserName']
         if self.messages_cache.has_key(from_user_name):
             messages_list = self.messages_cache[from_user_name]
@@ -442,7 +460,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中
             '''
             if (not self.current_select_contact) or from_user_name != self.current_select_contact['UserName']:
-                self.put_msg_cache(msg)
+                self.put_msgcache(msg)
             else:
                 '''
                     如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
@@ -464,12 +482,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 if code != '0':
                     pass
                 elif code == '0' and selector == '0':
-                    print("nothing")
+                    print("nothing need to process")
                 else:
                     if selector != '0':
                         sync_response = self.api.webwx_sync()
                         #print("WeChatSync.run#webwx_sync:")
-                        print(sync_response)
+                        #print(sync_response)
                         self.webwx_sync_process(sync_response)
             sleep(11)
 
