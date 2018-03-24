@@ -73,7 +73,6 @@ class WeChatAPI(object):
         self.base_request = {}
         self.sync_key_dic = []
         self.sync_key = ''
-        self.chat_set = {}
         # device_id: 登录手机设备
         # web wechat 的格式为: e123456789012345 (e+15位随机数)
         # mobile wechat 的格式为: A1234567890abcde (A+15位随机数字或字母)
@@ -254,7 +253,6 @@ class WeChatAPI(object):
         dict = json.loads(data, object_hook=_decode_data)
         self.user = dict['User']
         self.session_list = dict['ContactList']
-        self.chat_set = dict['ChatSet']
         #download and setup user head img
         self.webwx_get_icon(self.user['UserName'], self.user['HeadImgUrl'])
         #TODO download the user head icon
