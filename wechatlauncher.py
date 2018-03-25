@@ -9,22 +9,22 @@ from time import sleep
 
 from PyQt4 import QtGui, uic
 
-from api.requests.WeChatAPI import WeChatAPI
-from wechat import WeChat
+from com.ox11.wechat.api.requests.WeChatAPI import WeChatAPI
+from com.ox11.wechat.wechat import WeChat
 from PyQt4.Qt import QIcon
 
 qtCreatorFile = "resource/ui/wechatlauncher.ui"
 
-LoginWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
+LauncherWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
 
-class WeChatLoginDialog(QtGui.QDialog, LoginWindow,threading.Thread):
+class WeChatLauncher(QtGui.QDialog, LauncherWindow,threading.Thread):
 
     time_out = False
 
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
-        LoginWindow.__init__(self)
+        LauncherWindow.__init__(self)
         threading.Thread.__init__(self,name='wechat login')
         self.setDaemon(True)
         self.user_home = os.environ['HOME']
@@ -39,7 +39,7 @@ class WeChatLoginDialog(QtGui.QDialog, LoginWindow,threading.Thread):
         self.set_qr_code_image()
 
     def qr_time_out(self):
-        WeChatLoginDialog.time_out = True
+        WeChatLauncher.time_out = True
 
     def set_qr_code_image(self):
         qrcode_path = self.app_home+"/qrcode.jpg"
@@ -84,8 +84,8 @@ class WeChatLogint(threading.Thread):
 
     def run(self):
 
-        while(not (True == WeChatLoginDialog.time_out)):
-            #print(WeChatLoginDialog.time_out)
+        while(not (True == WeChatLauncher.time_out)):
+            #print(WeChatLauncher.time_out)
             #self.logind.login()
             sleep(1)
 
@@ -94,10 +94,10 @@ if __name__ =="__main__":
     #QtGui.QTextCodec.setCodecForTr(QtGui.QTextCodec.codecForName("utf8"))
     #QtGui.QTextCodec.setCodecForCStrings(QtGui.QTextCodec.codecForLocale())
     app = QtGui.QApplication(sys.argv)
-    loginDialog = WeChatLoginDialog()
-    loginDialog.show()
-    if QtGui.QDialog.Accepted == loginDialog.exec_():
-        window = WeChat(loginDialog.api)
+    launcher = WeChatLauncher()
+    launcher.show()
+    if QtGui.QDialog.Accepted == launcher.exec_():
+        window = WeChat(launcher.api)
         window.show()
         sys.exit(app.exec_())
     else:
