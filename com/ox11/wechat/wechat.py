@@ -41,7 +41,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.member_map = {'-1':-1}
         self.api = api
         self.setupUi(self)
-        self.setWindowIcon(QIcon("icons/hicolor/32x32/apps/electronic-wechat.png"))
+        self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"))
         self.api.login()
         self.api.webwx_init()
         self.setup_user()
