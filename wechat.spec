@@ -3,10 +3,11 @@
 block_cipher = None
 
 
-a = Analysis(['/home/zhaohongxing/workspace/python/wechat/wechatlogin.py'],
+a = Analysis(['/home/zhaohongxing/workspace/python/webwechat/wechatlauncher.py'],
              pathex=['/home/zhaohongxing/Downloads/PyInstaller-3.3.1/wechat'],
              binaries=[],
-             datas=[],
+             datas=[('./resource','resource')
+             ],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
@@ -19,7 +20,7 @@ pyz = PYZ(a.pure, a.zipped_data,
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='wechatlogin',
+          name='wechat',
           debug=False,
           strip=False,
           upx=True,
@@ -30,4 +31,4 @@ coll = COLLECT(exe,
                a.datas,
                strip=False,
                upx=True,
-               name='wechatlogin')
+               name='wechat')
