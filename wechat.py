@@ -18,7 +18,7 @@ reload(sys)
 
 sys.setdefaultencoding('utf-8')
 
-qtCreatorFile = "resource/ui/wechat-0.3-5.ui"
+qtCreatorFile = "resource/ui/wechat-0.3-8.ui"
 
 WeChatWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
@@ -50,7 +50,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.memberWidget.setVisible(False)
         self.readerWidget.setVisible(False)
 
-        #self.chatWidget.setVisible(False)
+        self.chatWidget.setVisible(False)
 
         self.sessionButton.clicked.connect(self.session_button_clicked)
         self.memberButton.clicked.connect(self.member_button_clicked)
@@ -141,7 +141,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
             self.sessionsWidget.setItem(currentRow,2,remark_nick_name_item)
 
-        self.sessionsWidget.itemClicked.connect(self.contact_item_clicked)
+        self.sessionsWidget.itemClicked.connect(self.session_item_clicked)
 
     def init_member(self):
         ''''''
@@ -215,7 +215,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if user_name == member['UserName']:
                 return member
 
-    def contact_item_clicked(self):
+    def session_item_clicked(self):
+        self.chatWidget.setVisible(True)
+        self.label.setVisible(False)
         current_row = self.sessionsWidget.currentRow()
         curuent_item = self.sessionsWidget.currentItem()
         user_name = str(self.sessionsWidget.item(current_row, 0).text())
@@ -260,6 +262,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.messages.setText('')
 
     def member_item_clicked(self):
+        self.chatWidget.setVisible(True)
+        self.label.setVisible(False)
         current_row =self.memberWidget.currentRow()
         user_name = self.memberWidget.item(current_row,0).text()
         contact = self.get_member(user_name)
