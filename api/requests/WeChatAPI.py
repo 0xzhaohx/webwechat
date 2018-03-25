@@ -57,6 +57,8 @@ class WeChatAPI(object):
             "wechat.com":['login.web.wechat.com','file.web.wechat.com','webpush.web.wechat.com'],
             "web2.wechat.com":['login.web2.wechat.com','file.web2.wechat.com','webpush.web2.wechat.com']
         }
+        self.user_home = os.environ['HOME']
+        self.app_home = self.user_home + '/.wechat/'
         self.file_host = None
         self.appid = 'wx782c26e4c19acffb'
         self.uuid = ''
@@ -143,7 +145,7 @@ class WeChatAPI(object):
         }
         data = self.post(url, params, stream=True)
 
-        image = os.environ['HOME']+"/.wechat/qrcode.jpg"
+        image = self.app_home+"/qrcode.jpg"
         with open(image, 'wb') as image:
             image.write(data)
             return image
@@ -308,10 +310,10 @@ class WeChatAPI(object):
         #print(data)
         if not data:
             pass
-        img_folder = ('%s/.wechat/heads/'%(os.environ['HOME']))
+        img_folder = ('%s/heads/'%(self.app_home))
         if not os.path.exists(img_folder):
             os.mkdir(img_folder)
-        image = os.environ['HOME'] + '/.wechat/heads/contact/'+user_name+'.jpg'
+        image = self.app_home + '/heads/contact/'+user_name+'.jpg'
         with open(image, 'wb') as image:
             image.write(data)
     '''
@@ -322,7 +324,7 @@ class WeChatAPI(object):
         data = self.get(url,stream=True)
         if not data:
             pass
-        img_folder = ('%s/.wechat/heads/contact/'%(os.environ['HOME']))
+        img_folder = ('%s/heads/contact/'%(self.app_home))
         if not os.path.exists(img_folder):
             os.mkdir(img_folder)
         image = img_folder+user_name+'.jpg'
@@ -547,7 +549,7 @@ class WeChatAPI(object):
         data = self.get(url,stream=True)
         if not data:
             pass
-        img_folder = ('%s/.wechat/cache/img/'%(os.environ['HOME']))
+        img_folder = ('%s/cache/img/'%(self.app_home))
         if not os.path.exists(img_folder):
             os.mkdir(img_folder)
         msg_img = img_folder+msg_id+'.jpg'

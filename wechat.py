@@ -18,7 +18,7 @@ reload(sys)
 
 sys.setdefaultencoding('utf-8')
 
-qtCreatorFile = "resource/ui/wechat-0.3-1.ui"
+qtCreatorFile = "resource/ui/wechat-0.3-5.ui"
 
 WeChatWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
@@ -28,7 +28,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def __init__(self,api):
         QtGui.QMainWindow.__init__(self)
         WeChatWindow.__init__(self)
-        self.user_home = os.environ['HOME'] + '/.wechat/'
+        self.config = {
+           
+        }
+        self.user_home = os.environ['HOME']
+        self.app_home = self.user_home + '/.wechat/'
         self.default_head_icon = 'default.png'
         self.current_select_contact = None
         self.messages_cache = {}
@@ -58,22 +62,22 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer.setDaemon(True)
         timer.start()
         
-    def load_image(self, file,use_default=True):
+    def load_image(self, img_path,use_default=True):
         image = QtGui.QImage()
-        if image.load(file):
+        if image.load(img_path):
             return image
         else:
             if use_default:
-                image.load(self.user_home)
+                image.load(self.app_home)
 
     def setup_user(self):
         self.userNameLabel.setText((self.api.user['NickName']))
-        user_icon_file = self.user_home + "/heads/contact/" + self.api.user['UserName'] + ".jpg"
+        user_icon_file = self.app_home + "/heads/contact/" + self.api.user['UserName'] + ".jpg"
         user_head_image = QtGui.QImage()
         if user_head_image.load(user_icon_file):
             self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
         else:
-            if user_head_image.load(self.user_home + "/heads/default/" +self.default_head_icon):
+            if user_head_image.load(self.app_home + "/heads/default/" +self.default_head_icon):
                 self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
 
     def init_session(self):
@@ -101,9 +105,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             'Count': len(group_contact_list),
             'List': group_contact_list
         }
-        session_list = self.api.webwx_batch_get_contact(params)
-        if session_list['Count'] and session_list['Count'] > 0:
-            self.api.session_list.extend(session_list['ContactList'])
+        session_response = self.api.webwx_batch_get_contact(params)
+        
+        session_list = session_response['ContactList']
+        session_list.sort(key=lambda mm: mm['AttrStatus'],reverse=True)
+        if session_response['Count'] and session_response['Count'] > 0:
+            self.api.session_list.extend(session_list)
        
         ''''''
         for contact in self.api.session_list:
@@ -119,13 +126,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.sessionsWidget.setItem(currentRow,0,user_name_item)
             #head icon
             icon_label = QtGui.QLabel("");
-            icon_file = self.user_home +"/heads/contact/"+contact['UserName']+".jpg"
+            icon_file = self.app_home +"/heads/contact/"+contact['UserName']+".jpg"
             icon = QtGui.QImage()
             if icon.load(icon_file):
                 icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
                 self.sessionsWidget.setCellWidget(currentRow,1,icon_label)
             else:
-                icon_file = self.user_home +"/heads/default/default.png"
+                icon_file = self.app_home +"/heads/default/default.png"
                 if icon.load(icon_file):
                     icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
                     self.sessionsWidget.setCellWidget(currentRow,1,icon_label)
@@ -162,7 +169,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.memberWidget.setItem(currentRow, 0, user_name_item)
             # head icon
             icon_label = QtGui.QLabel("");
-            icon_file = self.user_home + "/heads/contact/" + member['UserName'] + ".jpg"
+            icon_file = self.app_home + "/heads/contact/" + member['UserName'] + ".jpg"
             icon = QtGui.QImage()
             if icon.load(icon_file):
                 icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
@@ -389,7 +396,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
             
-            msg_img = ('<img src=%s/.wechat/cache/img/%s.jpg>'%(os.environ['HOME'],msg_id))
+            msg_img = ('<img src=%s/cache/img/%s.jpg>'%(self.app_home,msg_id))
             self.messages.append(msg_img)
         else:
             pass
@@ -494,7 +501,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.sessionsWidget.setItem(currentRow, 0, user_name_item)
             # head icon
             icon_label = QtGui.QLabel("");
-            icon_file = self.user_home + "/heads/contact/" + contact['UserName'] + ".jpg"
+            icon_file = self.app_home + "/heads/contact/" + contact['UserName'] + ".jpg"
             icon = QtGui.QImage()
             if icon.load(icon_file):
                 icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
