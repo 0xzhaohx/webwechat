@@ -479,7 +479,35 @@ class WeChatAPI(object):
         if dictt['BaseResponse']['Ret'] == 0:
             self.update_sync_key(dictt)
         return dictt
+    
+    def webwx_send_emoticon(self,msg):
+        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon" + \
+              '?fun=sys&pass_ticket=%s' % (
+                  self.pass_ticket
+              )
+        local_id = client_msg_id = str(int(time.time() * 1000)) + \
+            str(random.random())[:5].replace('.', '')
 
+        params = {
+            'BaseRequest': self.base_request,
+            'Msg': {
+                "Type":msg.type,
+                "Content":msg.content,
+                "FromUserName":self.user['UserName'],
+                "ToUserName":msg.to_user_name,
+                "LocalID":local_id,
+                "ClientMsgId":client_msg_id,
+            }
+        }
+        headers = {
+            'User-Agent': "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)",
+            "Content-Type": "application/json; charset=UTF-8",
+            "Referer": "https://wx.qq.com"
+        }
+
+        data = self.post_json(url, params)
+        return data
+    
     def webwx_send_msg(self,msg):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg" + \
               '?pass_ticket=%s' % (

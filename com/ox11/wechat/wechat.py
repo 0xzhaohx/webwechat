@@ -32,6 +32,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.config = {
            
         }
+        self.setAcceptDrops(True)
         self.user_home = os.environ['HOME']
         self.app_home = self.user_home + '/.wechat/'
         self.default_head_icon = 'default.png'
@@ -63,7 +64,32 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer = threading.Timer(5, self.sync)
         timer.setDaemon(True)
         timer.start()
-        
+    
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        print("dragEnterEvent")
+
+    def dragMoveEvent(self, event):
+        #print("dragMoveEvent")
+        pass
+    
+    def isImage(self,path):
+        if path:
+            reg="(?i).+?\\.(jpg|jpeg\png\gif|bmp)"
+            return path.match(reg)
+    
+    def dropEvent(self, event):
+        #print("dropEvent")
+        if event.mimeData().hasUrls():
+            #遍历输出拖动进来的所有文件路径
+            for url in event.mimeData().urls():                
+                print QtCore.QString.fromUtf8(str(url.toLocalFile()))
+            event.acceptProposedAction()
+        else:
+            #super(Button,self).dropEvent(event)
+            pass
+    
     def load_image(self, img_path,use_default=True):
         image = QtGui.QImage()
         if image.load(img_path):
