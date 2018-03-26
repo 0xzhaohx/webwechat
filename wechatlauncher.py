@@ -13,7 +13,7 @@ from com.ox11.wechat.api.requests.WeChatAPI import WeChatAPI
 from com.ox11.wechat.wechat import WeChat
 from PyQt4.Qt import QIcon
 
-qtCreatorFile = "resource/ui/wechatlauncher.ui"
+qtCreatorFile = "resource/ui/wechatlauncher-1.0.ui"
 
 LauncherWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
@@ -34,7 +34,7 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"))
         self.setWindowIconText("Wechat 0.3-8")
-        self.loginButton.clicked.connect(self.do_login)
+        #self.loginButton.clicked.connect(self.do_login)
         self.generate_qrcode()
         self.load_qr_code_image()
 
@@ -88,7 +88,7 @@ class WeChatLauncherThread(threading.Thread):
             #print(WeChatLauncher.timeout)
             self.launcher.do_login()
             
-            sleep(1)
+            sleep(2)
 
 if __name__ =="__main__":
 
