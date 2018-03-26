@@ -32,7 +32,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.config = {
            
         }
-        self.user_home = os.environ['HOME']
+        self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
         self.default_head_icon = 'default.png'
         self.current_select_contact = None

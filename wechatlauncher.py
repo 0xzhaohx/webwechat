@@ -25,16 +25,16 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow,threading.Thread):
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
         LauncherWindow.__init__(self)
-        threading.Thread.__init__(self,name='wechat login')
+        threading.Thread.__init__(self,name='wechat launcher')
         self.setDaemon(True)
-        self.user_home = os.environ['HOME']
+        self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
         self.api = WeChatAPI()
-        self.logint = WeChatLogint(self,self.api)
+        self.launcher_thread = WeChatLauncherThread(self,self.api)
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"))
         self.setWindowIconText("Wechat 0.3-8")
-        self.loginButton.clicked.connect(self.login)
+        self.loginButton.clicked.connect(self.do_login)
         self.generate_qrcode()
         self.set_qr_code_image()
 
@@ -51,11 +51,11 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow,threading.Thread):
 
             #auto_login_timer = threading.Timer(0, self.login())
             #auto_login_timer.start()
-            self.logint.start()
+            self.launcher_thread.start()
         else:
             pass
 
-    def login(self):
+    def do_login(self):
         login_state = self.api.wait4login()
         if self.api.redirect_uri:
             login_state = True
@@ -74,19 +74,19 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow,threading.Thread):
         self.api.generate_qrcode()
 
 
-class WeChatLogint(threading.Thread):
+class WeChatLauncherThread(threading.Thread):
 
-    def __init__(self,logind,api):
-        threading.Thread.__init__(self,name='wechat login')
+    def __init__(self,launcher,api):
+        threading.Thread.__init__(self,name='wechat launcher thread')
         self.setDaemon(True)
-        self.logind = logind
+        self.launcher = launcher
         self.api = api
 
     def run(self):
 
-        while(not (True == WeChatLauncher.time_out)):
-            #print(WeChatLauncher.time_out)
-            #self.logind.login()
+        while(False == WeChatLauncher.time_out):
+            print(WeChatLauncher.time_out)
+            self.launcher.do_login()
             sleep(1)
 
 if __name__ =="__main__":

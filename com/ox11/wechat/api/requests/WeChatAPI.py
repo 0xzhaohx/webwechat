@@ -57,7 +57,7 @@ class WeChatAPI(object):
             "wechat.com":['login.web.wechat.com','file.web.wechat.com','webpush.web.wechat.com'],
             "web2.wechat.com":['login.web2.wechat.com','file.web2.wechat.com','webpush.web2.wechat.com']
         }
-        self.user_home = os.environ['HOME']
+        self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
         self.file_host = None
         self.appid = 'wx782c26e4c19acffb'
