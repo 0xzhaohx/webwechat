@@ -18,35 +18,35 @@ qtCreatorFile = "resource/ui/wechatlauncher.ui"
 LauncherWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
 
-class WeChatLauncher(QtGui.QDialog, LauncherWindow,threading.Thread):
+class WeChatLauncher(QtGui.QDialog, LauncherWindow):
 
-    time_out = False
+    timeout = False
 
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
         LauncherWindow.__init__(self)
-        threading.Thread.__init__(self,name='wechat launcher')
-        self.setDaemon(True)
+        #threading.Thread.__init__(self,name='wechat launcher')
+        #self.setDaemon(True)
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
-        self.api = WeChatAPI()
-        self.launcher_thread = WeChatLauncherThread(self,self.api)
+        self.wxapi = WeChatAPI()
+        self.launcher_thread = WeChatLauncherThread(self,self.wxapi)
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"))
         self.setWindowIconText("Wechat 0.3-8")
         self.loginButton.clicked.connect(self.do_login)
         self.generate_qrcode()
-        self.set_qr_code_image()
+        self.load_qr_code_image()
 
-    def qr_time_out(self):
-        WeChatLauncher.time_out = True
+    def set_qr_timeout(self):
+        WeChatLauncher.timeout = True
 
-    def set_qr_code_image(self):
+    def load_qr_code_image(self):
         qrcode_path = self.app_home+"/qrcode.jpg"
         qr_image = QtGui.QImage()
         if qr_image.load(qrcode_path):
             self.qrLabel.setPixmap(QtGui.QPixmap.fromImage(qr_image))
-            timer = threading.Timer(5, self.qr_time_out)
+            timer = threading.Timer(25, self.set_qr_timeout)
             timer.start()
 
             #auto_login_timer = threading.Timer(0, self.login())
@@ -56,12 +56,12 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow,threading.Thread):
             pass
 
     def do_login(self):
-        login_state = self.api.wait4login()
-        if self.api.redirect_uri:
+        login_state = self.wxapi.wait4login()
+        if self.wxapi.redirect_uri:
             login_state = True
         else:
-            login_state = self.api.wait4login(0)
-            if self.api.redirect_uri:
+            login_state = self.wxapi.wait4login(0)
+            if self.wxapi.redirect_uri:
                 login_state = True
             else:
                 login_state = False
@@ -70,23 +70,24 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow,threading.Thread):
             self.accept()
 
     def generate_qrcode(self):
-        uuid = self.api.get_uuid()
-        self.api.generate_qrcode()
+        uuid = self.wxapi.get_uuid()
+        self.wxapi.generate_qrcode()
 
 
 class WeChatLauncherThread(threading.Thread):
 
-    def __init__(self,launcher,api):
+    def __init__(self,launcher,wxapi):
         threading.Thread.__init__(self,name='wechat launcher thread')
         self.setDaemon(True)
         self.launcher = launcher
-        self.api = api
+        self.wxapi = wxapi
 
     def run(self):
 
-        while(False == WeChatLauncher.time_out):
-            print(WeChatLauncher.time_out)
+        while(False == WeChatLauncher.timeout):
+            #print(WeChatLauncher.timeout)
             self.launcher.do_login()
+            
             sleep(1)
 
 if __name__ =="__main__":
@@ -97,7 +98,7 @@ if __name__ =="__main__":
     launcher = WeChatLauncher()
     launcher.show()
     if QtGui.QDialog.Accepted == launcher.exec_():
-        window = WeChat(launcher.api)
+        window = WeChat(launcher.wxapi)
         window.show()
         sys.exit(app.exec_())
     else:
