@@ -498,7 +498,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         return True
     '''
     '''       
-    def put_msgcache(self,msg):
+    def put_msg_cache(self,msg):
         from_user_name = msg['FromUserName']
         if self.msg_cache.has_key(from_user_name):
             messages_list = self.msg_cache[from_user_name]
@@ -607,7 +607,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中
             '''
             if (not self.current_select_contact) or from_user_name != self.current_select_contact['UserName']:
-                self.put_msgcache(msg)
+                self.put_msg_cache(msg)
             else:
                 '''
                     如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
