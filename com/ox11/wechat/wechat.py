@@ -48,8 +48,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.wxapi.webwx_init()
         self.setup_user()
         self.wxapi.webwx_get_contact()
-        self.sessionTableModel = QStandardItemModel()
-        self.memberTableModel = QStandardItemModel()
+        self.sessionTableModel = QStandardItemModel(1,4)
+        self.memberTableModel = QStandardItemModel(1,4)
         self.readerTableModel = QStandardItemModel()
         self.memberWidget.setVisible(False)
         self.readerWidget.setVisible(False)
@@ -60,7 +60,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.chatWidget.setVisible(False)
         
         self.sessionWidget.setModel(self.sessionTableModel)
+        self.sessionWidget.setColumnHidden(0,True)
         self.memberWidget.setModel(self.memberTableModel)
+        self.memberWidget.setColumnHidden(0,True)
         self.readerWidget.setModel(self.readerTableModel)
 
         self.sessionButton.clicked.connect(self.session_button_clicked)
@@ -125,8 +127,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         column 4:message count tips
         :return:
         '''
-        self.sessionWidget.setColumnCount(4)
-        self.sessionWidget.setColumnHidden(1,True)
+        #self.sessionWidget.setColumnCount(4)
         ''''''
         group_contact_list = []
         for contact in self.wxapi.member_list:
@@ -177,7 +178,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             #remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
             self.sessionTableModel.setItem(currentRow,2,remark_nick_name_item)
 
-        self.sessionTableModel.itemChanged.connect(self.session_item_clicked)
+        self.sessionWidget.clicked.connect(self.session_item_clicked)
 
     def init_member(self):
         ''''''
@@ -222,7 +223,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             #remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
             self.memberTableModel.setItem(currentRow,2,remark_nick_name_item)
 
-        self.memberTableModel.itemChanged.connect(self.member_item_clicked)
+        self.memberWidget.clicked.connect(self.member_item_clicked)
 
     def init_reader(self):
         pass
@@ -258,13 +259,15 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def session_item_clicked(self):
         self.chatWidget.setVisible(True)
         self.label.setVisible(False)
-        current_row = self.sessionWidget.currentRow()
-        curuent_item = self.sessionWidget.currentItem()
-        user_name = str(self.sessionWidget.item(current_row, 0).text())
+        current_row = self.sessionWidget.currentIndex().row()
+        user_name_index = self.sessionTableModel.index(current_row,0)
+        user_name = self.sessionTableModel.data(user_name_index)
+        #user_name = str(self.sessionWidget.item(current_row, 0).text())
 
-        tips_item = self.sessionWidget.item(current_row, 3)
+        tip_index = self.sessionTableModel.index(current_row,3)
+        tips_item = self.sessionTableModel.data(tip_index)
         if tips_item:
-            tips_item.setText('')
+            self.sessionTableModel.setData(tip_index, "")
         #message_count = self.sessionWidget.item(current_row, 3).text();
         #if message_count:
         #    count = int(message_count)
@@ -304,8 +307,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def member_item_clicked(self):
         self.chatWidget.setVisible(True)
         self.label.setVisible(False)
-        current_row =self.memberWidget.currentRow()
-        user_name = self.memberWidget.item(current_row,0).text()
+        current_row =self.sessionWidget.currentIndex().row()
+        user_name_index = self.memberTableModel.index(current_row,0)
+        user_name = self.memberTableModel.data(user_name_index,0)
         contact = self.get_member(user_name)
         self.current_select_contact = contact
         dn = contact['RemarkName']
@@ -318,8 +322,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 self.messages.append(QtCore.QString.fromUtf8(message))
         else:
             self.messages.setText('')
-        #self.widget.setVisible(True)
-        #self.label_2.setVisible(False)
     '''
         把消息發送出去
     '''
@@ -521,7 +523,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 if count_tips_obj:
                     count_tips = count_tips_obj.toInt()
                     if count_tips:
-                        self.sessionTableModel.setData(tip_index, "9")
+                        count = count_tips[0]
+                        self.sessionTableModel.setData(tip_index, str(count+1))
                         #count_tips_obj.setText(str(int(count_tips)+1))
                     else:
                         self.sessionTableModel.setData(tip_index, "1")
