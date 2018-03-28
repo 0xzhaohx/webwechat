@@ -38,7 +38,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.app_home = self.user_home + '/.wechat/'
         self.default_head_icon = 'default.png'
         self.current_select_contact = None
-        self.messages_cache = {}
+        self.msg_cache = {}
         self.contact_map = {'-1':-1}
         self.member_map = {'-1':-1}
         self.wxapi = wxapi
@@ -261,7 +261,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.label.setVisible(False)
         current_row = self.sessionWidget.currentIndex().row()
         user_name_index = self.sessionTableModel.index(current_row,0)
-        user_name = self.sessionTableModel.data(user_name_index)
+        user_name_o = self.sessionTableModel.data(user_name_index)
         #user_name = str(self.sessionWidget.item(current_row, 0).text())
 
         tip_index = self.sessionTableModel.index(current_row,3)
@@ -271,7 +271,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #message_count = self.sessionWidget.item(current_row, 3).text();
         #if message_count:
         #    count = int(message_count)
-
+        user_name = user_name_o.toString()
         contact = self.get_contact(user_name)
         if not contact:
             contact = self.get_member(user_name)
@@ -282,8 +282,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
         self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
         #self.label_2.setVisible(False)
-        if self.messages_cache.has_key(user_name):
-            messages_list = self.messages_cache[user_name]
+        if self.msg_cache.has_key(user_name):
+            messages_list = self.msg_cache[user_name]
             for message in messages_list:
                 msg_type = message['MsgType']
                 if msg_type:
@@ -309,15 +309,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.label.setVisible(False)
         current_row =self.memberWidget.currentIndex().row()
         user_name_index = self.memberTableModel.index(current_row,0)
-        user_name = self.memberTableModel.data(user_name_index)
-        contact = self.get_member(user_name.toString())
+        user_name_o = self.memberTableModel.data(user_name_index)
+        user_name = user_name_o.toString()
+        contact = self.get_member(user_name)
         self.current_select_contact = contact
         dn = contact['RemarkName']
         if not dn:
             dn = contact['NickName']
         self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
-        if self.messages_cache.has_key(user_name):
-            messages_list = self.messages_cache[user_name]
+        if self.msg_cache.has_key(user_name):
+            messages_list = self.msg_cache[user_name]
             for message in messages_list:
                 self.messages.append(QtCore.QString.fromUtf8(message))
         else:
@@ -499,12 +500,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     '''       
     def put_msgcache(self,msg):
         from_user_name = msg['FromUserName']
-        if self.messages_cache.has_key(from_user_name):
-            messages_list = self.messages_cache[from_user_name]
+        if self.msg_cache.has_key(from_user_name):
+            messages_list = self.msg_cache[from_user_name]
         else:
             messages_list = []
         messages_list.append(msg)
-        self.messages_cache[from_user_name] = messages_list
+        self.msg_cache[from_user_name] = messages_list
         
         #TODO ADD TIPS
         '''
@@ -512,13 +513,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         exist = False#此人是否在會話列表中
         row_count = self.sessionTableModel.rowCount()
-        for cells in range(row_count):
-            index = self.sessionTableModel.index(cells,0)
-            user_name = self.sessionTableModel.data(index)
+        for row in range(row_count):
+            index = self.sessionTableModel.index(row,0)
+            user_name_o = self.sessionTableModel.data(index)
+            user_name = user_name_o.toString()
             #user_name = self.sessionTableModel.item(i,0).text()
             if user_name and user_name == from_user_name:
                 exist = True
-                tip_index = self.sessionTableModel.index(cells,3)
+                tip_index = self.sessionTableModel.index(row,3)
                 count_tips_obj = self.sessionTableModel.data(tip_index)
                 if count_tips_obj:
                     count_tips = count_tips_obj.toInt()
@@ -531,7 +533,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         #count_tips_obj.setText('1')
                 else:
                     count_tips_item = QtGui.QStandardItem("1")
-                    self.sessionTableModel.setItem(cells, 3, count_tips_item)
+                    self.sessionTableModel.setItem(row, 3, count_tips_item)
+                #move this row to the top of the sessions
+                #TODO
                 break;
         #have not received a message before（如果此人没有在會話列表中，則加入之）
         if not exist:
