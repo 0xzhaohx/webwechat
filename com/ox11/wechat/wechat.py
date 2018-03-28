@@ -307,10 +307,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def member_item_clicked(self):
         self.chatWidget.setVisible(True)
         self.label.setVisible(False)
-        current_row =self.sessionWidget.currentIndex().row()
+        current_row =self.memberWidget.currentIndex().row()
         user_name_index = self.memberTableModel.index(current_row,0)
-        user_name = self.memberTableModel.data(user_name_index,0)
-        contact = self.get_member(user_name)
+        user_name = self.memberTableModel.data(user_name_index)
+        contact = self.get_member(user_name.toString())
         self.current_select_contact = contact
         dn = contact['RemarkName']
         if not dn:
