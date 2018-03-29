@@ -39,8 +39,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.default_head_icon = 'default.png'
         self.current_select_contact = None
         self.msg_cache = {}
-        self.contact_map = {'-1':-1}
-        self.member_map = {'-1':-1}
         self.wxapi = wxapi
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"))
@@ -118,6 +116,32 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if user_head_image.load(self.app_home + "/heads/default/" +self.default_head_icon):
                 self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
 
+    
+    def append_contact_row(self,contact,data_model):
+        ###############
+        cells = []
+        # user name item
+        user_name = contact['UserName']
+        user_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(user_name))
+        cells.append(user_name_item)
+        
+        user_head_icon_path = self.app_home +"/heads/contact/"+contact['UserName']+".jpg"
+        item = QtGui.QStandardItem(QIcon(user_head_icon_path),"")
+        cells.append(item)
+        
+        dn = contact['RemarkName']
+        if not dn:
+            dn = contact['NickName']
+        # user remark or nick name
+        remark_nick_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(dn))
+        cells.append(remark_nick_name_item)
+        #
+        tips_count_item = QtGui.QStandardItem()
+        cells.append(tips_count_item)
+        
+        data_model.appendRow(cells)
+        
+        
     def init_session(self):
         '''
         contact table (5 columns)
@@ -144,40 +168,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         }
         session_response = self.wxapi.webwx_batch_get_contact(params)
         
-        session_list = session_response['ContactList']
-        session_list.sort(key=lambda mm: mm['AttrStatus'],reverse=True)
         if session_response['Count'] and session_response['Count'] > 0:
+            session_list = session_response['ContactList']
+            session_list.sort(key=lambda mm: mm['AttrStatus'],reverse=True)
             self.wxapi.session_list.extend(session_list)
        
         ''''''
         for contact in self.wxapi.session_list:
-            dn = contact['RemarkName']
-            if not dn:
-                dn = contact['NickName']
-            user_name = contact['UserName']
-            currentRow = self.sessionTableModel.rowCount()
-            self.sessionTableModel.insertRow(currentRow)
-            #user name item
-            user_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(user_name))
-            #user_name_item.setText(QtCore.QString.fromUtf8(user_name))
-            self.sessionTableModel.setItem(currentRow,0,user_name_item)
-            #head icon
-            icon_label = QtGui.QLabel("");
-            icon_path = self.app_home +"/heads/contact/"+contact['UserName']+".jpg"
-            icon = QtGui.QImage()
-            if icon.load(icon_path):
-                icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
-            else:
-                icon_path = self.app_home +"/heads/default/default.png"
-                if icon.load(icon_path):
-                    icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
-                    
-            self.sessionTableModel.setItem(currentRow,1,QtGui.QStandardItem(QIcon(icon_path),""))
-            #user remark or nick name
-            remark_nick_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(dn))
-            #remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
-            self.sessionTableModel.setItem(currentRow,2,remark_nick_name_item)
-
+            self.append_contact_row(contact,self.sessionTableModel)
+            '''
+            '''
         self.sessionWidget.clicked.connect(self.session_item_clicked)
 
     def init_member(self):
@@ -188,7 +188,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         QHeaderView *headerView = table->verticalHeader();  
         headerView->setHidden(true);  
         '''
-        
         self.memberWidget.setColumnHidden(1,True)
         group_contact_list = []
         for member in self.wxapi.member_list:
@@ -196,33 +195,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         group_contact_list.sort(key=lambda mm: mm['PYInitial'])
 
         for member in group_contact_list:#.sort(key=lambda m: m['PYInitial'])
-            dn = member['RemarkName']
-            if not dn:
-                dn = member['NickName']
-
-            user_name = member['UserName']
-            user_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(user_name))
-            #user_name_item.setText(QtCore.QString.fromUtf8(user_name))
-            currentRow = self.memberTableModel.rowCount()
-            self.memberTableModel.insertRow(currentRow)
-            self.memberTableModel.setItem(currentRow, 0, user_name_item)
-            # head icon
-            icon_label = QtGui.QLabel("");
-            icon_path = self.app_home + "/heads/contact/" + member['UserName'] + ".jpg"
-            icon = QtGui.QImage()
-            if icon.load(icon_path):
-                icon_label.setPixmap(QtGui.QPixmap.fromImage(icon).scaled(40, 40));
-            else:
-                print('warning:icon load failed %s,use defalt' %(icon_path))
-                icon_path = self.app_home +"/heads/default/default.png"
-                
-            self.memberTableModel.setItem(currentRow,1,QtGui.QStandardItem(QIcon(icon_path),""))
-
-            # user remark or nick name
-            remark_nick_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(dn))
-            #remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
-            self.memberTableModel.setItem(currentRow,2,remark_nick_name_item)
-
+            self.append_contact_row(member,self.memberTableModel)
+            
         self.memberWidget.clicked.connect(self.member_item_clicked)
 
     def init_reader(self):
@@ -316,19 +290,18 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not dn:
             dn = contact['NickName']
         self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
+        self.messages.setText('')
         if self.msg_cache.has_key(user_name):
             messages_list = self.msg_cache[user_name]
             for message in messages_list:
                 self.messages.append(QtCore.QString.fromUtf8(message))
-        else:
-            self.messages.setText('')
     '''
     
     '''
     def update_insert_user_session(self,contact):
         pass
     '''
-        把消息發送出去
+                把消息發送出去
     '''
     def send_msg(self):
         msg_text = str(self.draft.toPlainText())
@@ -436,7 +409,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
         format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
         '''
-            如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+                        如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
@@ -444,7 +417,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             pass
     '''
-        把文本消息加入到聊天記錄裏
+            把文本消息加入到聊天記錄裏
     '''
     def image_msg_handler(self,msg):
         from_user_name = msg['FromUserName']
@@ -652,47 +625,3 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         #print(sync_response)
                         self.webwx_sync_process(sync_response)
             sleep(11)
-
-'''
-class WeChatSync(threading.Thread):
-
-    def __init__(self,wxapi):
-        threading.Thread.__init__(self,name='wechat sync')
-        self.wxapi = wxapi
-        self.setDaemon(True)
-
-    def run(self):
-        hosts = ['https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck',
-                 'https://webpush.weixin.qq.com/cgi-bin/mmwebwx-bin/synccheck',
-                 'https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck',
-                 'https://webpush.wx8.qq.com/cgi-bin/mmwebwx-bin/synccheck',
-                 'https://webpush.web.wechat.com/cgi-bin/mmwebwx-bin/synccheck',
-                 'https://webpush.web2.wechat.com/cgi-bin/mmwebwx-bin/synccheck'
-                 ]
-        while(True):
-            (code,selector) = self.wxapi.sync_check()
-            if code == -1 and selector == -1:
-                print("self.wxapi.sync_check() error")
-            else:
-                if code != '0':
-                    pass
-                elif code == '0' and selector == '0':
-                    print("nothing")
-                else:
-                    if selector != '0':
-                        sync_response = self.wxapi.webwx_sync()
-                        print("WeChatSync.run#webwx_sync:")
-                        print(sync_response)
-            sleep(10)
-'''
-
-'''
-if __name__ =="__main__":
-
-    app = QtGui.QApplication(sys.argv)
-
-    if(True):
-        wechat = WeChat()
-        wechat.show()
-        sys.exit(app.exec_())
-'''

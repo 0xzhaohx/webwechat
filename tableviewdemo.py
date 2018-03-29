@@ -39,7 +39,7 @@ class WeChatLauncher(QtGui.QDialog, TableViewWindow):
         print("click row %d"%(current_row))
         
     def doTableInitial(self):
-        self.dataTableView.setIconSize(QSize(160*2,160*2))
+        self.dataTableView.setIconSize(QSize(480,480))
         self.model.setColumnCount(4);
         self.model.setHeaderData(0,Qt.Horizontal,QVariant(QtCore.QString.fromUtf8("ID")));
         self.model.setHeaderData(1,Qt.Horizontal,QVariant(QtCore.QString.fromUtf8("頭像")));
