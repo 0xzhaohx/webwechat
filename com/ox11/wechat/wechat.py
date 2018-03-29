@@ -337,6 +337,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         '''
         contact = self.current_select_contact
+        #TODO FIX BUG
         row_count = self.sessionWidget.rowCount()
         find = False
         for i in range(row_count):
@@ -483,20 +484,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pass
         
     '''
-    提昇from_user_name在會話列表中的位置
-    '''
-    def up_session_position(self,from_user_name):
-        row_count = self.sessionWidget.rowCount()
-        for i in range(row_count):
-            user_name = self.sessionWidget.item(i,0).text()
-            #在會話列表中找到此人
-            if user_name and user_name == from_user_name:
-                
-                #刪除此行
-                #self.sessionWidget.removeRow(i)
-                break;
-        return True
-    '''
     '''       
     def put_msg_cache(self,msg):
         from_user_name = msg['FromUserName']
@@ -534,8 +521,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 else:
                     count_tips_item = QtGui.QStandardItem("1")
                     self.sessionTableModel.setItem(row, 3, count_tips_item)
+                #提昇from_user_name在會話列表中的位置
                 #move this row to the top of the sessions
-                #TODO
+                taked_row = self.sessionTableModel.takeRow(row)
+                self.sessionTableModel.insertRow(0 ,taked_row)
                 break;
         #have not received a message before（如果此人没有在會話列表中，則加入之）
         if not exist:
