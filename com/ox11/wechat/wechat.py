@@ -27,6 +27,14 @@ WeChatWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
 class WeChat(QtGui.QMainWindow, WeChatWindow):
 
+    '''
+        webwx_init
+        ->(webwx_geticon|webwx_batch_getheadimg)
+        ->webwx_getcontact
+        ->first call webwx_batch_getcontact
+        ->(webwx_geticon|webwx_batch_getheadimg)
+        ->second call webwx_batch_getcontact
+    '''
     def __init__(self,wxapi):
         QtGui.QMainWindow.__init__(self)
         WeChatWindow.__init__(self)
@@ -153,28 +161,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         #self.sessionWidget.setColumnCount(4)
         ''''''
-        group_contact_list = []
-        for contact in self.wxapi.member_list:
-            if contact['AttrStatus'] and contact['AttrStatus'] > 0:
-                group = {}
-                group['UserName'] = contact['UserName']
-                group['ChatRoomId'] = ''
-                group_contact_list.append(group)
-
-        params = {
-            'BaseRequest': self.wxapi.base_request,
-            'Count': len(group_contact_list),
-            'List': group_contact_list
-        }
-        session_response = self.wxapi.webwx_batch_get_contact(params)
-        
-        if session_response['Count'] and session_response['Count'] > 0:
-            session_list = session_response['ContactList']
-            session_list.sort(key=lambda mm: mm['AttrStatus'],reverse=True)
-            self.wxapi.session_list.extend(session_list)
-       
-        ''''''
         for contact in self.wxapi.session_list:
+            self.append_contact_row(contact,self.sessionTableModel)
+            
+        ''''''
+        for contact in sorted([x for x in self.wxapi.member_list if x['AttrStatus'] and x['AttrStatus'] > 0],key=lambda ct: ct['AttrStatus'],reverse=True):
             self.append_contact_row(contact,self.sessionTableModel)
             '''
             '''

@@ -252,10 +252,10 @@ class WeChatAPI(object):
         }
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
-        dict = json.loads(data, object_hook=_decode_data)
-        self.user = dict['User']
-        self.session_list = dict['ContactList']
-        #download and setup user head img
+        sessions_dict = json.loads(data, object_hook=_decode_data)
+        self.user = sessions_dict['User']
+        self.session_list = sessions_dict['ContactList']
+        #download and setup logined user head img
         self.webwx_get_icon(self.user['UserName'], self.user['HeadImgUrl'])
         #TODO download the user head icon
         for contact in self.session_list:
@@ -269,9 +269,9 @@ class WeChatAPI(object):
                 self.webwx_get_head_img(user_name,head_img_url)
             else:
                 pass
-        self.update_sync_key(dict)
+        self.update_sync_key(sessions_dict)
 
-        return dict
+        return sessions_dict
 
     def update_sync_key(self,dict):
         self.sync_key_dic = dict['SyncKey']
@@ -306,8 +306,6 @@ class WeChatAPI(object):
     def webwx_get_icon(self, user_name, head_img_url):
         url = 'https://wx.qq.com' + head_img_url
         data = self.get(url,stream=True)
-        #print('image data:')
-        #print(data)
         if not data:
             pass
         img_folder = ('%s/heads/'%(self.app_home))
@@ -347,9 +345,9 @@ class WeChatAPI(object):
         }
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
-        dict = json.loads(data, object_hook=_decode_data)
-        self.member_list = dict['MemberList']
-        self.member_count = dict['MemberCount']
+        contacts_dict = json.loads(data, object_hook=_decode_data)
+        self.member_list = contacts_dict['MemberList']
+        self.member_count = contacts_dict['MemberCount']
         # TODO download the user head icon
         for member in self.member_list:
             user_name = member['UserName']
@@ -362,7 +360,7 @@ class WeChatAPI(object):
                 self.webwx_get_head_img(user_name, head_img_url)
             else:
                 pass
-        return dict
+        return contacts_dict
     '''
     調用完webwx_init得到部分的有過聯天記錄的用户，再調用webwx_batch_get_contact可以護得完整的有過聯天記錄的用户列表
     params:
