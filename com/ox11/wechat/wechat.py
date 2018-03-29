@@ -281,28 +281,28 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             dn = contact['NickName']
 
         self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
-        #self.label_2.setVisible(False)
-        if self.msg_cache.has_key(user_name):
-            messages_list = self.msg_cache[user_name]
-            for message in messages_list:
-                msg_type = message['MsgType']
-                if msg_type:
-                    if msg_type == 1:
-                        self.text_msg_handler(message)
-                    elif msg_type == 52:
-                        pass
-                    elif msg_type == 2:
-                        pass
-                    elif msg_type == 3:
-                        self.image_msg_handler(message)
-                    elif msg_type == 34:
-                        self.voice_msg_handler(message)
-                    elif msg_type == 49:
-                        self.app_msg_handler(message)
-                    else:
-                        self.default_msg_handler(message)
-        else:
-            self.messages.setText('')
+        for (key,messages_list) in self.msg_cache.items():
+            if user_name == key:
+                for message in messages_list:
+                    msg_type = message['MsgType']
+                    if msg_type:
+                        if msg_type == 1:
+                            self.text_msg_handler(message)
+                        elif msg_type == 2:
+                            pass
+                        elif msg_type == 3:
+                            self.image_msg_handler(message)
+                        elif msg_type == 34:
+                            self.voice_msg_handler(message)
+                        elif msg_type == 49:
+                            self.app_msg_handler(message)
+                        elif msg_type == 51:
+                            pass
+                        elif msg_type == 52:
+                            pass
+                        else:
+                            self.default_msg_handler(message)
+                break
 
     def member_item_clicked(self):
         self.chatWidget.setVisible(True)
@@ -323,6 +323,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 self.messages.append(QtCore.QString.fromUtf8(message))
         else:
             self.messages.setText('')
+            
+    def insert_update_user_session(self):
+        pass
     '''
         把消息發送出去
     '''
@@ -334,45 +337,53 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         format_msg = ('(%s) %s: %s') % (st, self.wxapi.user['NickName'],msg)
         self.messages.append(QtCore.QString.fromUtf8(format_msg))
         self.draft.setText('')
-        '''
-        '''
         contact = self.current_select_contact
         #TODO FIX BUG
-        row_count = self.sessionWidget.rowCount()
+        row_count = self.sessionTableModel.rowCount()
         find = False
-        for i in range(row_count):
-            user_name = self.sessionWidget.item(i, 0).text()
+        for row_number in range(row_count):
+            user_name_index = self.sessionTableModel.index(row_number,0)
+            user_name_obj = self.sessionTableModel.data(user_name_index)
+            user_name = user_name_obj.toString()
             if user_name and user_name == contact['UserName']:
                 find = True
-                '''
-                tips_item = self.sessionWidget.item(i, 3)
-                if tips_item:
-                    tips = tips_item.text()
-                    tips_item.setText(str(int(tips) + 1))
+                tip_index = self.sessionTableModel.index(row_number,3)
+                tips_count_obj = self.sessionTableModel.data(tip_index)
+                if tips_count_obj:
+                    tips_count = tips_count_obj.toInt()
+                    if tips_count:
+                        count = tips_count[0]
+                        self.sessionTableModel.setData(tip_index, str(count+1))
+                    else:
+                        self.sessionTableModel.setData(tip_index, "1")
                 else:
-                    tips_item = QtGui.QTableWidgetItem()
-                    tips_item.setText('1')
-                    self.sessionWidget.setItem(i, 3, tips_item)
-                '''
+                    count_tips_item = QtGui.QStandardItem("1")
+                    self.sessionTableModel.setItem(row_number, 3, count_tips_item)
+                #提昇from_user_name在會話列表中的位置
+                #move this row to the top of the sessions
+                taked_row = self.sessionTableModel.takeRow(row_number)
+                self.sessionTableModel.insertRow(0 ,taked_row)
                 break;
         if find == False:
-            self.sessionWidget.insertRow(row_count+1)
-            user_name_item = QtGui.QTableWidgetItem()
-            user_name_item.setText(contact['UserName'])
-            self.sessionWidget.setItem(i, 0, user_name_item)
-            #
-            remark_nick_name_item = QtGui.QTableWidgetItem()
+            cells = []
+            # user name item
+            user_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(user_name))
+            cells.append(user_name_item)
+            
+            item = QtGui.QStandardItem(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"),"")
+            cells.append(item)
+            
             dn = contact['RemarkName']
             if not dn:
                 dn = contact['NickName']
-            remark_nick_name_item.setText(QtCore.QString.fromUtf8(dn))
-            self.sessionWidget.setItem(row_count+1, 1, remark_nick_name_item)
-            #tips
-            tips_item = QtGui.QTableWidgetItem()
-            tips_item.setText('1')
-            self.sessionWidget.setItem(row_count+1, 2, tips_item)
-        else:
-            pass
+            # user remark or nick name
+            remark_nick_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(dn))
+            cells.append(remark_nick_name_item)
+            
+            count_tips_item = QtGui.QStandardItem("1")
+            cells.append(count_tips_item)
+            
+            self.sessionTableModel.insertRow(0,cells)
     '''
         默認的消息處理handler
     '''
@@ -493,6 +504,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             messages_list = []
         messages_list.append(msg)
         self.msg_cache[from_user_name] = messages_list
+        print("user name is:%s"%(from_user_name))
+        print("self.msg_cache keys:"%(self.msg_cache.keys()))
         
         #TODO ADD TIPS
         '''
@@ -508,16 +521,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if user_name and user_name == from_user_name:
                 exist = True
                 tip_index = self.sessionTableModel.index(row,3)
-                count_tips_obj = self.sessionTableModel.data(tip_index)
-                if count_tips_obj:
-                    count_tips = count_tips_obj.toInt()
-                    if count_tips:
-                        count = count_tips[0]
+                tips_count_obj = self.sessionTableModel.data(tip_index)
+                if tips_count_obj:
+                    tips_count = tips_count_obj.toInt()
+                    if tips_count:
+                        count = tips_count[0]
                         self.sessionTableModel.setData(tip_index, str(count+1))
-                        #count_tips_obj.setText(str(int(count_tips)+1))
                     else:
                         self.sessionTableModel.setData(tip_index, "1")
-                        #count_tips_obj.setText('1')
                 else:
                     count_tips_item = QtGui.QStandardItem("1")
                     self.sessionTableModel.setItem(row, 3, count_tips_item)
@@ -612,6 +623,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.voice_msg_handler(msg)
                     elif msg_type == 49:
                         self.app_msg_handler(msg)
+                    elif msg_type == 51:
+                        pass
+                    elif msg_type == 52:
+                        pass
                     else:
                         self.default_msg_handler(msg)
 
