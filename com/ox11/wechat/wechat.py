@@ -262,13 +262,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         current_row = self.sessionWidget.currentIndex().row()
         user_name_index = self.sessionTableModel.index(current_row,0)
         user_name_o = self.sessionTableModel.data(user_name_index)
-        #user_name = str(self.sessionWidget.item(current_row, 0).text())
 
         tip_index = self.sessionTableModel.index(current_row,3)
         tips_item = self.sessionTableModel.data(tip_index)
         if tips_item:
             self.sessionTableModel.setData(tip_index, "")
-        #message_count = self.sessionWidget.item(current_row, 3).text();
         #if message_count:
         #    count = int(message_count)
         user_name = user_name_o.toString()
@@ -281,6 +279,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             dn = contact['NickName']
 
         self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
+        self.messages.setText('')
         for (key,messages_list) in self.msg_cache.items():
             if user_name == key:
                 for message in messages_list:
@@ -323,67 +322,70 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 self.messages.append(QtCore.QString.fromUtf8(message))
         else:
             self.messages.setText('')
-            
-    def insert_update_user_session(self):
+    '''
+    
+    '''
+    def update_insert_user_session(self,contact):
         pass
     '''
         把消息發送出去
     '''
     def send_msg(self):
-        msg = str(self.draft.toPlainText())
-        gsm = Msg(1, msg, self.current_select_contact['UserName'])
-        self.wxapi.webwx_send_msg(gsm)
+        msg_text = str(self.draft.toPlainText())
+        msg = Msg(1, msg_text, self.current_select_contact['UserName'])
+        self.wxapi.webwx_send_msg(msg)
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s: %s') % (st, self.wxapi.user['NickName'],msg)
-        self.messages.append(QtCore.QString.fromUtf8(format_msg))
+        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
+        self.messages.append(format_msg)
+        self.messages.append(QtCore.QString.fromUtf8(msg_text))
         self.draft.setText('')
-        contact = self.current_select_contact
         #TODO FIX BUG
-        row_count = self.sessionTableModel.rowCount()
-        find = False
-        for row_number in range(row_count):
-            user_name_index = self.sessionTableModel.index(row_number,0)
-            user_name_obj = self.sessionTableModel.data(user_name_index)
-            user_name = user_name_obj.toString()
-            if user_name and user_name == contact['UserName']:
-                find = True
-                tip_index = self.sessionTableModel.index(row_number,3)
-                tips_count_obj = self.sessionTableModel.data(tip_index)
-                if tips_count_obj:
-                    tips_count = tips_count_obj.toInt()
-                    if tips_count:
-                        count = tips_count[0]
-                        self.sessionTableModel.setData(tip_index, str(count+1))
+        if False:
+            row_count = self.sessionTableModel.rowCount()
+            find = False
+            for row_number in range(row_count):
+                user_name_index = self.sessionTableModel.index(row_number,0)
+                user_name_obj = self.sessionTableModel.data(user_name_index)
+                user_name = user_name_obj.toString()
+                if user_name and user_name == self.current_select_contact['UserName']:
+                    find = True
+                    tip_index = self.sessionTableModel.index(row_number,3)
+                    tips_count_obj = self.sessionTableModel.data(tip_index)
+                    if tips_count_obj:
+                        tips_count = tips_count_obj.toInt()
+                        if tips_count:
+                            count = tips_count[0]
+                            self.sessionTableModel.setData(tip_index, str(count+1))
+                        else:
+                            self.sessionTableModel.setData(tip_index, "1")
                     else:
-                        self.sessionTableModel.setData(tip_index, "1")
-                else:
-                    count_tips_item = QtGui.QStandardItem("1")
-                    self.sessionTableModel.setItem(row_number, 3, count_tips_item)
-                #提昇from_user_name在會話列表中的位置
-                #move this row to the top of the sessions
-                taked_row = self.sessionTableModel.takeRow(row_number)
-                self.sessionTableModel.insertRow(0 ,taked_row)
-                break;
-        if find == False:
-            cells = []
-            # user name item
-            user_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(user_name))
-            cells.append(user_name_item)
-            
-            item = QtGui.QStandardItem(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"),"")
-            cells.append(item)
-            
-            dn = contact['RemarkName']
-            if not dn:
-                dn = contact['NickName']
-            # user remark or nick name
-            remark_nick_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(dn))
-            cells.append(remark_nick_name_item)
-            
-            count_tips_item = QtGui.QStandardItem("1")
-            cells.append(count_tips_item)
-            
-            self.sessionTableModel.insertRow(0,cells)
+                        count_tips_item = QtGui.QStandardItem("1")
+                        self.sessionTableModel.setItem(row_number, 3, count_tips_item)
+                    #提昇from_user_name在會話列表中的位置
+                    #move this row to the top of the sessions
+                    taked_row = self.sessionTableModel.takeRow(row_number)
+                    self.sessionTableModel.insertRow(0 ,taked_row)
+                    break;
+            if find == False:
+                cells = []
+                # user name item
+                user_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(user_name))
+                cells.append(user_name_item)
+                
+                item = QtGui.QStandardItem(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"),"")
+                cells.append(item)
+                
+                dn = self.current_select_contact['RemarkName']
+                if not dn:
+                    dn = self.current_select_contact['NickName']
+                # user remark or nick name
+                remark_nick_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(dn))
+                cells.append(remark_nick_name_item)
+                
+                count_tips_item = QtGui.QStandardItem("1")
+                cells.append(count_tips_item)
+                
+                self.sessionTableModel.insertRow(0,cells)
     '''
         默認的消息處理handler
     '''
@@ -398,12 +400,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not self.current_select_contact:
             pass
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s: %s') % (st, self.wxapi.user['NickName'], "請在手機端收聽語音")
+        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
+            self.messages.append(QtCore.QString.fromUtf8("請在手機端收聽語音"))
         else:
             pass
     '''
@@ -414,12 +417,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not self.current_select_contact:
             pass
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s: %s') % (st, self.wxapi.user['NickName'], "請在手機端觀看視頻")
+        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
+            self.messages.append(QtCore.QString.fromUtf8("請在手機端觀看視頻"))
         else:
             pass
     '''
@@ -430,12 +434,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not self.current_select_contact:
             pass
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s: %s') % (st, self.wxapi.user['NickName'], msg['Content'])
+        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
+            self.messages.append(QtCore.QString.fromUtf8(msg['Content']))
         else:
             pass
     '''
@@ -484,13 +489,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             desc = desc_nodes[0].firstChild.data
         if app_url_nodes:
             app_url = app_url_nodes[0].firstChild.data
-        format_msg = ('(%s) %s: %s %s %s') % (st, self.wxapi.user['NickName'], title,desc,app_url)
+        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
         
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
+            self.messages.append(QtCore.QString.fromUtf8('%s %s %s') % ( title,desc,app_url))
         else:
             pass
         
@@ -504,9 +510,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             messages_list = []
         messages_list.append(msg)
         self.msg_cache[from_user_name] = messages_list
-        print("user name is:%s"%(from_user_name))
-        print("self.msg_cache keys:"%(self.msg_cache.keys()))
-        
         #TODO ADD TIPS
         '''
             增加消息數量提示（提昇此人在會話列表中的位置）
