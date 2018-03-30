@@ -33,13 +33,14 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         self.wxapi = WeChatAPI()
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"))
-        self.setWindowIconText("Wechat 0.5")
+        self.setWindowIconText("WeChat 0.5")
         self.launcher_thread = WeChatLauncherThread(self,self.wxapi)
         self.generate_qrcode()
+        self.launcher_thread.start()
         self.load_qr_code_image()
 
     def get_os_name(self):
-        return os.name[0]
+        return os.name
 
     def machine(self):
         """Return type of machine."""
@@ -70,7 +71,6 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
 
             #auto_login_timer = threading.Timer(0, self.login())
             #auto_login_timer.start()
-            self.launcher_thread.start()
         else:
             pass
 
