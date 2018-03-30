@@ -57,6 +57,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.wxapi.login()
         self.wxapi.webwx_init()
         self.setup_user()
+        self.batch_get_contact()
         self.wxapi.webwx_get_contact()
         self.sessionTableModel = QStandardItemModel(1,4)
         self.memberTableModel = QStandardItemModel(1,4)
@@ -93,7 +94,33 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer.start()
         
     def do_logout(self):
-        pass
+        print("logout..............")
+    
+    def batch_get_contact(self):
+        groups = []
+        for contact in self.wxapi.session_list:
+            if contact['UserName'].find('@@') >= 0:
+                group = {}
+                group['UserName'] = contact['UserName']
+                group['ChatRoomId'] = ''
+                groups.append(group)
+
+        params = {
+            'BaseRequest': self.wxapi.base_request,
+            'Count': len(groups),
+            'List': groups
+        }
+        session_response = self.wxapi.webwx_batch_get_contact(params)
+        
+        if session_response['Count'] and session_response['Count'] > 0:
+            session_list = session_response['ContactList']
+            for x in session_list:
+                for ss in self.wxapi.session_list:
+                    if ss["UserName"] == x["UserName"]:
+                        ss = x
+                        break
+            session_list.sort(key=lambda mm: mm['AttrStatus'],reverse=True)
+            #self.wxapi.session_list.extend(session_list)
     
     def prepare4Environment(self):
         if os.path.exists(self.contact_head_home):
@@ -200,7 +227,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.append_contact_row(contact,self.sessionTableModel)
             
         ''''''
-        for contact in sorted([x for x in self.wxapi.member_list if x['AttrStatus'] and x['AttrStatus'] > 0],key=lambda ct: ct['AttrStatus'],reverse=True):
+        for contact in sorted([x for x in self.wxapi.member_list if x["AttrStatus"] and x["AttrStatus"] > 0],key=lambda ct: ct["AttrStatus"],reverse=True):
             self.append_contact_row(contact,self.sessionTableModel)
             '''
             '''
@@ -234,9 +261,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.memberWidget.setVisible(False)
         self.sessionWidget.setVisible(True)
 
-    def session_itemSelectionChanged(self):
-        print("changed")
-
     def read_button_clicked(self):
         self.memberWidget.setVisible(False)
         self.sessionWidget.setVisible(False)
@@ -269,7 +293,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.sessionTableModel.setData(tip_index, "")
         #if message_count:
         #    count = int(message_count)
-        user_name = user_name_o.toString()
+        user_name = str(user_name_o.toString())
         contact = self.get_contact(user_name)
         if not contact:
             contact = self.get_member(user_name)
@@ -277,8 +301,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         dn = contact['RemarkName']
         if not dn:
             dn = contact['NickName']
-
-        self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
+        if user_name.find('@@') >= 0:
+            self.currentChatUserLabel.setText(("%s (%d)")%(QtCore.QString.fromUtf8(dn),contact["MemberCount"]))
+        else:
+            self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
         self.messages.setText('')
         for (key,messages_list) in self.msg_cache.items():
             if user_name == key:
@@ -658,9 +684,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 print("self.wxapi.sync_check() error")
             else:
                 if code != '0':
-                    pass
-                elif code == '0' and selector == '0':
-                    print("nothing need to process")
+                    if code == '1101' and selector == '0':
+                        print("session timeout")
+                        self.do_logout()
                 else:
                     if selector != '0':
                         sync_response = self.wxapi.webwx_sync()
