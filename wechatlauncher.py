@@ -12,6 +12,7 @@ from PyQt4 import QtGui, uic
 from com.ox11.wechat.api.requests.WeChatAPI import WeChatAPI
 from com.ox11.wechat.wechat import WeChat
 from PyQt4.Qt import QIcon
+import platform
 
 qtCreatorFile = "resource/ui/wechatlauncher-1.0.ui"
 
@@ -30,14 +31,32 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
         self.wxapi = WeChatAPI()
-        self.launcher_thread = WeChatLauncherThread(self,self.wxapi)
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"))
         self.setWindowIconText("Wechat 0.5")
-        #self.loginButton.clicked.connect(self.do_login)
+        self.launcher_thread = WeChatLauncherThread(self,self.wxapi)
         self.generate_qrcode()
         self.load_qr_code_image()
 
+    def get_os_name(self):
+        return os.name[0]
+
+    def machine(self):
+        """Return type of machine."""
+        if os.name == 'nt' and sys.version_info[:2] < (2,7):
+            return os.environ.get("PROCESSOR_ARCHITEW6432",
+                   os.environ.get('PROCESSOR_ARCHITECTURE', ''))
+        else:
+            return platform.machine()
+
+
+    def os_bits(self,machine):
+        if not machine:
+            machine =self.machine()
+        """Return bitness of operating system, or None if unknown."""
+        machine2bits = {'AMD64': 64, 'x86_64': 64, 'i386': 32, 'x86': 32}
+        return machine2bits.get(machine, None)
+    
     def set_qr_timeout(self):
         WeChatLauncher.timeout = True
 
