@@ -565,22 +565,15 @@ class WeChatAPI(object):
         response.close()
         return data
     '''
-    根据MSG_ID下載圖片
+            根据MSG_ID下載圖片
     '''
     def webwx_get_msg_img(self,msg_id):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg" + \
-              '?MsgID=%s&skey=%s&type=slave' % (
+              '?MsgID=%s&skey=%s&fun=download&type=slave' % (
                   msg_id,self.skey
               )
         data = self.get(url,stream=True)
-        if not data:
-            pass
-        img_folder = ('%s/cache/img/'%(self.app_home))
-        if not os.path.exists(img_folder):
-            os.mkdir(img_folder)
-        msg_img = img_folder+msg_id+'.jpg'
-        with open(msg_img, 'wb') as image:
-            image.write(data)
+        return data
 
     def get(self, url, data= {},stream=False):
         default_headers = {

@@ -45,6 +45,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.setAcceptDrops(True)
         self.app_home = self.user_home + '/.wechat/'
         self.head_home = ("%s/heads"%(self.app_home))
+        self.cache_home = ("%s/cache/"%(self.app_home))
         self.contact_head_home = ("%s/contact/"%(self.head_home))
         self.default_head_icon = '%s/default/default.png'%(self.head_home)
         self.current_select_contact = None
@@ -95,6 +96,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.clear()
         else:
             os.makedirs(self.contact_head_home)
+            
+        if os.path.exists(self.img_cache_folder):
+            self.clear()
+        else:
+            os.makedirs(self.img_cache_folder)
     '''
                 删除下载的头像文件
     '''
@@ -430,6 +436,17 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.messages.append(QtCore.QString.fromUtf8(msg['Content']))
         else:
             pass
+        
+    def download_msg_img(self,msg_id):
+        data = self.wxapi.webwx_get_msg_img(msg_id)
+        if not data:
+            return False
+        img_cache_folder = ('%s/cache/img/'%(self.app_home))
+        msg_img = img_cache_folder+msg_id+'.jpg'
+        with open(msg_img, 'wb') as image:
+            image.write(data)
+        return True
+        
     '''
             把文本消息加入到聊天記錄裏
     '''
