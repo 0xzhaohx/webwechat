@@ -59,6 +59,7 @@ class WeChatAPI(object):
         }
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
+        self.status = -1#登陸與否
         self.file_host = None
         self.appid = 'wx782c26e4c19acffb'
         self.uuid = ''
@@ -83,7 +84,6 @@ class WeChatAPI(object):
         self.user = []
         #會話列表
         self.session_list = []
-        self.contacts_extension = []
         self.member_count = 0
         self.member_list = []
         #群組列表

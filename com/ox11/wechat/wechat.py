@@ -14,7 +14,7 @@ import xml.dom.minidom
 from api.msg import Msg
 from PyQt4.Qt import QIcon, QModelIndex
 from PyQt4.QtGui import QStandardItemModel, QFileDialog
-from PyQt4.QtCore import QVariant, QSize
+from PyQt4.QtCore import QSize
 
 reload(sys)
 
@@ -92,6 +92,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer.setDaemon(True)
         timer.start()
         
+    def do_logout(self):
+        pass
+    
     def prepare4Environment(self):
         if os.path.exists(self.contact_head_home):
             self.clear()
@@ -318,11 +321,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             messages_list = self.msg_cache[user_name]
             for message in messages_list:
                 self.messages.append(QtCore.QString.fromUtf8(message))
-    '''
-    
-    '''
-    def update_insert_user_session(self,contact):
-        pass
     '''
                 把消息發送出去
     '''
