@@ -14,7 +14,7 @@ import xml.dom.minidom
 from api.msg import Msg
 from PyQt4.Qt import QIcon, QModelIndex
 from PyQt4.QtGui import QStandardItemModel
-from PyQt4.QtCore import QVariant
+from PyQt4.QtCore import QVariant, QSize
 
 reload(sys)
 
@@ -44,9 +44,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.user_home = os.path.expanduser('~')
         self.setAcceptDrops(True)
         self.app_home = self.user_home + '/.wechat/'
-        self.default_head_icon = 'default.png'
+        self.head_home = ("%s/heads"%(self.app_home))
+        self.contact_head_home = ("%s/contact/"%(self.head_home))
+        self.default_head_icon = '%s/default/default.png'%(self.head_home)
         self.current_select_contact = None
         self.msg_cache = {}
+        self.prepare4Environment()
         self.wxapi = wxapi
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"))
@@ -65,10 +68,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         
         self.chatWidget.setVisible(False)
         
+        self.sessionWidget.setIconSize(QSize(40,40))
         self.sessionWidget.setModel(self.sessionTableModel)
         self.sessionWidget.setColumnHidden(0,True)
+        self.sessionWidget.setColumnWidth(1, 40);
+        self.sessionWidget.setColumnWidth(3, 40);
         self.memberWidget.setModel(self.memberTableModel)
+        self.memberWidget.setIconSize(QSize(40,40))
         self.memberWidget.setColumnHidden(0,True)
+        self.memberWidget.setColumnWidth(1, 40);
+        self.memberWidget.setColumnWidth(3, 40);
         self.readerWidget.setModel(self.readerTableModel)
 
         self.sessionButton.clicked.connect(self.session_button_clicked)
@@ -80,6 +89,20 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer = threading.Timer(5, self.sync)
         timer.setDaemon(True)
         timer.start()
+        
+    def prepare4Environment(self):
+        if os.path.exists(self.contact_head_home):
+            self.clear()
+        else:
+            os.makedirs(self.contact_head_home)
+    '''
+                删除下载的头像文件
+    '''
+    def clear(self):
+        for i in os.listdir(self.contact_head_home):
+            head_path = os.path.join(self.contact_head_home,i)
+            if os.path.isfile(head_path):
+                os.remove(head_path)
     
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -116,12 +139,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
     def setup_user(self):
         self.userNameLabel.setText((self.wxapi.user['NickName']))
-        user_icon_file = self.app_home + "/heads/contact/" + self.wxapi.user['UserName'] + ".jpg"
+        user_icon_file = self.contact_head_home + self.wxapi.user['UserName'] + ".jpg"
         user_head_image = QtGui.QImage()
         if user_head_image.load(user_icon_file):
             self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
         else:
-            if user_head_image.load(self.app_home + "/heads/default/" +self.default_head_icon):
+            if user_head_image.load(self.default_head_icon):
                 self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
 
     
@@ -133,7 +156,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         user_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(user_name))
         cells.append(user_name_item)
         
-        user_head_icon_path = self.app_home +"/heads/contact/"+contact['UserName']+".jpg"
+        user_head_icon_path = self.contact_head_home + contact['UserName']+".jpg"
         item = QtGui.QStandardItem(QIcon(user_head_icon_path),"")
         cells.append(item)
         
