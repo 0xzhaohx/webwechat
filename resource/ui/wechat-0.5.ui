@@ -119,6 +119,9 @@
          <attribute name="verticalHeaderVisible">
           <bool>true</bool>
          </attribute>
+         <attribute name="verticalHeaderDefaultSectionSize">
+          <number>60</number>
+         </attribute>
         </widget>
        </item>
        <item>
@@ -138,6 +141,9 @@
          <attribute name="verticalHeaderVisible">
           <bool>true</bool>
          </attribute>
+         <attribute name="verticalHeaderDefaultSectionSize">
+          <number>60</number>
+         </attribute>
         </widget>
        </item>
        <item>
@@ -156,6 +162,9 @@
          </attribute>
          <attribute name="verticalHeaderVisible">
           <bool>true</bool>
+         </attribute>
+         <attribute name="verticalHeaderDefaultSectionSize">
+          <number>60</number>
          </attribute>
         </widget>
        </item>

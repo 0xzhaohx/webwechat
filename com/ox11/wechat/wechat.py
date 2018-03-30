@@ -97,10 +97,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             os.makedirs(self.contact_head_home)
             
-        if os.path.exists(self.img_cache_folder):
+        if os.path.exists(self.cache_home):
             self.clear()
         else:
-            os.makedirs(self.img_cache_folder)
+            os.makedirs(self.cache_home)
     '''
                 删除下载的头像文件
     '''
