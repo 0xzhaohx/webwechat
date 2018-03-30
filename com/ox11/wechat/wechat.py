@@ -13,7 +13,7 @@ import xml.dom.minidom
 
 from api.msg import Msg
 from PyQt4.Qt import QIcon, QModelIndex
-from PyQt4.QtGui import QStandardItemModel
+from PyQt4.QtGui import QStandardItemModel, QFileDialog
 from PyQt4.QtCore import QVariant, QSize
 
 reload(sys)
@@ -85,6 +85,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.memberButton.clicked.connect(self.member_button_clicked)
 
         self.sendButton.clicked.connect(self.send_msg)
+        self.selectImageFileButton.clicked.connect(self.select_document)
         #self.synct = WeChatSync(self.wxapi)
         #self.synct.start()
         timer = threading.Timer(5, self.sync)
@@ -639,6 +640,17 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     else:
                         self.default_msg_handler(msg)
 
+    def select_document(self):
+        fileDialog = QFileDialog(self)
+        #fileDialog.setWindowTitle("sss")
+        if fileDialog.exec_():
+            fileNames = fileDialog.selectedFiles()
+            for fileName in fileNames:
+                if self.is_image(str(fileName)):
+                    self.draft.append("<img src=%s width=80 height=80>"%(fileName))
+                else:
+                    print(fileName)
+    
     def sync(self):
         while (True):
             st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
