@@ -200,18 +200,18 @@
         <widget class="QWidget" name="chatWidget" native="true">
          <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,7,0,2,0">
           <item>
-           <widget class="QLabel" name="currentChatUserLabel">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>20</height>
-             </size>
+           <widget class="QPushButton" name="currentChatUser">
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background: transparent;</string>
             </property>
             <property name="text">
              <string>張三</string>
             </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
+            <property name="flat">
+             <bool>true</bool>
             </property>
            </widget>
           </item>

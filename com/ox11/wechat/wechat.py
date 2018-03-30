@@ -302,9 +302,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not dn:
             dn = contact['NickName']
         if user_name.find('@@') >= 0:
-            self.currentChatUserLabel.setText(("%s (%d)")%(QtCore.QString.fromUtf8(dn),contact["MemberCount"]))
+            self.currentChatUser.setText(("%s (%d)")%(QtCore.QString.fromUtf8(dn),contact["MemberCount"]))
         else:
-            self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
+            self.currentChatUser.setText(QtCore.QString.fromUtf8(dn))
         self.messages.setText('')
         for (key,messages_list) in self.msg_cache.items():
             if user_name == key:
@@ -341,7 +341,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         dn = contact['RemarkName']
         if not dn:
             dn = contact['NickName']
-        self.currentChatUserLabel.setText(QtCore.QString.fromUtf8(dn))
+        self.currentChatUser.setText(QtCore.QString.fromUtf8(dn))
         self.messages.setText('')
         if self.msg_cache.has_key(user_name):
             messages_list = self.msg_cache[user_name]
