@@ -116,20 +116,22 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         print("dragEnterEvent")
 
     def dragMoveEvent(self, event):
-        #print("dragMoveEvent")
-        pass
+        print("dragMoveEvent")
     
-    def isImage(self,path):
-        if path:
-            reg="(?i).+?\\.(jpg|jpeg\png\gif|bmp)"
-            return path.match(reg)
-    
+    def is_image(self,path):
+        if not path:
+            return False
+        if path.endswith("jpg") or path.endswith("jpeg") or path.endswith("png"):
+            return True
+        
     def dropEvent(self, event):
         #print("dropEvent")
         if event.mimeData().hasUrls():
             #遍历输出拖动进来的所有文件路径
-            for url in event.mimeData().urls():                
-                print QtCore.QString.fromUtf8(str(url.toLocalFile()))
+            for url in event.mimeData().urls():
+                file_name = str(url.toLocalFile())
+                if self.is_image(file_name):
+                    self.draft.append("<img src=%s width=80 height=80>"%(file_name))
             event.acceptProposedAction()
         else:
             #super(Button,self).dropEvent(event)
