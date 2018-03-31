@@ -87,6 +87,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
         self.sendButton.clicked.connect(self.send_msg)
         self.selectImageFileButton.clicked.connect(self.select_document)
+        self.currentChatUser.clicked.connect(self.current_chat_user_click)
         #self.synct = WeChatSync(self.wxapi)
         #self.synct.start()
         timer = threading.Timer(5, self.sync)
@@ -329,6 +330,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                             self.default_msg_handler(message)
                 break
 
+    def current_chat_user_click(self):
+        print("clicked")
+    
     def member_item_clicked(self):
         self.chatWidget.setVisible(True)
         self.label.setVisible(False)
@@ -352,6 +356,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     '''
     def send_msg(self):
         msg_text = str(self.draft.toPlainText())
+        txt = self.draft.toPlainText()
         msg = Msg(1, msg_text, self.current_select_contact['UserName'])
         self.wxapi.webwx_send_msg(msg)
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
@@ -406,6 +411,21 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 cells.append(count_tips_item)
                 
                 self.sessionTableModel.insertRow(0,cells)
+    '''
+        把消息發送出去
+    '''
+    def send_image_msg(self,contact,images):
+        for image in images:
+            print(image)
+            media_id = self.wxapi.webwx_upload_media(contact,image)
+            print(media_id)
+            msg = Msg(3, media_id, self.current_select_contact['UserName'])
+            self.wxapi.webwx_send_msg(msg)
+            st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+            format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
+            self.messages.append(format_msg)
+            msg_img = ('<img src=%s width=40 height=40>'%(image))
+            self.messages.append(msg_img)
     '''
         默認的消息處理handler
     '''
@@ -619,6 +639,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         MSGTYPE_RECALLED: 10002,  // 撤销消息
     '''
     def webwx_sync_process(self, data):
+        '''
+        @param data
+        ''' 
         if not data:
             return False
         ret_code = data['BaseResponse']['Ret']
@@ -666,12 +689,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
     def select_document(self):
         fileDialog = QFileDialog(self)
-        #fileDialog.setWindowTitle("sss")
         if fileDialog.exec_():
             fileNames = fileDialog.selectedFiles()
             for fileName in fileNames:
-                if self.is_image(str(fileName)):
+                fileName = str(fileName)
+                if self.is_image(fileName):
+                    fileName=QtCore.QString.fromUtf8(fileName)
                     self.draft.append("<img src=%s width=80 height=80>"%(fileName))
+                    images = []
+                    images.append(fileName)
+                    self.send_image_msg(self.current_select_contact,images)
                 else:
                     print(fileName)
     

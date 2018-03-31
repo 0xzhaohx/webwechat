@@ -23,15 +23,22 @@ class Msg(object):
         '10000':'系统消息',
         '10002':'撤回消息',
     }
-    def __init__(self,type,content,to_user_name):
+    def __init__(self,m_type,content,to_user_name):
         '''
-        :param type:
+        :param m_type:
             1:txt msg
+            3:image msg
         :param content:
         :param to_user_name:
         '''
-        self.type = type
-        self.content = content
+        self.m_type = m_type
+        if m_type == 1:
+            self.content = content
+        elif m_type ==3:
+            self.media_id = content
+        else:
+            pass
+            
         #self.from_user_name = from_user_name
         self.to_user_name = to_user_name
 

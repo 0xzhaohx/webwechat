@@ -10,6 +10,7 @@ import xml.dom.minidom
 import json
 import os
 import sys
+from _socket import timeout
 
 '''
 1.ContactFlag:
@@ -70,6 +71,7 @@ class WeChatAPI(object):
         self.sid = ''
         #wxuin: weixin user identity number
         self.uin = ''
+        self.webwx_data_ticket=''
         #pass_ticket: 通关文牒
         self.pass_ticket = ''
         self.is_grayscale = 0
@@ -489,7 +491,7 @@ class WeChatAPI(object):
         params = {
             'BaseRequest': self.base_request,
             'Msg': {
-                "Type":msg.type,
+                "Type":msg.m_type,
                 "Content":msg.content,
                 "FromUserName":self.user['UserName'],
                 "ToUserName":msg.to_user_name,
@@ -516,15 +518,21 @@ class WeChatAPI(object):
 
         params = {
             'BaseRequest': self.base_request,
-            'Msg': {
-                "Type":msg.type,
-                "Content":msg.content,
-                "FromUserName":self.user['UserName'],
-                "ToUserName":msg.to_user_name,
-                "LocalID":local_id,
-                "ClientMsgId":client_msg_id,
-            }
         }
+        params_msg = {
+            "Type":msg.m_type,
+            "FromUserName":self.user['UserName'],
+            "ToUserName":msg.to_user_name,
+            "LocalID":local_id,
+            "ClientMsgId":client_msg_id,
+        }
+        if msg.m_type == 1:
+            params_msg["Content"]=msg.content,
+        elif msg.m_type == 3:
+            params_msg["MediaId"]=msg.media_id,
+        else:
+            pass
+        params["Msg"]=params_msg
         headers = {
             'User-Agent': "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)",
             "Content-Type": "application/json; charset=UTF-8",
@@ -545,7 +553,7 @@ class WeChatAPI(object):
         params = {
             'BaseRequest': self.base_request,
             'Msg': {
-                "Type":msg.type,
+                "Type":msg.m_type,
                 "Content":msg.content,
                 "FromUserName":self.user['UserName'],
                 "ToUserName":msg.to_user_name,
@@ -564,6 +572,34 @@ class WeChatAPI(object):
         data = response.text
         response.close()
         return data
+    
+    def webwx_upload_media(self,to_contact,upload_file):
+        files = {'file':open(upload_file,'rb')}
+        url = "https://file.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json"
+        params = {
+            'id':'WU_FILE_0',
+            'name':'',
+            'type':'image/jpeg',
+            'lastModifiedDate':'',
+            'size':'111',
+            'mediatype':'pic',
+            'UploadType':2,
+            'pass_ticket':self.pass_ticket,
+            'uploadmediarequest':{
+                'BaseRequest': self.base_request,
+                'ClientMediaId':1522484143966,
+                'TotalLen':54992,
+                'StartPos':0,
+                'DataLen':54992,
+                'MediaType':4,
+                'FromUserName':self.user['UserName'],
+                'ToUserName':to_contact['UserName']
+            }
+        }
+        jsd = json.dumps(params, ensure_ascii=False).encode('utf8')
+        response = self.post(url=url, data=params,files=files)
+        return response
+    
     '''
             根据MSG_ID下載圖片
     '''
@@ -599,7 +635,7 @@ class WeChatAPI(object):
                 print("except")
             '''
 
-    def post(self, url, data, headers={}, stream=False):
+    def post(self, url, data, headers={}, stream=False,files=None,timeout=10):
         default_headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
@@ -612,7 +648,10 @@ class WeChatAPI(object):
 
         while True:
             try:
-                response = self.session.post(url=url, data=data, headers=default_headers)
+                if files:
+                    response = self.session.post(url=url, data=data, headers=default_headers,files=files,timeout=timeout)
+                else:
+                    response = self.session.post(url=url, data=data, headers=default_headers)
                 if stream:
                     data = response.content
                 else:
@@ -622,9 +661,10 @@ class WeChatAPI(object):
                 return data
             except (KeyboardInterrupt, SystemExit):
                 raise
-            except:
-                #Log.error(traceback.format_exc())
-                pass
+                return False
+            except Exception,e:
+                print(str(e))
+                return False
 
     def post_json(self, url, data, headers={}):
         default_headers = {
@@ -646,8 +686,9 @@ class WeChatAPI(object):
                 return data
             except (KeyboardInterrupt, SystemExit):
                 raise
+                return False
             except:
-                pass
+                return False
 
 
 if __name__ =="__main__":
