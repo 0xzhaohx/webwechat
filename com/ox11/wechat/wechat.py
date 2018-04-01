@@ -233,9 +233,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         for contact in self.wxapi.session_list:
             self.append_contact_row(contact,self.sessionTableModel)
             
-        ''''''
-        for contact in sorted([x for x in self.wxapi.member_list if x["AttrStatus"] and x["AttrStatus"] > 0],key=lambda ct: ct["AttrStatus"],reverse=True):
-            self.append_contact_row(contact,self.sessionTableModel)
+        
+        for session in sorted([x for x in self.wxapi.member_list if x["AttrStatus"] and x["AttrStatus"] > 0],key=lambda ct: ct["AttrStatus"],reverse=True):
+            exist = False
+            for contact in self.wxapi.session_list:
+                if contact["UserName"] == session["UserName"]:
+                    exist = True
+            if not exist:
+                self.append_contact_row(session,self.sessionTableModel)
             '''
             '''
         self.sessionWidget.clicked.connect(self.session_item_clicked)
