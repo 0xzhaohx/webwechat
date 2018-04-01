@@ -658,31 +658,25 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
         for msg in msg_list:
             msg_type = msg['MsgType']
-            from_user_name = msg['FromUserName']
-            '''
-            没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中
-            '''
-            if (not self.current_select_contact) or from_user_name != self.current_select_contact['UserName']:
-                self.put_msg_cache(msg)
-            else:
+            if msg_type:
+                from_user_name = msg['FromUserName']
+                if msg_type == 2 or msg_type == 51 or msg_type == 52:
+                    continue
                 '''
-                    如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+                没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中;
+                如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
                 '''
-                if msg_type:
+                if (not self.current_select_contact) or from_user_name != self.current_select_contact['UserName']:
+                    self.put_msg_cache(msg)
+                else:
                     if msg_type == 1:
                         self.text_msg_handler(msg)
-                    elif msg_type == 2:
-                        pass
                     elif msg_type == 3:
                         self.image_msg_handler(msg) 
                     elif msg_type == 34:
                         self.voice_msg_handler(msg)
                     elif msg_type == 49:
                         self.app_msg_handler(msg)
-                    elif msg_type == 51:
-                        pass
-                    elif msg_type == 52:
-                        pass
                     else:
                         self.default_msg_handler(msg)
 
