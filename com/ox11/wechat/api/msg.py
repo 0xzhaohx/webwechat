@@ -1,5 +1,10 @@
 #!/usr/bin/python2.7
 # -*- coding:UTF-8 -*-
+'''
+Created on 2018年3月25日
+
+@author: zhaohongxing
+'''
 
 
 class Msg(object):
@@ -27,11 +32,18 @@ class Msg(object):
         '''
         :param type:
             1:txt msg
+            3:image msg
         :param content:
         :param to_user_name:
         '''
         self.type = type
-        self.content = content
+        if type == 1:
+            self.content = content
+        elif type ==3:
+            self.media_id = content
+        else:
+            pass
+            
         #self.from_user_name = from_user_name
         self.to_user_name = to_user_name
 

@@ -1,5 +1,10 @@
 #!/usr/bin/python2.7
 # -*- coding: UTF-8 -*-
+'''
+Created on 2018年3月25日
+
+@author: zhaohongxing
+'''
 
 
 import os
@@ -32,7 +37,7 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         self.app_home = self.user_home + '/.wechat/'
         self.wxapi = WeChatAPI()
         self.setupUi(self)
-        self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"))
+        self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"))
         self.setWindowIconText("WeChat 0.5")
         self.launcher_thread = WeChatLauncherThread(self,self.wxapi)
         self.generate_qrcode()
@@ -68,9 +73,6 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
             self.qrLabel.setPixmap(QtGui.QPixmap.fromImage(qr_image))
             timer = threading.Timer(25, self.set_qr_timeout)
             timer.start()
-
-            #auto_login_timer = threading.Timer(0, self.login())
-            #auto_login_timer.start()
         else:
             pass
 
