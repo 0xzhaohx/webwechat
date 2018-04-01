@@ -37,7 +37,7 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         self.app_home = self.user_home + '/.wechat/'
         self.wxapi = WeChatAPI()
         self.setupUi(self)
-        self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"))
+        self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"))
         self.setWindowIconText("WeChat 0.5")
         self.launcher_thread = WeChatLauncherThread(self,self.wxapi)
         self.generate_qrcode()

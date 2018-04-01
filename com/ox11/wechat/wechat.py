@@ -58,7 +58,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.prepare4Environment()
         self.wxapi = wxapi
         self.setupUi(self)
-        self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"))
+        self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"))
         self.wxapi.login()
         self.wxapi.webwx_init()
         self.setup_user()
