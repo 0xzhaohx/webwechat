@@ -10,7 +10,6 @@ import xml.dom.minidom
 import json
 import os
 import sys
-from _socket import timeout
 
 '''
 1.ContactFlag:
@@ -518,21 +517,20 @@ class WeChatAPI(object):
 
         params = {
             'BaseRequest': self.base_request,
-        }
-        params_msg = {
-            "Type":msg.type,
-            "FromUserName":self.user['UserName'],
-            "ToUserName":msg.to_user_name,
-            "LocalID":local_id,
-            "ClientMsgId":client_msg_id,
+            'Msg':{
+                "Type":msg.type,
+                "FromUserName":self.user['UserName'],
+                "ToUserName":msg.to_user_name,
+                "LocalID":local_id,
+                "ClientMsgId":client_msg_id
+            }
         }
         if msg.type == 1:
-            params_msg["Content"]=msg.content,
+            params['Msg']["Content"]=msg.content,
         elif msg.type == 3:
-            params_msg["MediaId"]=msg.media_id,
+            params['Msg']["MediaId"]=msg.media_id,
         else:
             pass
-        params["Msg"]=params_msg
         headers = {
             'User-Agent': "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)",
             "Content-Type": "application/json; charset=UTF-8",
