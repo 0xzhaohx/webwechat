@@ -421,6 +421,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 cells.append(count_tips_item)
                 
                 self.sessionTableModel.insertRow(0,cells)
+        self.up_2_top()
     '''
         把消息發送出去
     '''
@@ -430,7 +431,15 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             media_id = self.wxapi.webwx_upload_media(contact,image)
             print(media_id)
             msg = Msg(3, media_id, self.current_select_contact['UserName'])
-            return self.wxapi.webwx_send_msg(msg)
+            send_response = self.wxapi.webwx_send_msg(msg)
+        self.up_2_top()
+        
+    def up_2_top(self):
+        #提昇from_user_name在會話列表中的位置
+        #move this row to the top of the sessions
+        current_row = self.sessionWidget.currentIndex().row()
+        taked_row = self.sessionTableModel.takeRow(current_row)
+        self.sessionTableModel.insertRow(0 ,taked_row)
     '''
         默認的消息處理handler
     '''
@@ -612,7 +621,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             user_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(user_name))
             cells.append(user_name_item)
             
-            item = QtGui.QStandardItem(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"),"")
+            item = QtGui.QStandardItem(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"),"")
             cells.append(item)
             
             # user remark or nick name
@@ -706,7 +715,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     self.messages.append(msg_img)
                 else:
                     print(fileName)
-    
+                    
+    def keyPressEvent(self,event):
+        print("keyPressEvent")
+        
     def sync(self):
         while (True):
             st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())

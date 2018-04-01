@@ -38,6 +38,28 @@ class AbstractWeChatAPI(object):
         'Content-Type':'application/json; charset=UTF-8',
         'Referer':'https://wx.qq.com'
     }
+    response_keys = {
+        'SYNC_KEY':'SyncKey',
+        'USER':'User',
+        'USER_NAME':'UserName',
+        'FROM_USER_NAME':'FromUserName',
+        'HEAD_IMG_URL':'HeadImgUrl',
+        'NICK_NAME':'NickName',
+        'REMARK_NAME':'RemarkName',
+        'CHAT_ROOM_ID':'ChatRoomId',
+        'CONTACT_LIST':'ContactList',
+        'COUNT':'Count',
+        'MEMBER_LIST':'MemberList',
+        'MEMBER_COUNT':'MemberCount',
+        'ATTR_STATUS':'AttrStatus',
+        'MSG_TYPE':'MsgType',
+        'MSG_ID':'MsgId',
+        'CONTENT':'Content',
+        'BASE_RESPONSE':'BaseResponse',
+        'RET':'Ret',
+        'ADD_MSG_COUNT':'AddMsgCount',
+        'ADD_MSG_LIST':'AddMsgList',
+    }
 
     def get_icon(self):
         pass

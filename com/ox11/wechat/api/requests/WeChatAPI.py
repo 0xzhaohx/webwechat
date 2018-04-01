@@ -580,7 +580,13 @@ class WeChatAPI(object):
     
     def webwx_upload_media(self,to_contact,upload_file):
         url = "https://file.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json"
-        self.options(url)
+        headers = {
+            'Access-Control-Request-Method':'POST',
+            'Host':'file.wx.qq.com',
+            'Origin': 'https://wx.qq.com/'
+        }
+        options_response = self.options(url,headers=headers)
+        print("options_response:%s"%options_response)
         fil = open(upload_file,'rb')
         f_name = os.path.basename(str(upload_file))
         files = {
@@ -712,11 +718,12 @@ class WeChatAPI(object):
             'User-Agent': self.user_agent
         }
 
-        for (key,value) in headers.items():
-            default_headers[key]=value
+        for (key,value) in default_headers.items():
+            headers[key]=value
 
         try:
-            response = self.session.options(url=url)
+            response = self.session.options(url=url,headers=headers)
+            print("headers:%s"%(str(response.headers)))
             response.encoding='utf-8'
             data = response.text
             response.close()
