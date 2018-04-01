@@ -358,7 +358,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         msg_text = str(self.draft.toPlainText())
         msg = Msg(1, msg_text, self.current_select_contact['UserName'])
         response = self.wxapi.webwx_send_msg(msg)
-        print("response:%s"%(response)) 
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
         format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
         self.messages.append(format_msg)

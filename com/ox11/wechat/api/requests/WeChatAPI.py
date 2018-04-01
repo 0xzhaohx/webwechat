@@ -526,9 +526,9 @@ class WeChatAPI(object):
             }
         }
         if msg.type == 1:
-            params['Msg']["Content"]=msg.content,
+            params['Msg']["Content"]=msg.content
         elif msg.type == 3:
-            params['Msg']["MediaId"]=msg.media_id,
+            params['Msg']["MediaId"]=msg.media_id
         else:
             pass
         headers = {
