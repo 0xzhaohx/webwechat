@@ -1,5 +1,10 @@
 #!/usr/bin/python2.7
 # -*- coding: UTF-8 -*-
+'''
+Created on 2018年3月25日
+
+@author: zhaohongxing
+'''
 
 import random
 import time
@@ -59,6 +64,8 @@ class WeChatAPI(object):
         }
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
+        self.cache_home = ("%s/cache/"%(self.app_home))
+        self.cache_image_home = "%s/image/"%(self.cache_home)
         self.status = -1#登陸與否
         self.file_host = None
         self.appid = 'wx782c26e4c19acffb'
@@ -70,6 +77,7 @@ class WeChatAPI(object):
         self.sid = ''
         #wxuin: weixin user identity number
         self.uin = ''
+        self.webwx_data_ticket=''
         #pass_ticket: 通关文牒
         self.pass_ticket = ''
         self.is_grayscale = 0
@@ -518,13 +526,18 @@ class WeChatAPI(object):
             'BaseRequest': self.base_request,
             'Msg': {
                 "Type":msg.type,
-                "Content":msg.content,
                 "FromUserName":self.user['UserName'],
                 "ToUserName":msg.to_user_name,
                 "LocalID":local_id,
-                "ClientMsgId":client_msg_id,
+                "ClientMsgId":client_msg_id
             }
         }
+        if msg.type == 1:
+            params['Msg']["Content"]=msg.content
+        elif msg.type == 3:
+            params['Msg']["MediaId"]=msg.media_id
+        else:
+            pass
         headers = {
             'User-Agent': "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)",
             "Content-Type": "application/json; charset=UTF-8",
@@ -564,15 +577,52 @@ class WeChatAPI(object):
         data = response.text
         response.close()
         return data
+    
+    def webwx_upload_media(self,to_contact,upload_file):
+        url = "https://file.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json"
+        self.options(url)
+        fil = open(upload_file,'rb')
+        f_name = os.path.basename(str(upload_file))
+        files = {
+            'filename':("%s"%(f_name),fil)
+        }
+        params = {
+            'id':'WU_FILE_0',
+            'name':'',
+            'type':'image/jpeg',
+            'lastModifiedDate':'',
+            'size':'111',
+            'mediatype':'pic',
+            'UploadType':2,
+            'pass_ticket':self.pass_ticket,
+            'uploadmediarequest':{
+                'BaseRequest': self.base_request,
+                'ClientMediaId':1522484143966,
+                'TotalLen':54992,
+                'StartPos':0,
+                'DataLen':54992,
+                'MediaType':4,
+                'FromUserName':self.user['UserName'],
+                'ToUserName':to_contact['UserName']
+            },
+            'filename':f_name
+        }
+        response = self.post(url=url, data=params,files=files)
+        return response
+    
     '''
             根据MSG_ID下載圖片
     '''
-    def webwx_get_msg_img(self,msg_id):
+    def webwx_get_msg_img(self,msg_id,media_type="jpg"):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg" + \
               '?MsgID=%s&skey=%s&fun=download&type=slave' % (
                   msg_id,self.skey
               )
         data = self.get(url,stream=True)
+        if data:
+            image = ('%s/%s.%s'%(self.cache_image_home,msg_id,media_type))
+            with open(image, 'wb') as image:
+                image.write(data)
         return data
 
     def get(self, url, data= {},stream=False):
@@ -599,7 +649,7 @@ class WeChatAPI(object):
                 print("except")
             '''
 
-    def post(self, url, data, headers={}, stream=False):
+    def post(self, url, data, headers={}, stream=False,files=None):
         default_headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
@@ -612,7 +662,10 @@ class WeChatAPI(object):
 
         while True:
             try:
-                response = self.session.post(url=url, data=data, headers=default_headers)
+                if files:
+                    response = self.session.post(url=url, data=data, headers=default_headers,files=files)
+                else:
+                    response = self.session.post(url=url, data=data, headers=default_headers)
                 if stream:
                     data = response.content
                 else:
@@ -622,9 +675,10 @@ class WeChatAPI(object):
                 return data
             except (KeyboardInterrupt, SystemExit):
                 raise
-            except:
-                #Log.error(traceback.format_exc())
-                pass
+                return False
+            except Exception,e:
+                print(str(e))
+                return False
 
     def post_json(self, url, data, headers={}):
         default_headers = {
@@ -646,8 +700,32 @@ class WeChatAPI(object):
                 return data
             except (KeyboardInterrupt, SystemExit):
                 raise
+                return False
             except:
-                pass
+                return False
+    
+    def options(self, url, data=None, headers={}):
+        default_headers = {
+            'Connection': 'keep-alive',
+            'Referer': 'https://wx.qq.com/?&lang=zh_TW',
+            'Content-Type': 'application/json; charset=UTF-8',
+            'User-Agent': self.user_agent
+        }
+
+        for (key,value) in headers.items():
+            default_headers[key]=value
+
+        try:
+            response = self.session.options(url=url)
+            response.encoding='utf-8'
+            data = response.text
+            response.close()
+            return data
+        except (KeyboardInterrupt, SystemExit):
+            raise
+            return False
+        except:
+            return False
 
 
 if __name__ =="__main__":
