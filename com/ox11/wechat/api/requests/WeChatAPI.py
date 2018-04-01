@@ -574,8 +574,13 @@ class WeChatAPI(object):
         return data
     
     def webwx_upload_media(self,to_contact,upload_file):
-        files = {'file':open(upload_file,'rb')}
         url = "https://file.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json"
+        self.options(url)
+        fil = open(upload_file,'rb')
+        f_name = os.path.basename(str(upload_file))
+        files = {
+            'filename':("%s"%(f_name),fil)
+        }
         params = {
             'id':'WU_FILE_0',
             'name':'',
@@ -594,9 +599,9 @@ class WeChatAPI(object):
                 'MediaType':4,
                 'FromUserName':self.user['UserName'],
                 'ToUserName':to_contact['UserName']
-            }
+            },
+            'filename':f_name
         }
-        jsd = json.dumps(params, ensure_ascii=False).encode('utf8')
         response = self.post(url=url, data=params,files=files)
         return response
     
@@ -689,6 +694,29 @@ class WeChatAPI(object):
                 return False
             except:
                 return False
+    
+    def options(self, url, data=None, headers={}):
+        default_headers = {
+            'Connection': 'keep-alive',
+            'Referer': 'https://wx.qq.com/?&lang=zh_TW',
+            'Content-Type': 'application/json; charset=UTF-8',
+            'User-Agent': self.user_agent
+        }
+
+        for (key,value) in headers.items():
+            default_headers[key]=value
+
+        try:
+            response = self.session.options(url=url)
+            response.encoding='utf-8'
+            data = response.text
+            response.close()
+            return data
+        except (KeyboardInterrupt, SystemExit):
+            raise
+            return False
+        except:
+            return False
 
 
 if __name__ =="__main__":

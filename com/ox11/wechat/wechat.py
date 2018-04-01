@@ -358,7 +358,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         msg_text = str(self.draft.toPlainText())
         txt = self.draft.toPlainText()
         msg = Msg(1, msg_text, self.current_select_contact['UserName'])
-        self.wxapi.webwx_send_msg(msg)
+        response = self.wxapi.webwx_send_msg(msg)
+        print("response:%s"%(response)) 
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
         format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
         self.messages.append(format_msg)
@@ -420,12 +421,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             media_id = self.wxapi.webwx_upload_media(contact,image)
             print(media_id)
             msg = Msg(3, media_id, self.current_select_contact['UserName'])
-            self.wxapi.webwx_send_msg(msg)
-            st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-            format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
-            self.messages.append(format_msg)
-            msg_img = ('<img src=%s width=40 height=40>'%(image))
-            self.messages.append(msg_img)
+            return self.wxapi.webwx_send_msg(msg)
     '''
         默認的消息處理handler
     '''
@@ -699,6 +695,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     images = []
                     images.append(fileName)
                     self.send_image_msg(self.current_select_contact,images)
+                    
+                    st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+                    format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
+                    self.messages.append(format_msg)
+                    msg_img = ('<img src=%s width=40 height=40>'%(fileName))
+                    self.messages.append(msg_img)
                 else:
                     print(fileName)
     
