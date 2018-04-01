@@ -491,7 +491,7 @@ class WeChatAPI(object):
         params = {
             'BaseRequest': self.base_request,
             'Msg': {
-                "Type":msg.m_type,
+                "Type":msg.type,
                 "Content":msg.content,
                 "FromUserName":self.user['UserName'],
                 "ToUserName":msg.to_user_name,
@@ -520,15 +520,15 @@ class WeChatAPI(object):
             'BaseRequest': self.base_request,
         }
         params_msg = {
-            "Type":msg.m_type,
+            "Type":msg.type,
             "FromUserName":self.user['UserName'],
             "ToUserName":msg.to_user_name,
             "LocalID":local_id,
             "ClientMsgId":client_msg_id,
         }
-        if msg.m_type == 1:
+        if msg.type == 1:
             params_msg["Content"]=msg.content,
-        elif msg.m_type == 3:
+        elif msg.type == 3:
             params_msg["MediaId"]=msg.media_id,
         else:
             pass
@@ -553,7 +553,7 @@ class WeChatAPI(object):
         params = {
             'BaseRequest': self.base_request,
             'Msg': {
-                "Type":msg.m_type,
+                "Type":msg.type,
                 "Content":msg.content,
                 "FromUserName":self.user['UserName'],
                 "ToUserName":msg.to_user_name,
@@ -640,7 +640,7 @@ class WeChatAPI(object):
                 print("except")
             '''
 
-    def post(self, url, data, headers={}, stream=False,files=None,timeout=10):
+    def post(self, url, data, headers={}, stream=False,files=None):
         default_headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
@@ -654,7 +654,7 @@ class WeChatAPI(object):
         while True:
             try:
                 if files:
-                    response = self.session.post(url=url, data=data, headers=default_headers,files=files,timeout=timeout)
+                    response = self.session.post(url=url, data=data, headers=default_headers,files=files)
                 else:
                     response = self.session.post(url=url, data=data, headers=default_headers)
                 if stream:
