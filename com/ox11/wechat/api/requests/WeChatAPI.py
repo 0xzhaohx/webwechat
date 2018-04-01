@@ -517,7 +517,7 @@ class WeChatAPI(object):
 
         params = {
             'BaseRequest': self.base_request,
-            'Msg':{
+            'Msg': {
                 "Type":msg.type,
                 "FromUserName":self.user['UserName'],
                 "ToUserName":msg.to_user_name,
