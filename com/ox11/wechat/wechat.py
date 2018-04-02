@@ -492,7 +492,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not self.current_select_contact:
             pass
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
+        format_msg = ('(%s) %s:') % (st, from_user_name)
         '''
                         如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
