@@ -20,6 +20,7 @@ from api.msg import Msg
 from PyQt4.Qt import QIcon, QModelIndex
 from PyQt4.QtGui import QStandardItemModel, QFileDialog
 from PyQt4.QtCore import QSize
+import json
 
 reload(sys)
 
@@ -428,9 +429,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def send_image_msg(self,contact,images):
         for image in images:
             print(image)
-            media_id = self.wxapi.webwx_upload_media(contact,image)
-            print(media_id)
-            msg = Msg(3, media_id, self.current_select_contact['UserName'])
+            upload_response = self.wxapi.webwx_upload_media(contact,image)
+            json_upload_response = json.loads(upload_response)
+            media_id = json_upload_response['MediaId']
+            print("upload_response :%s"%media_id)
+            msg = Msg(3, str(media_id), self.current_select_contact['UserName'])
             send_response = self.wxapi.webwx_send_msg(msg)
         self.up_2_top()
         
@@ -440,6 +443,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         current_row = self.sessionWidget.currentIndex().row()
         taked_row = self.sessionTableModel.takeRow(current_row)
         self.sessionTableModel.insertRow(0 ,taked_row)
+        self.sessionWidget.selectRow(0)
     '''
         默認的消息處理handler
     '''

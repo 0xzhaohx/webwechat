@@ -77,7 +77,6 @@ class WeChatAPI(object):
         self.sid = ''
         #wxuin: weixin user identity number
         self.uin = ''
-        self.webwx_data_ticket=''
         #pass_ticket: 通关文牒
         self.pass_ticket = ''
         self.is_grayscale = 0
@@ -588,32 +587,35 @@ class WeChatAPI(object):
         options_response = self.options(url,headers=headers)
         print("options_response:%s"%options_response)
         fil = open(upload_file,'rb')
-        f_name = os.path.basename(str(upload_file))
+        file_name = os.path.basename(str(upload_file))
         files = {
-            'filename':("%s"%(f_name),fil)
+            'filename':("%s"%(file_name),fil)
         }
+        webwx_data_ticket = self.session.cookies['webwx_data_ticket']
         params = {
             'id':'WU_FILE_0',
-            'name':'',
+            'name':file_name,
             'type':'image/jpeg',
-            'lastModifiedDate':'',
-            'size':'111',
+            'lastModifiedDate':'Wed Aug 17 2016 14:05:18 GMT+0800',
+            'size':'79580',
             'mediatype':'pic',
-            'UploadType':2,
-            'pass_ticket':self.pass_ticket,
             'uploadmediarequest':{
+                'UploadType':2,
                 'BaseRequest': self.base_request,
                 'ClientMediaId':1522484143966,
-                'TotalLen':54992,
+                'TotalLen':79580,
                 'StartPos':0,
-                'DataLen':54992,
+                'DataLen':79580,
                 'MediaType':4,
                 'FromUserName':self.user['UserName'],
-                'ToUserName':to_contact['UserName']
+                'ToUserName':to_contact['UserName'],
+                'FileMd5': "199ef3bf430427633d3fb8e1b66b8a6b"
             },
-            'filename':f_name
+            'webwx_data_ticket':webwx_data_ticket,
+            'pass_ticket':self.pass_ticket
         }
-        response = self.post(url=url, data=params,files=files)
+        headers['Content-Type']= 'multipart/form-data'
+        response = self.post(url=url, data=params,headers=headers,files=files)
         return response
     
     '''
@@ -632,14 +634,15 @@ class WeChatAPI(object):
         return data
 
     def get(self, url, data= {},stream=False):
-        default_headers = {
+        _headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
             'User-Agent': self.user_agent
         }
 
         while True:
-            response = self.session.get(url=url, data=data, headers=default_headers)
+            response = self.session.get(url=url, data=data, headers=_headers)
+            #self.cookies = data.coookies
             if stream:
                 data = response.content
             else:
@@ -655,8 +658,8 @@ class WeChatAPI(object):
                 print("except")
             '''
 
-    def post(self, url, data, headers={}, stream=False,files=None):
-        default_headers = {
+    def post(self, url, data, headers={}, stream=False,files=None,cookies={}):
+        _headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
             'Content-Type': 'application/json; charset=UTF-8',
@@ -664,14 +667,14 @@ class WeChatAPI(object):
         }
 
         for (key,value) in headers.items():
-            default_headers[key]=value
+            _headers[key]=value
 
         while True:
             try:
                 if files:
-                    response = self.session.post(url=url, data=data, headers=default_headers,files=files)
+                    response = self.session.post(url=url, data=data, headers=_headers,files=files,cookies=cookies)
                 else:
-                    response = self.session.post(url=url, data=data, headers=default_headers)
+                    response = self.session.post(url=url, data=data, headers=_headers)
                 if stream:
                     data = response.content
                 else:
@@ -687,7 +690,7 @@ class WeChatAPI(object):
                 return False
 
     def post_json(self, url, data, headers={}):
-        default_headers = {
+        _headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
             'Content-Type': 'application/json; charset=UTF-8',
@@ -695,11 +698,11 @@ class WeChatAPI(object):
         }
 
         for (key,value) in headers.items():
-            default_headers[key]=value
+            _headers[key]=value
 
         while True:
             try:
-                response = self.session.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=default_headers)
+                response = self.session.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=_headers)
                 response.encoding='utf-8'
                 data = response.text
                 response.close()
@@ -711,19 +714,18 @@ class WeChatAPI(object):
                 return False
     
     def options(self, url, data=None, headers={}):
-        default_headers = {
+        _headers = {
             'Connection': 'keep-alive',
-            'Referer': 'https://wx.qq.com/?&lang=zh_TW',
-            'Content-Type': 'application/json; charset=UTF-8',
             'User-Agent': self.user_agent
         }
 
-        for (key,value) in default_headers.items():
-            headers[key]=value
+        for (key,value) in headers.items():
+            _headers[key]=value
 
         try:
-            response = self.session.options(url=url,headers=headers)
+            response = self.session.options(url=url,headers=_headers)
             print("headers:%s"%(str(response.headers)))
+            #print("request headers:%s"%(str(response.request.headers)))
             response.encoding='utf-8'
             data = response.text
             response.close()
