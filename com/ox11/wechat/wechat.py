@@ -18,7 +18,7 @@ import xml.dom.minidom
 
 from api.msg import Msg
 from PyQt4.Qt import QIcon, QModelIndex
-from PyQt4.QtGui import QStandardItemModel, QFileDialog
+from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction
 from PyQt4.QtCore import QSize
 import json
 
@@ -100,6 +100,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer = threading.Timer(5, self.sync)
         timer.setDaemon(True)
         timer.start()
+        
+    def addMenu4SendButton(self):
+        menu = QMenu()
+        enterAction = QAction("按Enter發送消息")
+        menu.addAction(enterAction)
+        self.sendButton.setMenu(menu)
         
     def do_logout(self):
         print("logout..............")

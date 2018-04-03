@@ -55,12 +55,36 @@ class WeChatAPI(object):
 
     def __init__(self):
         self.hosts = {
-            "weixin.qq.com":['login.weixin.qq.com','file.wx.qq.com','webpush.weixin.qq.com'],
-            "wx2.qq.com":['login.wx2.qq.com','file.wx2.qq.com','webpush.wx2.qq.com'],
-            "wx8.qq.com":['login.wx8.qq.com','file.wx8.qq.com','webpush.wx8.qq.com'],
-            "qq.com":['login.wx.qq.com','file.wx.qq.com','webpush.wx.qq.com'],
-            "wechat.com":['login.web.wechat.com','file.web.wechat.com','webpush.web.wechat.com'],
-            "web2.wechat.com":['login.web2.wechat.com','file.web2.wechat.com','webpush.web2.wechat.com']
+            "weixin.qq.com":{
+                'login':'login.weixin.qq.com',
+                'file':'file.wx.qq.com',
+                'push':'webpush.weixin.qq.com'
+            },
+            "wx2.qq.com":{
+                'login':'login.wx2.qq.com',
+                'file':'file.wx2.qq.com',
+                'push':'webpush.wx2.qq.com'
+            },
+            "wx8.qq.com":{
+                'login':'login.wx8.qq.com',
+                'file':'file.wx8.qq.com',
+                'push':'webpush.wx8.qq.com'
+            },
+            "qq.com":{
+                'login':'login.wx.qq.com',
+                'file':'file.wx.qq.com',
+                'push':'webpush.wx.qq.com'
+            },
+            "wechat.com":{
+                'login':'login.web.wechat.com',
+                'file':'file.web.wechat.com',
+                'push':'webpush.web.wechat.com'
+            },
+            "web2.wechat.com":{
+                'login':'login.web2.wechat.com',
+                'file':'file.web2.wechat.com',
+                'push':'webpush.web2.wechat.com'
+            }
         }
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
@@ -592,6 +616,7 @@ class WeChatAPI(object):
             'filename':("%s"%(file_name),fil)
         }
         webwx_data_ticket = self.session.cookies['webwx_data_ticket']
+        client_media_id =str(int(time.time()))
         params = {
             'id':'WU_FILE_0',
             'name':file_name,
@@ -602,7 +627,7 @@ class WeChatAPI(object):
             'uploadmediarequest':{
                 'UploadType':2,
                 'BaseRequest': self.base_request,
-                'ClientMediaId':1522484143966,
+                'ClientMediaId':client_media_id,#1522484143966
                 'TotalLen':79580,
                 'StartPos':0,
                 'DataLen':79580,
@@ -615,7 +640,9 @@ class WeChatAPI(object):
             'pass_ticket':self.pass_ticket
         }
         headers['Content-Type']= 'multipart/form-data'
-        response = self.post(url=url, data=params,headers=headers,files=files)
+        cookies = requests.utils.dict_from_cookiejar(self.session.cookies)
+        print(str(cookies))
+        response = self.post(url=url, data=params,headers=headers,files=files,cookies=cookies)
         return response
     
     '''
