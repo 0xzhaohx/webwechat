@@ -459,7 +459,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 user_name_item = QtGui.QStandardItem(QtCore.QString.fromUtf8(user_name))
                 cells.append(user_name_item)
                 
-                item = QtGui.QStandardItem(QIcon("resource/icons/hicolor/32x32/apps/electronic-wechat.png"),"")
+                item = QtGui.QStandardItem(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"),"")
                 cells.append(item)
                 
                 dn = self.current_select_contact['RemarkName']

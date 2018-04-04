@@ -125,10 +125,12 @@ class WeChatAPI(object):
         self.timeout = 30
         self.session = requests.session()
         self.user_agent = (
-            'Mozilla/5.0 (X11; Linux x86_64) '
+            'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0'
+        )
+        '''
             'AppleWebKit/537.36 (KHTML, like Gecko) '
             'Chrome/63.0.3239.108 Safari/537.36'
-        )
+        '''
         self.version='0.1'
         self.wxversion = 'v2'
 
@@ -280,7 +282,7 @@ class WeChatAPI(object):
             'User-Agent': self.user_agent,
             'Content-Type': 'application/json; charset=UTF-8',
             'Connection': 'keep-alive',
-            'Referer': 'https://wx.qq.com'
+            'Referer': 'https://wx.qq.com/'
         }
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
@@ -330,7 +332,7 @@ class WeChatAPI(object):
             'user-agent': self.user_agent,
             "content-type": "application/json; charset=UTF-8",
             'connection': 'keep-alive',
-            "referer": "https://wx.qq.com"
+            "referer": "https://wx.qq.com/"
         }
         data = self.post_json(url, params)
         return data
@@ -373,7 +375,7 @@ class WeChatAPI(object):
             'user-agent': self.user_agent,
             "content-type": "application/json; charset=UTF-8",
             'connection': 'keep-alive',
-            "referer": "https://wx.qq.com"
+            "referer": "https://wx.qq.com/"
         }
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
@@ -468,7 +470,7 @@ class WeChatAPI(object):
             'accept':'*/*',
             'accept-encoding':'gzip, deflate, br',
             'connection': 'keep-alive',
-            "referer": "https://wx.qq.com/?&lang=zh_TW",
+            "referer": "https://wx.qq.com/",
             'user-agent': self.user_agent
         }
         url = host + '?' + urllib.urlencode(params)
@@ -601,10 +603,10 @@ class WeChatAPI(object):
     
     def webwx_upload_media(self,to_contact,upload_file):
         url = "https://file.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json"
+        #'Access-Control-Request-Method':'POST',
         headers = {
-            'Access-Control-Request-Method':'POST',
             'Host':'file.wx.qq.com',
-            'Origin': 'https://wx.qq.com/'
+            'Origin': 'https://wx.qq.com'
         }
         options_response = self.options(url,headers=headers)
         print("options_response:%s"%options_response)
@@ -640,7 +642,7 @@ class WeChatAPI(object):
             "pass_ticket":self.pass_ticket
         }
         _cookies = requests.utils.dict_from_cookiejar(self.session.cookies)
-        response = self.post(url=url, data=data,headers=headers,files=files,cookies=_cookies)
+        response = self.post(url=url, data=data,headers=headers,files=files,cookies={})
         return response
     
     '''
@@ -662,6 +664,7 @@ class WeChatAPI(object):
         _headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
+            'Accept-Language': 'zh-TW,zh-HK;q=0.8,en-US;q=0.5,en;q=0.3',
             'User-Agent': self.user_agent
         }
 
@@ -686,7 +689,8 @@ class WeChatAPI(object):
     def post(self, url, data, headers={}, stream=False,files=None,cookies={}):
         _headers = {
             'Connection': 'keep-alive',
-            'Referer': 'https://wx.qq.com/?&lang=zh_TW',
+            'Referer': 'https://wx.qq.com/',
+            'Accept-Language': 'zh-TW,zh-HK;q=0.8,en-US;q=0.5,en;q=0.3',
             'User-Agent': self.user_agent
         }
         #'Content-Type': 'application/json; charset=UTF-8',
@@ -725,8 +729,8 @@ class WeChatAPI(object):
     def post_json(self, url, data, headers={}):
         _headers = {
             'Connection': 'keep-alive',
-            'Referer': 'https://wx.qq.com/?&lang=zh_TW',
-            'Content-Type': 'application/json; charset=UTF-8',
+            'Referer': 'https://wx.qq.com/',
+            'Accept-Language': 'zh-TW,zh-HK;q=0.8,en-US;q=0.5,en;q=0.3',
             'User-Agent': self.user_agent
         }
 
