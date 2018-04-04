@@ -15,6 +15,7 @@ import xml.dom.minidom
 import json
 import os
 import sys
+import hashlib
 
 '''
 1.ContactFlag:
@@ -386,9 +387,11 @@ class WeChatAPI(object):
             if not user_name or not head_img_url:
                 continue
             if user_name.startswith('@'):
-                self.webwx_get_icon(user_name, head_img_url)
+                pass
+                #self.webwx_get_icon(user_name, head_img_url)
             elif user_name.startswith('@@'):
-                self.webwx_get_head_img(user_name, head_img_url)
+                pass
+                #self.webwx_get_head_img(user_name, head_img_url)
             else:
                 pass
         return contacts_dict
@@ -561,11 +564,6 @@ class WeChatAPI(object):
             params['Msg']["MediaId"]=msg.media_id
         else:
             pass
-        headers = {
-            'User-Agent': "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)",
-            "Content-Type": "application/json; charset=UTF-8",
-            "Referer": "https://wx.qq.com"
-        }
 
         data = self.post_json(url, params)
         return data
@@ -610,39 +608,39 @@ class WeChatAPI(object):
         }
         options_response = self.options(url,headers=headers)
         print("options_response:%s"%options_response)
-        fil = open(upload_file,'rb')
         file_name = os.path.basename(str(upload_file))
-        files = {
-            'filename':("%s"%(file_name),fil)
-        }
+        files = [('filename',("%s"%(file_name),open(upload_file,'rb'),'image/jpeg'))]
+        with open(upload_file,'rb') as fe:
+            md5 = hashlib.md5()
+            md5.update(fe.read())
+            md5_digest = md5.hexdigest()
+            
         webwx_data_ticket = self.session.cookies['webwx_data_ticket']
-        client_media_id =str(int(time.time()))
-        params = {
-            'id':'WU_FILE_0',
-            'name':file_name,
-            'type':'image/jpeg',
-            'lastModifiedDate':'Wed Aug 17 2016 14:05:18 GMT+0800',
-            'size':'79580',
-            'mediatype':'pic',
-            'uploadmediarequest':{
-                'UploadType':2,
-                'BaseRequest': self.base_request,
-                'ClientMediaId':client_media_id,#1522484143966
-                'TotalLen':79580,
-                'StartPos':0,
-                'DataLen':79580,
-                'MediaType':4,
-                'FromUserName':self.user['UserName'],
-                'ToUserName':to_contact['UserName'],
-                'FileMd5': "199ef3bf430427633d3fb8e1b66b8a6b"
-            },
-            'webwx_data_ticket':webwx_data_ticket,
-            'pass_ticket':self.pass_ticket
+        client_media_id =int(time.time())
+        data = {
+            "id":"WU_FILE_0",
+            "name":file_name,
+            "type":"image/jpeg",
+            "lastModifiedDate":time.ctime(os.stat(upload_file).st_mtime),
+            "size":os.path.getsize(upload_file),
+            "mediatype":"pic",
+            "uploadmediarequest":str({
+                "UploadType":2,
+                "BaseRequest": self.base_request,
+                "ClientMediaId":client_media_id,
+                "TotalLen":int(os.path.getsize(upload_file)),
+                "StartPos":0,
+                "DataLen":int(os.path.getsize(upload_file)),
+                "MediaType":4,
+                "FromUserName":self.user['UserName'],
+                "ToUserName":to_contact['UserName'],
+                "FileMd5": md5_digest
+            }),
+            "webwx_data_ticket":webwx_data_ticket,
+            "pass_ticket":self.pass_ticket
         }
-        headers['Content-Type']= 'multipart/form-data'
-        cookies = requests.utils.dict_from_cookiejar(self.session.cookies)
-        print(str(cookies))
-        response = self.post(url=url, data=params,headers=headers,files=files,cookies=cookies)
+        _cookies = requests.utils.dict_from_cookiejar(self.session.cookies)
+        response = self.post(url=url, data=data,headers=headers,files=files,cookies=_cookies)
         return response
     
     '''
@@ -689,9 +687,9 @@ class WeChatAPI(object):
         _headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
-            'Content-Type': 'application/json; charset=UTF-8',
             'User-Agent': self.user_agent
         }
+        #'Content-Type': 'application/json; charset=UTF-8',
 
         for (key,value) in headers.items():
             _headers[key]=value
@@ -702,6 +700,14 @@ class WeChatAPI(object):
                     response = self.session.post(url=url, data=data, headers=_headers,files=files,cookies=cookies)
                 else:
                     response = self.session.post(url=url, data=data, headers=_headers)
+                
+                #print("wxpluginkey:%s"%response.cookies["wxpluginkey"])
+                print("request cookies")
+                for item in response.cookies.items():
+                    print(item)
+                print(str(requests.utils.dict_from_cookiejar(response.cookies)))
+                print("request header:%s"%response.request.headers)
+                print("response headers:%s"%response.headers)
                 if stream:
                     data = response.content
                 else:

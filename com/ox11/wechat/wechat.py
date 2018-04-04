@@ -17,8 +17,9 @@ from PyQt4 import QtCore, QtGui, uic
 import xml.dom.minidom
 
 from api.msg import Msg
-from PyQt4.Qt import QIcon, QModelIndex
-from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction
+from PyQt4.Qt import QIcon, Qt
+from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction,\
+    QTableView, QVBoxLayout, QStandardItem
 from PyQt4.QtCore import QSize
 import json
 
@@ -69,6 +70,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.sessionTableModel = QStandardItemModel(1,4)
         self.memberTableModel = QStandardItemModel(1,4)
         self.readerTableModel = QStandardItemModel()
+        
+        self.memberListWidget = None
         self.memberWidget.setVisible(False)
         self.readerWidget.setVisible(False)
         self.init_session()
@@ -95,6 +98,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.sendButton.clicked.connect(self.send_msg)
         self.selectImageFileButton.clicked.connect(self.select_document)
         self.currentChatUser.clicked.connect(self.current_chat_user_click)
+        self.addMenu4SendButton()
+        self.addMenu4SettingButton()
         #self.synct = WeChatSync(self.wxapi)
         #self.synct.start()
         timer = threading.Timer(5, self.sync)
@@ -103,9 +108,15 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         
     def addMenu4SendButton(self):
         menu = QMenu()
-        enterAction = QAction("按Enter發送消息")
+        enterAction = QAction(QtCore.QString.fromUtf8("按Enter發送消息"),self)
         menu.addAction(enterAction)
-        self.sendButton.setMenu(menu)
+        self.sendSetButton.setMenu(menu)
+        
+    def addMenu4SettingButton(self):
+        menu = QMenu()
+        aboutAction = QAction(QtCore.QString.fromUtf8("關於"),self)
+        menu.addAction(aboutAction)
+        self.settingButton.setMenu(menu)
         
     def do_logout(self):
         print("logout..............")
@@ -137,15 +148,30 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             #self.wxapi.session_list.extend(session_list)
     
     def prepare4Environment(self):
+        if os.path.exists(self.app_home):
+            self.clear()
+        else:
+            os.makedirs(self.app_home)
+            
         if os.path.exists(self.contact_head_home):
             self.clear()
         else:
             os.makedirs(self.contact_head_home)
             
         if os.path.exists(self.cache_home):
-            self.clear()
+            pass
         else:
             os.makedirs(self.cache_home)
+        
+        if os.path.exists(self.head_home):
+            pass
+        else:
+            os.makedirs(self.head_home)
+            
+        if os.path.exists(self.contact_head_home):
+            pass
+        else:
+            os.makedirs(self.contact_head_home)
     '''
                 删除下载的头像文件
     '''
@@ -298,7 +324,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         for member in self.wxapi.member_list:
             if user_name == member['UserName']:
                 return member
-
+            
     def session_item_clicked(self):
         self.chatWidget.setVisible(True)
         self.label.setVisible(False)
@@ -349,7 +375,26 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 break
 
     def current_chat_user_click(self):
-        print("clicked")
+        if self.memberListWidget:
+            print("visible ddd%s:"+str(self.memberListWidget.isHidden()))
+            if self.memberListWidget.isHidden():
+                rect = self.geometry()
+                self.memberListWidget.resize(QSize(MemberListWidget.WIDTH,rect.height()+self.frameGeometry().height()-self.geometry().height()))
+                self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
+                self.memberListWidget.show()
+                print("show")
+            else:
+                self.memberListWidget.hide()
+                print("hide")
+        else:
+            rect = self.geometry()
+            print(rect.left(), rect.top())
+            print(self.frameGeometry())
+            print(rect.width(), rect.height()) 
+            self.memberListWidget = MemberListWidget({})
+            self.memberListWidget.resize(QSize(MemberListWidget.WIDTH,rect.height()+self.frameGeometry().height()-self.geometry().height()))
+            self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
+            self.memberListWidget.show()
     
     def member_item_clicked(self):
         self.chatWidget.setVisible(True)
@@ -434,11 +479,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     '''
     def send_image_msg(self,contact,images):
         for image in images:
-            print(image)
             upload_response = self.wxapi.webwx_upload_media(contact,image)
             json_upload_response = json.loads(upload_response)
+            print("upload_response :%s"%upload_response)
             media_id = json_upload_response['MediaId']
-            print("upload_response :%s"%media_id)
             msg = Msg(3, str(media_id), self.current_select_contact['UserName'])
             send_response = self.wxapi.webwx_send_msg(msg)
         self.up_2_top()
@@ -748,3 +792,22 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         #print(sync_response)
                         self.webwx_sync_process(sync_response)
             sleep(11)
+            
+class MemberListWidget(QtGui.QWidget):
+    WIDTH = 300
+    def __init__(self,member_list):
+        super(MemberListWidget,self).__init__()
+        self.setWindowFlags(Qt.FramelessWindowHint|Qt.Popup)
+        self.membersTable = QTableView()
+        self.membersTableModel = QStandardItemModel(1,4)
+        self.initinal_member_list_widget(member_list)
+        mainLayout=QVBoxLayout()
+        mainLayout.addWidget(self.membersTable)
+        self.setLayout(mainLayout)
+        
+    def initinal_member_list_widget(self,member_list):
+        self.membersTableModel.setHorizontalHeaderItem(0,QStandardItem("0000"))
+        self.membersTable.setModel(self.membersTableModel)
+    
+    def update_memebers(self,member_list):
+        pass
