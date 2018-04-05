@@ -541,13 +541,32 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         把文本消息加入到聊天記錄裏
     '''
     def text_msg_handler(self,msg):
-        from_user_name = msg['FromUserName']
         if not self.current_select_contact:
             pass
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s:') % (st, from_user_name)
+        from_user_name = msg['FromUserName']
+        if from_user_name == self.wxapi.user["UserName"]:
+            contact = self.wxapi.user
+        else:
+            contact = self.get_contact(from_user_name)
+        dn = None
+        if contact['UserName'].find('@@') >= 0:
+            members = contact["MemberList"]
+            for member in members:
+                if from_user_name == member['UserName']:
+                    dn = member['RemarkName']
+                    if not dn:
+                        dn = member['NickName']
+                    break
+        else:
+            dn = contact['RemarkName']
+            if not dn:
+                dn = contact['NickName']
+        if not dn:
+            dn = from_user_name
+        format_msg = ('(%s) %s:') % (st, dn)
         '''
-                        如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+            如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
@@ -566,7 +585,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         return True
         
     '''
-            把文本消息加入到聊天記錄裏
+        把文本消息加入到聊天記錄裏
     '''
     def image_msg_handler(self,msg):
         from_user_name = msg['FromUserName']
@@ -584,6 +603,34 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             
             msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
             self.messages.append(msg_img)
+        else:
+            pass
+    '''
+        系統消息處理
+    '''
+    def sys_msg_handler(self,msg):
+        from_user_name = msg['FromUserName']
+        if not self.current_select_contact:
+            pass
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        xml_content = msg['Content']
+        if xml_content:
+            xml_content = xml_content.replace("&gt;",">")
+            xml_content = xml_content.replace("&lt;","<")
+            xml_content = xml_content.replace("<br/>","")
+        
+        doc = xml.dom.minidom.parseString(xml_content)
+        replacemsg_nodes = doc.getElementsByTagName("replacemsg")
+        if replacemsg_nodes:
+            replacemsg = replacemsg_nodes[0].firstChild.data
+        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
+        
+        '''
+            如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+        '''
+        if self.current_select_contact and from_user_name == self.current_select_contact['UserName']:
+            self.messages.append(QtCore.QString.fromUtf8(format_msg))
+            self.messages.append(QtCore.QString.fromUtf8('%s') % ( replacemsg))
         else:
             pass
         
@@ -749,6 +796,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.voice_msg_handler(msg)
                     elif msg_type == 49:
                         self.app_msg_handler(msg)
+                    elif msg_type == 9999:
+                        self.sys_msg_handler(msg)
                     else:
                         self.default_msg_handler(msg)
 
@@ -816,7 +865,7 @@ class MemberListWidget(QtGui.QWidget):
         self.membersTable.horizontalHeader().setVisible(False)
         #More
         self.more = QPushButton(QtCore.QString.fromUtf8('顯示更多'))
-        self.verticalSpacer = QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.verticalSpacer = QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         
         self.membersTableModel = QStandardItemModel(1,4)
         self.initinal_member_list_widget(member_list)
@@ -849,8 +898,8 @@ class MemberListWidget(QtGui.QWidget):
         data_model.appendRow(cells)
         i = 3
         members_len = len(members)
-        if members_len > 40:
-            members_len = 40
+        if members_len > 15:
+            members_len = 15
         while i < members_len:
             cells = []
             for member in members[i:i+4]:
