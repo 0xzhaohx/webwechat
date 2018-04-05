@@ -642,7 +642,7 @@ class WeChatAPI(object):
             "pass_ticket":self.pass_ticket
         }
         _cookies = requests.utils.dict_from_cookiejar(self.session.cookies)
-        response = self.post(url=url, data=data,headers=headers,files=files,cookies={})
+        response = self.post(url=url, data=data,headers=headers,files=files)
         return response
     
     '''
@@ -661,6 +661,7 @@ class WeChatAPI(object):
         return data
 
     def get(self, url, data= {},stream=False):
+        print("url===================%s"%url)
         _headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
@@ -686,7 +687,8 @@ class WeChatAPI(object):
                 print("except")
             '''
 
-    def post(self, url, data, headers={}, stream=False,files=None,cookies={}):
+    def post(self, url, data, headers={}, stream=False,files=None):
+        print("url===================%s"%url)
         _headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/',
@@ -700,12 +702,8 @@ class WeChatAPI(object):
 
         while True:
             try:
-                if files:
-                    response = self.session.post(url=url, data=data, headers=_headers,files=files,cookies=cookies)
-                else:
-                    response = self.session.post(url=url, data=data, headers=_headers)
+                response = self.session.post(url=url, data=data, headers=_headers,files=files or {})
                 
-                #print("wxpluginkey:%s"%response.cookies["wxpluginkey"])
                 print("request cookies")
                 for item in response.cookies.items():
                     print(item)
