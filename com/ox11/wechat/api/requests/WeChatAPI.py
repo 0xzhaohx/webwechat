@@ -619,6 +619,19 @@ class WeChatAPI(object):
             
         webwx_data_ticket = self.session.cookies['webwx_data_ticket']
         client_media_id =int(time.time())
+        uploadmediarequest = str({
+            "UploadType":2,
+            "BaseRequest": self.base_request,
+            "ClientMediaId":client_media_id,
+            "TotalLen":int(os.path.getsize(upload_file)),
+            "StartPos":0,
+            "DataLen":int(os.path.getsize(upload_file)),
+            "MediaType":4,
+            "FromUserName":self.user['UserName'],
+            "ToUserName":to_contact['UserName'],
+            "FileMd5": md5_digest
+        })
+        uploadmediarequest = uploadmediarequest.replace("\'", "\"")
         data = {
             "id":"WU_FILE_0",
             "name":file_name,
@@ -626,22 +639,10 @@ class WeChatAPI(object):
             "lastModifiedDate":time.ctime(os.stat(upload_file).st_mtime),
             "size":os.path.getsize(upload_file),
             "mediatype":"pic",
-            "uploadmediarequest":str({
-                "UploadType":2,
-                "BaseRequest": self.base_request,
-                "ClientMediaId":client_media_id,
-                "TotalLen":int(os.path.getsize(upload_file)),
-                "StartPos":0,
-                "DataLen":int(os.path.getsize(upload_file)),
-                "MediaType":4,
-                "FromUserName":self.user['UserName'],
-                "ToUserName":to_contact['UserName'],
-                "FileMd5": md5_digest
-            }),
+            "uploadmediarequest":uploadmediarequest,
             "webwx_data_ticket":webwx_data_ticket,
             "pass_ticket":self.pass_ticket
         }
-        _cookies = requests.utils.dict_from_cookiejar(self.session.cookies)
         response = self.post(url=url, data=data,headers=headers,files=files)
         return response
     
