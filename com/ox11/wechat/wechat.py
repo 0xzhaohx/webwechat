@@ -19,7 +19,7 @@ import xml.dom.minidom
 from api.msg import Msg
 from PyQt4.Qt import QIcon, Qt
 from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction,\
-    QTableView, QVBoxLayout, QStandardItem
+    QTableView, QVBoxLayout, QStandardItem, QPushButton, QSpacerItem
 from PyQt4.QtCore import QSize
 import json
 
@@ -375,7 +375,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 break
 
     def current_chat_user_click(self):
-        if self.memberListWidget:
+        if False and self.memberListWidget:
             print("visible ddd%s:"+str(self.memberListWidget.isHidden()))
             if self.memberListWidget.isHidden():
                 rect = self.geometry()
@@ -390,8 +390,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             rect = self.geometry()
             print(rect.left(), rect.top())
             print(self.frameGeometry())
-            print(rect.width(), rect.height()) 
-            self.memberListWidget = MemberListWidget({})
+            print(rect.width(), rect.height())
+            memebers = [self.current_select_contact]
+            if self.current_select_contact['UserName'].find('@@') >= 0:
+                memebers = self.current_select_contact["MemberList"]
+            self.memberListWidget = MemberListWidget(memebers)
             self.memberListWidget.resize(QSize(MemberListWidget.WIDTH,rect.height()+self.frameGeometry().height()-self.geometry().height()))
             self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
             self.memberListWidget.show()
@@ -797,17 +800,69 @@ class MemberListWidget(QtGui.QWidget):
     WIDTH = 300
     def __init__(self,member_list):
         super(MemberListWidget,self).__init__()
+        self.user_home = os.path.expanduser('~')
+        self.setAcceptDrops(True)
+        self.app_home = self.user_home + '/.wechat/'
+        self.head_home = ("%s/heads"%(self.app_home))
+        self.cache_home = ("%s/cache/"%(self.app_home))
+        self.cache_image_home = "%s/image/"%(self.cache_home)
+        self.contact_head_home = ("%s/contact/"%(self.head_home))
+        self.default_head_icon = '%s/default/default.png'%(self.head_home)
         self.setWindowFlags(Qt.FramelessWindowHint|Qt.Popup)
         self.membersTable = QTableView()
+        self.membersTable.verticalHeader().setDefaultSectionSize(60)
+        self.membersTable.verticalHeader().setVisible(False)
+        self.membersTable.horizontalHeader().setDefaultSectionSize(60)
+        self.membersTable.horizontalHeader().setVisible(False)
+        #More
+        self.more = QPushButton(QtCore.QString.fromUtf8('顯示更多'))
+        self.verticalSpacer = QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        
         self.membersTableModel = QStandardItemModel(1,4)
         self.initinal_member_list_widget(member_list)
         mainLayout=QVBoxLayout()
         mainLayout.addWidget(self.membersTable)
+        mainLayout.addWidget(self.more)
+        mainLayout.addItem(self.verticalSpacer)
         self.setLayout(mainLayout)
         
     def initinal_member_list_widget(self,member_list):
-        self.membersTableModel.setHorizontalHeaderItem(0,QStandardItem("0000"))
+        #self.membersTableModel.setHorizontalHeaderItem(0,QStandardItem("0000"))
+        self.append_row(member_list, self.membersTableModel)
         self.membersTable.setModel(self.membersTableModel)
-    
+        self.membersTable.setIconSize(QSize(40,40))
+        
+    def append_row(self,members,data_model):
+        ###############
+        cells = []
+        item = QtGui.QStandardItem(QtCore.QString.fromUtf8("+"))
+        cells.append(item)
+        for member in members[0:3]:
+            user_head_path = self.contact_head_home + member['UserName']+".jpg"
+            if not os.path.exists(user_head_path):
+                user_head_path = self.default_head_icon
+            dn = member['DisplayName']
+            if not dn:
+                dn = member['NickName']
+            item = QtGui.QStandardItem(QIcon(user_head_path),QtCore.QString.fromUtf8(dn))
+            cells.append(item)
+        data_model.appendRow(cells)
+        i = 3
+        members_len = len(members)
+        if members_len > 40:
+            members_len = 40
+        while i < members_len:
+            cells = []
+            for member in members[i:i+4]:
+                user_head_path = self.contact_head_home + member['UserName']+".jpg"
+                if not os.path.exists(user_head_path):
+                    user_head_path = self.default_head_icon
+                dn = member['DisplayName']
+                if not dn:
+                    dn = member['NickName']
+                item = QtGui.QStandardItem(QIcon(user_head_path),QtCore.QString.fromUtf8(dn))
+                cells.append(item)
+            i = i + 4
+            data_model.appendRow(cells)
     def update_memebers(self,member_list):
         pass
