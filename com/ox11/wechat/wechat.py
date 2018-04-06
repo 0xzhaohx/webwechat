@@ -848,7 +848,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.webwx_sync_process(sync_response)
             sleep(11)
             
-class MemberListWidget(QtGui.QWidget):
+class MemberListWidget(QtGui.QDialog):
     WIDTH = 300
     def __init__(self,member_list):
         super(MemberListWidget,self).__init__()
@@ -890,8 +890,7 @@ class MemberListWidget(QtGui.QWidget):
         print("member_clicked")
         self.memberListWindow = MemberListWindow(self.members)
         self.memberListWindow.resize(400,600)
-        #self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
-        self.memberListWindow.show()
+        self.memberListWindow.exec_()
         
     def append_row(self,members,data_model):
         ###############
@@ -928,10 +927,11 @@ class MemberListWidget(QtGui.QWidget):
     def update_memebers(self,member_list):
         pass
     
-class MemberListWindow(QtGui.QWidget):
+class MemberListWindow(QtGui.QDialog):
     WIDTH = 600
     def __init__(self,member_list):
         super(MemberListWindow,self).__init__()
+        self.setModal(True)
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
         self.head_home = ("%s/heads"%(self.app_home))
