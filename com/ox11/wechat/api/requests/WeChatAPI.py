@@ -125,12 +125,8 @@ class WeChatAPI(object):
         self.timeout = 30
         self.session = requests.session()
         self.user_agent = (
-            'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0'
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'
         )
-        '''
-            'AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Chrome/63.0.3239.108 Safari/537.36'
-        '''
         self.version='0.1'
         self.wxversion = 'v2'
 
@@ -661,7 +657,19 @@ class WeChatAPI(object):
             with open(image, 'wb') as image:
                 image.write(data)
         return data
-
+    
+    def webwx_create_chatroom(self,member_list):
+        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxcreatechatroom" + \
+              '?r=%s&lang=%s&pass_ticket=%s' %(
+                  int(time.time()),self.lang,self.pass_ticket
+               )
+        data = {
+            "BaseRequest": self.base_request,
+            "MemberCount":len(member_list),
+            "MemberList":member_list,
+            "Topic":""
+        }
+        response = self.post(url=url, data=data)
     def get(self, url, data= {},stream=False):
         _headers = {
             'Connection': 'keep-alive',

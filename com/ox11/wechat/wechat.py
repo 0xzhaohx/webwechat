@@ -19,7 +19,8 @@ import xml.dom.minidom
 from api.msg import Msg
 from PyQt4.Qt import QIcon, Qt
 from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction,\
-    QTableView, QVBoxLayout, QStandardItem, QPushButton, QSpacerItem
+    QTableView, QVBoxLayout, QStandardItem, QPushButton, QSpacerItem,\
+    QRadioButton
 from PyQt4.QtCore import QSize
 import json
 
@@ -481,6 +482,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         把消息發送出去
     '''
     def send_image_msg(self,contact,images):
+        send_response = None
         for image in images:
             upload_response = self.wxapi.webwx_upload_media(contact,image)
             json_upload_response = json.loads(upload_response)
@@ -489,6 +491,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             msg = Msg(3, str(media_id), self.current_select_contact['UserName'])
             send_response = self.wxapi.webwx_send_msg(msg)
         self.up_2_top()
+        return send_response
         
     def up_2_top(self):
         #提昇from_user_name在會話列表中的位置
@@ -812,7 +815,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     self.draft.append("<img src=%s width=80 height=80>"%(fileName))
                     images = []
                     images.append(fileName)
-                    self.send_image_msg(self.current_select_contact,images)
+                    send_response = self.send_image_msg(self.current_select_contact,images)
                     
                     st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
                     format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
@@ -857,6 +860,7 @@ class MemberListWidget(QtGui.QWidget):
         self.cache_image_home = "%s/image/"%(self.cache_home)
         self.contact_head_home = ("%s/contact/"%(self.head_home))
         self.default_head_icon = '%s/default/default.png'%(self.head_home)
+        self.members = member_list
         self.setWindowFlags(Qt.FramelessWindowHint|Qt.Popup)
         self.membersTable = QTableView()
         self.membersTable.verticalHeader().setDefaultSectionSize(60)
@@ -868,7 +872,7 @@ class MemberListWidget(QtGui.QWidget):
         self.verticalSpacer = QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         
         self.membersTableModel = QStandardItemModel(1,4)
-        self.initinal_member_list_widget(member_list)
+        self.initinal_member_list_widget(self.members)
         mainLayout=QVBoxLayout()
         mainLayout.addWidget(self.membersTable)
         mainLayout.addWidget(self.more)
@@ -880,6 +884,14 @@ class MemberListWidget(QtGui.QWidget):
         self.append_row(member_list, self.membersTableModel)
         self.membersTable.setModel(self.membersTableModel)
         self.membersTable.setIconSize(QSize(40,40))
+        self.membersTable.clicked.connect(self.member_click)
+        
+    def member_click(self):
+        print("member_clicked")
+        self.memberListWindow = MemberListWindow(self.members)
+        self.memberListWindow.resize(400,600)
+        #self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
+        self.memberListWindow.show()
         
     def append_row(self,members,data_model):
         ###############
@@ -913,5 +925,57 @@ class MemberListWidget(QtGui.QWidget):
                 cells.append(item)
             i = i + 4
             data_model.appendRow(cells)
+    def update_memebers(self,member_list):
+        pass
+    
+class MemberListWindow(QtGui.QWidget):
+    WIDTH = 600
+    def __init__(self,member_list):
+        super(MemberListWindow,self).__init__()
+        self.user_home = os.path.expanduser('~')
+        self.app_home = self.user_home + '/.wechat/'
+        self.head_home = ("%s/heads"%(self.app_home))
+        self.cache_home = ("%s/cache/"%(self.app_home))
+        self.cache_image_home = "%s/image/"%(self.cache_home)
+        self.contact_head_home = ("%s/contact/"%(self.head_home))
+        self.default_head_icon = '%s/default/default.png'%(self.head_home)
+        self.members = member_list
+        self.membersTable = QTableView()
+        self.membersTable.verticalHeader().setDefaultSectionSize(60)
+        self.membersTable.verticalHeader().setVisible(False)
+        #self.membersTable.horizontalHeader().setDefaultSectionSize(60)
+        self.membersTable.horizontalHeader().setVisible(False)
+        #confirm
+        confirm = QPushButton(QtCore.QString.fromUtf8("確定"),self)
+        self.membersTableModel = QStandardItemModel(1,4)
+        self.initinal_member_list_widget()
+        mainLayout=QVBoxLayout()
+        mainLayout.addWidget(self.membersTable)
+        mainLayout.addWidget(confirm)
+        self.setLayout(mainLayout)
+        
+    def initinal_member_list_widget(self):
+        self.append_row(self.members, self.membersTableModel)
+        self.membersTable.setModel(self.membersTableModel)
+        self.membersTable.setIconSize(QSize(40,40))
+        
+    def append_row(self,members,data_model):
+        for (i,member) in enumerate(members):
+            cells = []
+            user_name = member['UserName']
+            user_name_cell = QtGui.QStandardItem(QtCore.QString.fromUtf8(user_name))
+            cells.append(user_name_cell)
+            
+            user_head_path = self.contact_head_home + member['UserName']+".jpg"
+            if not os.path.exists(user_head_path):
+                user_head_path = self.default_head_icon
+            dn = member['DisplayName']
+            if not dn:
+                dn = member['NickName']
+            item = QtGui.QStandardItem(QIcon(user_head_path),QtCore.QString.fromUtf8(dn))
+            cells.append(item)
+            data_model.appendRow(cells)
+            rb = QRadioButton("0000",self)
+            self.membersTable.setIndexWidget(data_model.index(i,3),rb)
     def update_memebers(self,member_list):
         pass
