@@ -484,8 +484,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         for image in images:
             upload_response = self.wxapi.webwx_upload_media(contact,image)
             json_upload_response = json.loads(upload_response)
-            print("upload_response :%s"%upload_response)
             media_id = json_upload_response['MediaId']
+            print("upload_response MediaId:%s"%media_id)
             msg = Msg(3, str(media_id), self.current_select_contact['UserName'])
             send_response = self.wxapi.webwx_send_msg(msg)
         self.up_2_top()

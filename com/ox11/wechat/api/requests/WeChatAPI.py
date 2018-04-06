@@ -544,7 +544,7 @@ class WeChatAPI(object):
     
     def webwx_send_msg(self,msg):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg" + \
-              '?pass_ticket=%s' % (
+              '?f=json&fun=async&pass_ticket=%s' % (
                   self.pass_ticket
               )
         local_id = client_msg_id = str(int(time.time() * 1000)) + \
@@ -564,6 +564,8 @@ class WeChatAPI(object):
             params['Msg']["Content"]=msg.content
         elif msg.type == 3:
             params['Msg']["MediaId"]=msg.media_id
+            params['Msg']["Content"]=""
+            params['Scene']=0
         else:
             pass
 
@@ -609,7 +611,6 @@ class WeChatAPI(object):
             'Origin': 'https://wx.qq.com'
         }
         options_response = self.options(url,headers=headers)
-        print("options_response:%s"%options_response)
         file_name = os.path.basename(str(upload_file))
         files = [('filename',("%s"%(file_name),open(upload_file,'rb'),'image/jpeg'))]
         with open(upload_file,'rb') as fe:
@@ -662,7 +663,6 @@ class WeChatAPI(object):
         return data
 
     def get(self, url, data= {},stream=False):
-        print("url===================%s"%url)
         _headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/?&lang=zh_TW',
@@ -689,7 +689,6 @@ class WeChatAPI(object):
             '''
 
     def post(self, url, data, headers={}, stream=False,files=None):
-        print("url===================%s"%url)
         _headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/',
@@ -705,12 +704,6 @@ class WeChatAPI(object):
             try:
                 response = self.session.post(url=url, data=data, headers=_headers,files=files or {})
                 
-                print("request cookies")
-                for item in response.cookies.items():
-                    print(item)
-                print(str(requests.utils.dict_from_cookiejar(response.cookies)))
-                print("request header:%s"%response.request.headers)
-                print("response headers:%s"%response.headers)
                 if stream:
                     data = response.content
                 else:
@@ -740,9 +733,9 @@ class WeChatAPI(object):
             try:
                 response = self.session.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=_headers)
                 response.encoding='utf-8'
-                data = response.text
+                response_text = response.text
                 response.close()
-                return data
+                return response_text
             except (KeyboardInterrupt, SystemExit):
                 raise
                 return False
@@ -760,8 +753,6 @@ class WeChatAPI(object):
 
         try:
             response = self.session.options(url=url,headers=_headers)
-            print("headers:%s"%(str(response.headers)))
-            #print("request headers:%s"%(str(response.request.headers)))
             response.encoding='utf-8'
             data = response.text
             response.close()

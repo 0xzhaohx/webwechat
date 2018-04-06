@@ -39,7 +39,7 @@ class Msg(object):
         self.type = type
         if type == 1:
             self.content = content
-        elif type ==3:
+        elif type == 3:
             self.media_id = content
         else:
             pass
