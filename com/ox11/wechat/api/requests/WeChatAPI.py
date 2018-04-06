@@ -601,14 +601,18 @@ class WeChatAPI(object):
     
     def webwx_upload_media(self,to_contact,upload_file):
         url = "https://file.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json"
-        #'Access-Control-Request-Method':'POST',
         headers = {
             'Host':'file.wx.qq.com',
             'Origin': 'https://wx.qq.com'
         }
         options_response = self.options(url,headers=headers)
         file_name = os.path.basename(str(upload_file))
-        files = [('filename',("%s"%(file_name),open(upload_file,'rb'),'image/jpeg'))]
+        file_extension = os.path.splitext(str(upload_file))[1]
+        if file_extension and len(file_extension) > 1 and file_extension.startswith("."):
+            file_extension = file_extension[1:(len(file_extension))]
+        file_type = 'image/%s'%(file_extension)
+        file_size = int(os.path.getsize(upload_file))
+        files = [('filename',("%s"%(file_name),open(upload_file,'rb'),file_type))]
         with open(upload_file,'rb') as fe:
             md5 = hashlib.md5()
             md5.update(fe.read())
@@ -616,25 +620,24 @@ class WeChatAPI(object):
             
         webwx_data_ticket = self.session.cookies['webwx_data_ticket']
         client_media_id =int(time.time())
-        uploadmediarequest = str({
+        uploadmediarequest = json.dumps({
             "UploadType":2,
             "BaseRequest": self.base_request,
             "ClientMediaId":client_media_id,
-            "TotalLen":int(os.path.getsize(upload_file)),
+            "TotalLen":file_size,
             "StartPos":0,
-            "DataLen":int(os.path.getsize(upload_file)),
+            "DataLen":file_size,
             "MediaType":4,
             "FromUserName":self.user['UserName'],
             "ToUserName":to_contact['UserName'],
             "FileMd5": md5_digest
         })
-        uploadmediarequest = uploadmediarequest.replace("\'", "\"")
         data = {
             "id":"WU_FILE_0",
             "name":file_name,
-            "type":"image/jpeg",
+            "type":file_type,
             "lastModifiedDate":time.ctime(os.stat(upload_file).st_mtime),
-            "size":os.path.getsize(upload_file),
+            "size":file_size,
             "mediatype":"pic",
             "uploadmediarequest":uploadmediarequest,
             "webwx_data_ticket":webwx_data_ticket,
