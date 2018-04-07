@@ -357,20 +357,18 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 for message in messages_list:
                     msg_type = message['MsgType']
                     if msg_type:
+                        if msg_type == 2 or msg_type == 51 or msg_type == 52:
+                            continue
                         if msg_type == 1:
                             self.text_msg_handler(message)
-                        elif msg_type == 2:
-                            pass
                         elif msg_type == 3:
                             self.image_msg_handler(message)
                         elif msg_type == 34:
                             self.voice_msg_handler(message)
                         elif msg_type == 49:
                             self.app_msg_handler(message)
-                        elif msg_type == 51:
-                            pass
-                        elif msg_type == 52:
-                            pass
+                        elif msg_type == 10002:
+                            self.sys_msg_handler(message)
                         else:
                             self.default_msg_handler(message)
                 break
@@ -382,7 +380,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 rect = self.geometry()
                 self.memberListWidget.resize(QSize(MemberListWidget.WIDTH,rect.height()+self.frameGeometry().height()-self.geometry().height()))
                 self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
-                self.memberListWidget.show()
+                self.memberListWidget.exec_()
                 print("show")
             else:
                 self.memberListWidget.hide()
@@ -481,17 +479,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     '''
         把圖片發送出去
     '''
-    def send_image_msg(self,contact,images):
+    def send_image_msg(self,contact,image):
         send_response = None
-        for image in images:
-            upload_response = self.wxapi.webwx_upload_media(contact,image)
-            json_upload_response = json.loads(upload_response)
-            media_id = json_upload_response['MediaId']
-            print("upload_response MediaId:%s"%media_id)
-            msg = Msg(3, str(media_id), self.current_chat_contact['UserName'])
-            print("send body:%s"%str(msg))
-            send_response = self.wxapi.webwx_send_msg(msg)
-            print("send_response :%s"%send_response)
+        upload_response = self.wxapi.webwx_upload_media(contact,image)
+        json_upload_response = json.loads(upload_response)
+        media_id = json_upload_response['MediaId']
+        print("upload_response MediaId:%s"%media_id)
+        msg = Msg(3, str(media_id), self.current_chat_contact['UserName'])
+        print("send body:%s"%str(msg))
+        send_response = self.wxapi.webwx_send_msg(msg)
+        print("send_response :%s"%send_response)
         self.up_2_top()
         return send_response
         
@@ -817,14 +814,17 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 if self.is_image(fileName):
                     fileName=QtCore.QString.fromUtf8(fileName)
                     self.draft.append("<img src=%s width=80 height=80>"%(fileName))
-                    images = []
-                    images.append(fileName)
-                    send_response = self.send_image_msg(self.current_chat_contact,images)
+                    send_response = self.send_image_msg(self.current_chat_contact,fileName)
+                    json_send_response = json.loads(send_response)
+                    print("send_response:%s"%send_response)
                     
+                    msg_id = json_send_response["MsgID"]
+                    if msg_id:
+                        self.wxapi.webwx_get_msg_img(msg_id)
                     st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
                     format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
                     self.messages.append(format_msg)
-                    msg_img = ('<img src=%s width=40 height=40>'%(fileName))
+                    msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
                     self.messages.append(msg_img)
                 else:
                     print(fileName)
@@ -852,7 +852,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.webwx_sync_process(sync_response)
             sleep(11)
             
-class MemberListWidget(QtGui.QDialog):
+class MemberListWidget(QtGui.QWidget):
     WIDTH = 300
     def __init__(self,member_list,contacts):
         super(MemberListWidget,self).__init__()
@@ -866,7 +866,7 @@ class MemberListWidget(QtGui.QDialog):
         self.default_head_icon = '%s/default/default.png'%(self.head_home)
         self.members = member_list
         self.contacts = contacts
-        self.setWindowFlags(Qt.FramelessWindowHint|Qt.Popup)
+        #self.setWindowFlags(Qt.FramelessWindowHint|Qt.Popup)
         self.membersTable = QTableView()
         self.membersTable.verticalHeader().setDefaultSectionSize(60)
         self.membersTable.verticalHeader().setVisible(False)
@@ -895,7 +895,7 @@ class MemberListWidget(QtGui.QDialog):
         print("member_clicked")
         self.memberListWindow = MemberListWindow(self.contacts)
         self.memberListWindow.resize(400,600)
-        self.memberListWindow.exec_()
+        self.memberListWindow.show()
         
     def append_row(self,members,data_model):
         ###############
@@ -985,7 +985,7 @@ class MemberListWindow(QtGui.QDialog):
             data_model.appendRow(cells)
             rb = QRadioButton("0000",self)
             self.membersTable.setIndexWidget(data_model.index(i,3),rb)
-    #@pyqtSlot
+    @pyqtSlot()
     def update_selected_count(self):
         pass
     
