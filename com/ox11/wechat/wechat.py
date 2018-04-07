@@ -21,7 +21,7 @@ from PyQt4.Qt import QIcon, Qt
 from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction,\
     QTableView, QVBoxLayout, QStandardItem, QPushButton, QSpacerItem,\
     QRadioButton
-from PyQt4.QtCore import QSize, pyqtSlot
+from PyQt4.QtCore import QSize, pyqtSlot, pyqtSignal
 import json
 
 reload(sys)
@@ -396,8 +396,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.memberListWidget = MemberListWidget(memebers,self.wxapi.member_list)
             self.memberListWidget.resize(QSize(MemberListWidget.WIDTH,rect.height()+self.frameGeometry().height()-self.geometry().height()))
             self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
+            
+            self.memberListWidget.Signal_OneParameter.connect(self.getSelectedUsers)
             self.memberListWidget.show()
-    
+            
+    @pyqtSlot(str)
+    def getSelectedUsers(self,users):
+        print("users %s"%users)
+        
     def member_item_clicked(self):
         self.chatWidget.setVisible(True)
         self.label.setVisible(False)
@@ -852,8 +858,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.webwx_sync_process(sync_response)
             sleep(11)
             
-class MemberListWidget(QtGui.QWidget):
+class MemberListWidget(QtGui.QDialog):
     WIDTH = 300
+    Signal_OneParameter = pyqtSignal(str)
     def __init__(self,member_list,contacts):
         super(MemberListWidget,self).__init__()
         self.user_home = os.path.expanduser('~')
@@ -893,9 +900,15 @@ class MemberListWidget(QtGui.QWidget):
         
     def member_click(self):
         print("member_clicked")
-        self.memberListWindow = MemberListWindow(self.contacts)
+        self.memberListWindow = ContactListWindow(self.contacts)
         self.memberListWindow.resize(400,600)
+        self.memberListWindow.Signal_OneParameter.connect(self.route)
         self.memberListWindow.show()
+    
+    @pyqtSlot(str)
+    def route(self,objectt):
+        print("route objectt :%s"%objectt)
+        self.Signal_OneParameter.emit(objectt)
         
     def append_row(self,members,data_model):
         ###############
@@ -932,10 +945,12 @@ class MemberListWidget(QtGui.QWidget):
     def update_memebers(self,member_list):
         pass
     
-class MemberListWindow(QtGui.QDialog):
+class ContactListWindow(QtGui.QDialog):
     WIDTH = 600
+    Signal_OneParameter = pyqtSignal(str)
+    
     def __init__(self,member_list):
-        super(MemberListWindow,self).__init__()
+        super(ContactListWindow,self).__init__()
         self.setModal(True)
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
@@ -985,12 +1000,6 @@ class MemberListWindow(QtGui.QDialog):
             data_model.appendRow(cells)
             rb = QRadioButton("0000",self)
             self.membersTable.setIndexWidget(data_model.index(i,3),rb)
-    @pyqtSlot()
-    def update_selected_count(self):
-        pass
-    
-    def update_memebers(self,member_list):
-        pass
     
     def member_item_clicked(self):
         selections = self.membersTable.selectionModel()
@@ -998,4 +1007,16 @@ class MemberListWindow(QtGui.QDialog):
         self.confirm.setText(QtCore.QString.fromUtf8("確定(%s)"%len(selectedIndexes)))
         
     def do_confirm(self):
-        self.close()
+        selections = self.membersTable.selectionModel()
+        selectedIndexes = selections.selectedIndexes()
+        selected_name = []
+        for index in selectedIndexes:
+            row = index.row()
+            index = self.membersTableModel.index(row,0)
+            user_name_obj = self.membersTableModel.data(index)
+            if user_name_obj:
+                user_name = user_name_obj.toString()
+                selected_name.append(str(user_name))
+        if len(selected_name) > 0:
+            self.Signal_OneParameter.emit(str(selected_name))
+        #self.close()
