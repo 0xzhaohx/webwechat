@@ -638,7 +638,7 @@ class WeChatAPI(object):
             "type":file_type,
             "lastModifiedDate":time.ctime(os.stat(upload_file).st_mtime),
             "size":file_size,
-            "mediatype":"pic",
+            "mediatype":"pic",#doc
             "uploadmediarequest":uploadmediarequest,
             "webwx_data_ticket":webwx_data_ticket,
             "pass_ticket":self.pass_ticket
@@ -662,6 +662,9 @@ class WeChatAPI(object):
         return data
     
     def webwx_create_chatroom(self,member_list):
+        '''
+        :param member_list[{UserName:"@xxxxxxxx"}]
+        '''
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxcreatechatroom" + \
               '?r=%s&lang=%s&pass_ticket=%s' %(
                   int(time.time()),self.lang,self.pass_ticket
