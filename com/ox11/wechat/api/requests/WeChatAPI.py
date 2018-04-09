@@ -686,7 +686,6 @@ class WeChatAPI(object):
             "MemberList":member_list,
             "Topic":""
         }
-        print("data :%s"%str(data))
         response = self.post_json(url=url,data=data)
         return response
     def get(self, url, data= {},stream=False):
@@ -750,8 +749,8 @@ class WeChatAPI(object):
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/',
             'Accept-Language': 'zh-TW,zh-HK;q=0.8,en-US;q=0.5,en;q=0.3',
-            "Content-Type": "application/json; charset=UTF-8",
-            'User-Agent': self.user_agent
+            'User-Agent': self.user_agent,
+            "Content-Type": "application/json; charset=UTF-8"
         }
 
         for (key,value) in headers.items():

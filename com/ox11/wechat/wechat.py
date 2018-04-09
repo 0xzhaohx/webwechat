@@ -254,7 +254,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         cells.append(tips_count_item)
         if "APPEND" == action:
             data_model.appendRow(cells)
-        elif "INSERT" == action and row:
+        elif "INSERT" == action and row >= 0:
             data_model.insertRow(row,cells)
         else:
             data_model.appendRow(cells)
@@ -429,7 +429,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #i
         i = {}
         i['UserName']=self.wxapi.user["UserName"]
-        member_list.append(i)
+        #member_list.append(i)
         
         response_data = self.wxapi.webwx_create_chatroom(member_list)
         print("webwx_create_chatroom response:%s"%response_data)
@@ -443,11 +443,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             }
             batch_response = self.wxapi.webwx_batch_get_contact(data)
             if batch_response['Count'] and batch_response['Count'] > 0:
-                new_chat_contact_list = batch_response['ContactList']
-                for new_contact in new_chat_contact_list:
-                    self.wxapi.member_list.append(new_contact)
-                    self.wxapi.webwx_get_head_img(new_contact["UserName"], new_contact["HeadImgUrl"])
-                    self.append_contact_row(new_contact,self.sessionTableModel,action="INSERT",row=0)
+                new_contact = batch_response['ContactList'][0]
+                remark_name = ("%s,%s,%s")%(self.wxapi.user["NickName"],self.current_chat_contact["NickName"],"")
+                new_contact["RemarkName"]=remark_name
+                self.wxapi.member_list.append(new_contact)
+                self.wxapi.webwx_get_head_img(new_contact["UserName"], new_contact["HeadImgUrl"])
+                self.append_contact_row(new_contact,self.sessionTableModel,action="INSERT",row=0)
             
         
     def member_item_clicked(self):
@@ -1077,4 +1078,5 @@ class ContactListWindow(QtGui.QDialog):
             dictt = {}
             dictt['UserNames']=selected_user_names
             self.Signal_OneParameter.emit(selected_user_names)
-        #self.close()
+        
+        self.close()
