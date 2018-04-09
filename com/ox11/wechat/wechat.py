@@ -169,10 +169,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             os.makedirs(self.head_home)
             
-        if os.path.exists(self.contact_head_home):
+        if os.path.exists(self.cache_image_home):
             pass
         else:
-            os.makedirs(self.contact_head_home)
+            os.makedirs(self.cache_image_home)
     '''
                 删除下载的头像文件
     '''
@@ -646,8 +646,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(QtCore.QString.fromUtf8(format_msg))
-            self.messages.append(QtCore.QString.fromUtf8(replacemsg))
+            self.messages.append(QtCore.QString.fromUtf8(("%s\r\n%s")%(format_msg,replacemsg)))
         else:
             pass
         
@@ -830,7 +829,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     self.draft.append("<img src=%s width=80 height=80>"%(fileName))
                     send_response = self.send_image_msg(self.current_chat_contact,fileName)
                     json_send_response = json.loads(send_response)
-                    print("send_response:%s"%send_response)
                     
                     msg_id = json_send_response["MsgID"]
                     if msg_id:
