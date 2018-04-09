@@ -16,6 +16,7 @@ import json
 import os
 import sys
 import hashlib
+import mimetypes
 
 '''
 1.ContactFlag:
@@ -545,7 +546,9 @@ class WeChatAPI(object):
               )
         local_id = client_msg_id = str(int(time.time() * 1000)) + \
             str(random.random())[:5].replace('.', '')
-
+        headers = {
+            "content-type": "application/json; charset=UTF-8"
+        }
         params = {
             'BaseRequest': self.base_request,
             'Msg': {
@@ -565,7 +568,7 @@ class WeChatAPI(object):
         else:
             pass
 
-        data = self.post_json(url, params)
+        data = self.post_json(url,params,headers=headers)
         return data
 
     def webwx_revoke_msg(self,msg):
@@ -600,6 +603,7 @@ class WeChatAPI(object):
         return data
     
     def webwx_upload_media(self,to_contact,upload_file):
+        upload_file = str(upload_file)
         url = "https://file.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json"
         headers = {
             'Host':'file.wx.qq.com',
@@ -607,12 +611,19 @@ class WeChatAPI(object):
         }
         options_response = self.options(url,headers=headers)
         file_name = os.path.basename(str(upload_file))
+        '''
         file_extension = os.path.splitext(str(upload_file))[1]
         if file_extension and len(file_extension) > 1 and file_extension.startswith("."):
             file_extension = file_extension[1:(len(file_extension))]
         file_type = 'image/%s'%(file_extension)
+        '''
         file_size = int(os.path.getsize(upload_file))
-        files = [('filename',("%s"%(file_name),open(upload_file,'rb'),file_type))]
+        file_mimetype = mimetypes.guess_type(upload_file)[0]
+        mediatype = "pic"
+        if not file_mimetype.startswith("image"):
+            mediatype = "doc"
+            
+        files = [('filename',("%s"%(file_name),open(upload_file,'rb'),file_mimetype))]
         with open(upload_file,'rb') as fe:
             md5 = hashlib.md5()
             md5.update(fe.read())
@@ -635,10 +646,10 @@ class WeChatAPI(object):
         data = {
             "id":"WU_FILE_0",
             "name":file_name,
-            "type":file_type,
+            "type":file_mimetype,
             "lastModifiedDate":time.ctime(os.stat(upload_file).st_mtime),
             "size":file_size,
-            "mediatype":"pic",#doc
+            "mediatype":mediatype,#pic or doc
             "uploadmediarequest":uploadmediarequest,
             "webwx_data_ticket":webwx_data_ticket,
             "pass_ticket":self.pass_ticket
@@ -676,7 +687,7 @@ class WeChatAPI(object):
             "Topic":""
         }
         print("data :%s"%str(data))
-        response = self.post(url=url, data=data)
+        response = self.post_json(url=url,data=data)
         return response
     def get(self, url, data= {},stream=False):
         _headers = {
@@ -739,6 +750,7 @@ class WeChatAPI(object):
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/',
             'Accept-Language': 'zh-TW,zh-HK;q=0.8,en-US;q=0.5,en;q=0.3',
+            "Content-Type": "application/json; charset=UTF-8",
             'User-Agent': self.user_agent
         }
 
