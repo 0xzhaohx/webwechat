@@ -404,8 +404,15 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def getSelectedUsers(self,users):
         if not users:
             return
-        dictt = json.loads(str(users))
-        member_list = dictt["UserNames"]
+        print(str(users))
+        #dictt = json.loads(str(users))
+        user_list = str(users).split(";")
+        member_list = []
+        for s_user in user_list:
+            if len(s_user) > 1:
+                user = {}
+                user['UserName']=s_user
+                member_list.append(user)
         response_data = self.wxapi.webwx_create_chatroom(member_list)
         print("webwx_create_chatroom response:%s"%response_data)
         
@@ -1015,7 +1022,7 @@ class ContactListWindow(QtGui.QDialog):
     def do_confirm(self):
         selections = self.membersTable.selectionModel()
         selectedIndexes = selections.selectedIndexes()
-        selected_user_name = []
+        selected_user_names = ""
         for index in selectedIndexes:
             row = index.row()
             index = self.membersTableModel.index(row,0)
@@ -1024,9 +1031,10 @@ class ContactListWindow(QtGui.QDialog):
                 user_name = user_name_obj.toString()
                 user = {}
                 user['UserName']=str(user_name)
-                selected_user_name.append(user)
-        if len(selected_user_name) > 0:
+                selected_user_names=selected_user_names+(user_name)
+                selected_user_names=selected_user_names+(";")
+        if len(selected_user_names) > 0:
             dictt = {}
-            dictt['UserNames']=selected_user_name
-            self.Signal_OneParameter.emit(json.dumps(dictt))
+            dictt['UserNames']=selected_user_names
+            self.Signal_OneParameter.emit(selected_user_names)
         #self.close()
