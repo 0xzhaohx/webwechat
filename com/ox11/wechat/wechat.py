@@ -404,7 +404,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def getSelectedUsers(self,users):
         if not users:
             return
-        print("users %s"%users)
         dictt = json.loads(str(users))
         member_list = dictt["UserNames"]
         response_data = self.wxapi.webwx_create_chatroom(member_list)
@@ -558,33 +557,35 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pass
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
         to_user_name = msg['ToUserName']
-        contact = None
-        if to_user_name == self.wxapi.user["UserName"]:
-            contact = self.wxapi.user
+        
+        if to_user_name == to_user_name:
+            from_user = self.wxapi.user
         else:
-            contact = self.get_contact(to_user_name)
-        dn = None
-        if contact['UserName'].find('@@') >= 0:
-            members = contact["MemberList"]
+            from_user = self.get_contact(to_user_name)
+        from_user_display_name = None
+        from_user_name = msg['FromUserName']
+        #如果是群消息
+        if to_user_name.find('@@') >= 0:
+            members = from_user["MemberList"]
             for member in members:
-                if to_user_name == member['UserName']:
-                    dn = member['RemarkName']
-                    if not dn:
-                        dn = member['NickName']
+                if from_user_name == member['UserName']:
+                    from_user_display_name = member['RemarkName']
+                    if not from_user_display_name:
+                        from_user_display_name = member['NickName']
                     break
         else:
-            dn = contact['RemarkName']
-            if not dn:
-                dn = contact['NickName']
-        if not dn:
-            dn = to_user_name
-        format_msg = ('(%s) %s:') % (st, dn)
+            from_user_display_name = from_user['RemarkName']
+            if not from_user_display_name:
+                from_user_display_name = from_user['NickName']
+                
+        if not from_user_display_name:
+            from_user_display_name = from_user_name
+        format_msg = ('(%s) %s:') % (st, from_user_display_name)
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(QtCore.QString.fromUtf8(format_msg))
-            self.messages.append(QtCore.QString.fromUtf8(msg['Content']))
+            self.messages.append(QtCore.QString.fromUtf8("%s\r\n%s"%(format_msg,msg['Content'])))
         else:
             pass
         
@@ -795,14 +796,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             print("msg body:%s"%str(msg))
             msg_type = msg['MsgType']
             if msg_type:
-                from_user_name = msg['FromUserName']
+                to_user_name = msg['ToUserName']
                 if msg_type == 2 or msg_type == 51 or msg_type == 52:
                     continue
                 '''
                 没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中;
                 如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
                 '''
-                if (not self.current_chat_contact) or from_user_name != self.current_chat_contact['UserName']:
+                if (not self.current_chat_contact) or to_user_name != self.current_chat_contact['UserName']:
                     self.put_msg_cache(msg)
                 else:
                     if msg_type == 1:
@@ -881,7 +882,7 @@ class MemberListWidget(QtGui.QDialog):
         self.default_head_icon = '%s/default/default.png'%(self.head_home)
         self.members = member_list
         self.contacts = contacts
-        #self.setWindowFlags(Qt.FramelessWindowHint|Qt.Popup)
+        #self.setWindowFlags(Qt.FramelessWindowHint)#|Qt.Popup
         self.membersTable = QTableView()
         self.membersTable.verticalHeader().setDefaultSectionSize(60)
         self.membersTable.verticalHeader().setVisible(False)
@@ -1023,7 +1024,11 @@ class ContactListWindow(QtGui.QDialog):
             user_name_obj = self.membersTableModel.data(index)
             if user_name_obj:
                 user_name = user_name_obj.toString()
-                selected_user_name.append({"UserName":("%s")%user_name})
+                user = {}
+                user['UserName']=str(user_name)
+                selected_user_name.append(user)
         if len(selected_user_name) > 0:
-            self.Signal_OneParameter.emit(json.dumps({"UserNames":selected_user_name}))
+            dictt = {}
+            dictt['UserNames']=selected_user_name
+            self.Signal_OneParameter.emit(json.dumps(dictt))
         #self.close()
