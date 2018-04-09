@@ -675,7 +675,9 @@ class WeChatAPI(object):
             "MemberList":member_list,
             "Topic":""
         }
+        print("data :%s"%str(data))
         response = self.post(url=url, data=data)
+        return response
     def get(self, url, data= {},stream=False):
         _headers = {
             'Connection': 'keep-alive',
