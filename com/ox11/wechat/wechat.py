@@ -20,9 +20,10 @@ from api.msg import Msg
 from PyQt4.Qt import QIcon, Qt
 from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction,\
     QTableView, QVBoxLayout, QStandardItem, QPushButton, QSpacerItem,\
-    QRadioButton
+    QRadioButton, QDialog, QTextCursor
 from PyQt4.QtCore import QSize, pyqtSlot, pyqtSignal
 import json
+from com.ox11.wechat.emotion import Emotion
 
 reload(sys)
 
@@ -97,6 +98,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.memberButton.clicked.connect(self.member_button_clicked)
 
         self.sendButton.clicked.connect(self.send_msg)
+        self.emotionButton.clicked.connect(self.select_emotion)
         self.selectImageFileButton.clicked.connect(self.select_document)
         self.currentChatUser.clicked.connect(self.current_chat_user_click)
         self.addMenu4SendButton()
@@ -862,6 +864,21 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     else:
                         self.default_msg_handler(msg)
 
+    def select_emotion(self):
+        emotionWidget = Emotion(self)
+        emotionWidget.resize(QSize(460,300))
+        emotionWidget.setWindowTitle("----")
+        emotionWidget.selectChanged.connect(self.get_select_emotion)
+        emotionWidget.exec_()
+        if QDialog.Accepted == emotionWidget.accept():
+            selected_emotion = emotionWidget.get_selected_emotion()
+            print("selected_emotion %s"%selected_emotion)
+            
+    @pyqtSlot(str)
+    def get_select_emotion(self,emotion):
+        self.draft.moveCursor(QTextCursor.End)
+        self.draft.append("<img src=%s>"%(os.path.join(Emotion.EMOTION_DIR,str(emotion))))
+        
     def select_document(self):
         fileDialog = QFileDialog(self)
         if fileDialog.exec_():
