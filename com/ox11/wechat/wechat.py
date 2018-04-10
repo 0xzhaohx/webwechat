@@ -536,11 +536,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         upload_response = self.wxapi.webwx_upload_media(contact,image)
         json_upload_response = json.loads(upload_response)
         media_id = json_upload_response['MediaId']
-        print("upload_response MediaId:%s"%media_id)
+        print("upload_response MediaId:\r\n%s"%media_id)
         msg = Msg(3, str(media_id), self.current_chat_contact['UserName'])
-        print("send body:%s"%str(msg))
         send_response = self.wxapi.webwx_send_msg(msg)
-        print("send_response :%s"%send_response)
+        print("send_response :\r\n%s"%send_response)
         self.up_2_top()
         return send_response
         
@@ -698,10 +697,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             pass
         
-    '''
-        把應用消息加入到聊天記錄裏，應該指的是由其他應用分享的消息
-    '''
     def app_msg_handler(self,msg):
+        '''把應用消息加入到聊天記錄裏，應該指的是由其他應用分享的消息
+        '''
         from_user_name = msg['FromUserName']
         if not self.current_chat_contact:
             pass
@@ -722,14 +720,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             desc = desc_nodes[0].firstChild.data
         if app_url_nodes:
             app_url = app_url_nodes[0].firstChild.data
-        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
+        format_msg = ('(%s) %s:') % (st, from_user_name)
         
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
-            self.messages.append(QtCore.QString.fromUtf8('%s %s %s') % ( title,desc,app_url))
+            self.messages.append(QtCore.QString.fromUtf8(('%s %s %s')%(title,desc,app_url)))
         else:
             pass
         

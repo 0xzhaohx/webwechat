@@ -191,15 +191,16 @@ class WeChatAPI(object):
         data = self.post(url, params)
 
         #print(data)
-    '''
+    
+    def wait4login(self,tip=1):
+        '''
         tip = 0 已扫描
         tip = 1 未扫描
         turn
         408 timeout
         200
         201
-    '''
-    def wait4login(self,tip=1):
+        '''
         url = "https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login" + "?loginicon="+str(self.login_icon)+"&tip=" + str(tip) + "&uuid=" + self.uuid + "&_" + str(int(time.time()))
         data = self.get(url)
         data = data.replace("\n","")
@@ -463,33 +464,23 @@ class WeChatAPI(object):
             '_': int(time.time())
         }
 
-        headers = {
-            'accept':'*/*',
-            'accept-encoding':'gzip, deflate, br',
-            'connection': 'keep-alive',
-            "referer": "https://wx.qq.com/",
-            'user-agent': self.user_agent
-        }
         url = host + '?' + urllib.urlencode(params)
         data = self.get(url)
-        #print("sync_check_response:")
-        #print(data)
         pm = re.search(r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}', data)
         if pm:
             return (pm.group(1), pm.group(2))
         else:
             return (-1,-1)
 
-    '''
-    BaseResponse
-    AddMsgCount:新增消息数
-    AddMsgList：新增消息列表
-    ModContactCount: 变更联系人数目
-    ModContactList: 变更联系人列表
-    SyncKey:新的synckey列表
-    '''
     def webwx_sync(self):
-
+        '''
+        BaseResponse
+        AddMsgCount:新增消息数
+        AddMsgList：新增消息列表
+        ModContactCount: 变更联系人数目
+        ModContactList: 变更联系人列表
+        SyncKey:新的synckey列表
+        '''
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync" + \
             '?sid=%s&skey=%s&pass_ticket=%s' % (
                 self.sid, self.skey, self.pass_ticket
@@ -500,9 +491,9 @@ class WeChatAPI(object):
             'rr':~int(time.time())
         }
         headers = {
-            'user-agent': self.user_agent,
-            "content-type": "application/json; charset=UTF-8",
-            "referer": "https://wx.qq.com"
+            'User-Agent': self.user_agent,
+            "Content-Type": "application/json; charset=UTF-8",
+            "Referer": "https://wx.qq.com"
         }
 
         data = self.post_json(url, params)
@@ -567,7 +558,7 @@ class WeChatAPI(object):
             params['Scene']=0
         else:
             pass
-
+        print("send msg body:\r\n%s"%json.dumps(params, ensure_ascii=False).encode('utf8'))
         data = self.post_json(url,params,headers=headers)
         return data
 
@@ -619,6 +610,7 @@ class WeChatAPI(object):
         '''
         file_size = int(os.path.getsize(upload_file))
         file_mimetype = mimetypes.guess_type(upload_file)[0]
+       
         mediatype = "pic"
         if not file_mimetype.startswith("image"):
             mediatype = "doc"
@@ -627,7 +619,7 @@ class WeChatAPI(object):
         with open(upload_file,'rb') as fe:
             md5 = hashlib.md5()
             md5.update(fe.read())
-            md5_digest = md5.hexdigest()
+            file_md5_digest = md5.hexdigest()
             
         webwx_data_ticket = self.session.cookies['webwx_data_ticket']
         client_media_id =int(time.time())
@@ -641,13 +633,17 @@ class WeChatAPI(object):
             "MediaType":4,
             "FromUserName":self.user['UserName'],
             "ToUserName":to_contact['UserName'],
-            "FileMd5": md5_digest
+            "FileMd5": file_md5_digest
         })
+        last_modified_date_seconds = os.stat(upload_file).st_mtime
+        tup_last=time.localtime(last_modified_date_seconds)
+        strftime = time.strftime("%a %b %d %Y %H:%M:%S",tup_last)
+        file_last_modified_date= ("%s %s")%(strftime,"GMT+0800")
         data = {
-            "id":"WU_FILE_0",
+            "id":"WU_FILE_1",
             "name":file_name,
             "type":file_mimetype,
-            "lastModifiedDate":time.ctime(os.stat(upload_file).st_mtime),
+            "lastModifiedDate":file_last_modified_date,
             "size":file_size,
             "mediatype":mediatype,#pic or doc
             "uploadmediarequest":uploadmediarequest,
@@ -691,7 +687,7 @@ class WeChatAPI(object):
     def get(self, url, data= {},stream=False):
         _headers = {
             'Connection': 'keep-alive',
-            'Referer': 'https://wx.qq.com/?&lang=zh_TW',
+            'Referer': 'https://wx.qq.com/',
             'Accept-Language': 'zh-TW,zh-HK;q=0.8,en-US;q=0.5,en;q=0.3',
             'User-Agent': self.user_agent
         }
@@ -728,7 +724,7 @@ class WeChatAPI(object):
 
         while True:
             try:
-                response = self.session.post(url=url, data=data, headers=_headers,files=files or {})
+                response = self.session.post(url=url, data=data, headers=_headers,files=files)
                 
                 if stream:
                     data = response.content
