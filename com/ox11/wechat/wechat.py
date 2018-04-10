@@ -532,14 +532,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     '''
         把圖片發送出去
     '''
-    def send_image_msg(self,contact,image):
+    def upload_send_msg_image(self,contact,image):
         upload_response = self.wxapi.webwx_upload_media(contact,image)
         json_upload_response = json.loads(upload_response)
         media_id = json_upload_response['MediaId']
-        print("upload_response MediaId:\r\n%s"%media_id)
         msg = Msg(3, str(media_id), self.current_chat_contact['UserName'])
-        send_response = self.wxapi.webwx_send_msg(msg)
-        print("send_response :\r\n%s"%send_response)
+        send_response = self.wxapi.webwx_send_msg_img(msg)
         self.up_2_top()
         return send_response
         
@@ -873,7 +871,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 if self.is_image(fileName):
                     fileName=QtCore.QString.fromUtf8(fileName)
                     self.draft.append("<img src=%s width=80 height=80>"%(fileName))
-                    send_response = self.send_image_msg(self.current_chat_contact,fileName)
+                    send_response = self.upload_send_msg_image(self.current_chat_contact,fileName)
                     json_send_response = json.loads(send_response)
                     
                     msg_id = json_send_response["MsgID"]

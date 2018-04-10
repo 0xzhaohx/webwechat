@@ -538,7 +538,7 @@ class WeChatAPI(object):
         local_id = client_msg_id = str(int(time.time() * 1000)) + \
             str(random.random())[:5].replace('.', '')
         headers = {
-            "content-type": "application/json; charset=UTF-8"
+            "Content-Type": "application/json; charset=UTF-8"
         }
         params = {
             'BaseRequest': self.base_request,
@@ -548,17 +548,48 @@ class WeChatAPI(object):
                 "ToUserName":msg.to_user_name,
                 "LocalID":local_id,
                 "ClientMsgId":client_msg_id
-            }
+            },
+            "Scene":0
         }
         if msg.type == 1:
             params['Msg']["Content"]=msg.content
         elif msg.type == 3:
             params['Msg']["MediaId"]=msg.media_id
             params['Msg']["Content"]=""
-            params['Scene']=0
         else:
             pass
         print("send msg body:\r\n%s"%json.dumps(params, ensure_ascii=False).encode('utf8'))
+        data = self.post_json(url,params,headers=headers)
+        return data
+    
+    def webwx_send_msg_img(self,msg):
+        url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg" + \
+              '?f=json&fun=async&pass_ticket=%s' % (
+                  self.pass_ticket
+              )
+        local_id = client_msg_id = str(int(time.time() * 1000)) + \
+            str(random.random())[:5].replace('.', '')
+        headers = {
+            "Content-Type": "application/json; charset=UTF-8"
+        }
+        params = {
+            'BaseRequest': self.base_request,
+            'Msg': {
+                "Type":msg.type,
+                "FromUserName":self.user['UserName'],
+                "ToUserName":msg.to_user_name,
+                "LocalID":local_id,
+                "ClientMsgId":client_msg_id
+            },
+            "Scene":0
+        }
+        if msg.type == 1:
+            params['Msg']["Content"]=msg.content
+        elif msg.type == 3:
+            params['Msg']["MediaId"]=msg.media_id
+            params['Msg']["Content"]=""
+        else:
+            pass
         data = self.post_json(url,params,headers=headers)
         return data
 
@@ -714,7 +745,6 @@ class WeChatAPI(object):
         _headers = {
             'Connection': 'keep-alive',
             'Referer': 'https://wx.qq.com/',
-            'Accept-Language': 'zh-TW,zh-HK;q=0.8,en-US;q=0.5,en;q=0.3',
             'User-Agent': self.user_agent
         }
         #'Content-Type': 'application/json; charset=UTF-8',
