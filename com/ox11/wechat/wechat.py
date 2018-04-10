@@ -869,19 +869,21 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             for fileName in fileNames:
                 fileName = str(fileName)
                 if self.is_image(fileName):
-                    fileName=QtCore.QString.fromUtf8(fileName)
-                    self.draft.append("<img src=%s width=80 height=80>"%(fileName))
                     send_response = self.upload_send_msg_image(self.current_chat_contact,fileName)
                     json_send_response = json.loads(send_response)
                     
                     msg_id = json_send_response["MsgID"]
+                    #send success append the image to history;failed append to draft 
                     if msg_id:
                         self.wxapi.webwx_get_msg_img(msg_id)
-                    st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-                    format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
-                    self.messages.append(format_msg)
-                    msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
-                    self.messages.append(msg_img)
+                        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+                        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
+                        self.messages.append(format_msg)
+                        msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
+                        self.messages.append(msg_img)
+                    else:
+                        fileName=QtCore.QString.fromUtf8(fileName)
+                        self.draft.append("<img src=%s width=80 height=80>"%(fileName))
                 else:
                     print(fileName)
                     
