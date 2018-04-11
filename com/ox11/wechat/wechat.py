@@ -337,6 +337,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def session_item_clicked(self):
         self.chatWidget.setVisible(True)
         self.label.setVisible(False)
+        #self.memberListWidget.destroy()
         current_row = self.sessionWidget.currentIndex().row()
         user_name_index = self.sessionTableModel.index(current_row,0)
         user_name_o = self.sessionTableModel.data(user_name_index)
@@ -382,13 +383,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 break
 
     def current_chat_user_click(self):
-        if False and self.memberListWidget:
+        if self.memberListWidget:
             print("visible ddd%s:"+str(self.memberListWidget.isHidden()))
             if self.memberListWidget.isHidden():
                 rect = self.geometry()
                 self.memberListWidget.resize(QSize(MemberListWidget.WIDTH,rect.height()+self.frameGeometry().height()-self.geometry().height()))
                 self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
-                self.memberListWidget.exec_()
+                self.memberListWidget.show()
                 print("show")
             else:
                 self.memberListWidget.hide()
@@ -405,7 +406,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.memberListWidget.resize(QSize(MemberListWidget.WIDTH,rect.height()+self.frameGeometry().height()-self.geometry().height()))
             self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
             
-            self.memberListWidget.Signal_OneParameter.connect(self.getSelectedUsers)
+            self.memberListWidget.membersChanged.connect(self.getSelectedUsers)
             self.memberListWidget.show()
             
     @pyqtSlot(str)
@@ -549,53 +550,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         taked_row = self.sessionTableModel.takeRow(current_row)
         self.sessionTableModel.insertRow(0 ,taked_row)
         self.sessionWidget.selectRow(0)
-    '''
-        默認的消息處理handler
-    '''
-    def default_msg_handler(self,msg):
-        self.text_msg_handler(msg)
-    
-    '''
-        把語音消息加入到聊天記錄裏
-    '''
-    def voice_msg_handler(self,msg):
-        from_user_name = msg['FromUserName']
-        if not self.current_chat_contact:
-            pass
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
-        '''
-            如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
-        '''
-        if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(QtCore.QString.fromUtf8(format_msg))
-            self.messages.append(QtCore.QString.fromUtf8("請在手機端收聽語音"))
-        else:
-            pass
-    '''
-        把語音消息加入到聊天記錄裏
-    '''
-    def video_msg_handler(self,msg):
-        from_user_name = msg['FromUserName']
-        if not self.current_chat_contact:
-            pass
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
-        '''
-            如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
-        '''
-        if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(QtCore.QString.fromUtf8(format_msg))
-            self.messages.append(QtCore.QString.fromUtf8("請在手機端觀看視頻"))
-        else:
-            pass
-    '''
-        把文本消息加入到聊天記錄裏
-    '''
-    def text_msg_handler(self,msg):
-        if not self.current_chat_contact:
-            pass
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        
+    def get_user_display_name(self,msg):
+        
         from_user_name = msg['FromUserName']
         
         if from_user_name == self.wxapi.user["UserName"]:
@@ -604,9 +561,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             from_user = self.get_contact(from_user_name)
         #如果為群，則消息來源顯示from_member_name
         from_user_display_name = from_member_name= None
-        from_user_name = msg['FromUserName']
-        msg_content = msg['Content']
         #如果是群消息
+        msg_content = msg['Content']
         if from_user_name.find('@@') >= 0:
             index = msg_content.index(":")
             
@@ -628,11 +584,70 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 
         if not from_user_display_name:
             from_user_display_name = from_user_name
+        
+        return from_user_display_name
+    '''
+        默認的消息處理handler
+    '''
+    def default_msg_handler(self,msg):
+        self.text_msg_handler(msg)
+    
+    '''
+        把語音消息加入到聊天記錄裏
+    '''
+    def voice_msg_handler(self,msg):
+        if not self.current_chat_contact:
+            pass
+        
+        from_user_display_name = self.get_user_display_name(msg)
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        format_msg = ('(%s) %s:') % (st, from_user_display_name)
+        '''
+        Note:如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+        '''
+        to_user_name = msg['ToUserName']
+        if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
+            self.messages.append(QtCore.QString.fromUtf8(format_msg))
+            self.messages.append(QtCore.QString.fromUtf8("請在手機端收聽語音"))
+        else:
+            pass
+    '''
+        把語音消息加入到聊天記錄裏
+    '''
+    def video_msg_handler(self,msg):
+        if not self.current_chat_contact:
+            pass
+        from_user_display_name = self.get_user_display_name(msg)
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
         format_msg = ('(%s) %s:') % (st, from_user_display_name)
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
-        if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
+        to_user_name = msg['ToUserName']
+        if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
+            self.messages.append(QtCore.QString.fromUtf8(format_msg))
+            self.messages.append(QtCore.QString.fromUtf8("請在手機端觀看視頻"))
+        else:
+            pass
+        
+    def text_msg_handler(self,msg):
+        '''
+        Note:把文本消息加入到聊天記錄裏
+        '''
+        if not self.current_chat_contact:
+            pass
+        
+        from_user_display_name = self.get_user_display_name(msg)
+        
+        msg_content = msg['Content']
+            
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        format_msg = ('(%s) %s:') % (st, from_user_display_name)
+        '''
+        Note:如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+        '''
+        to_user_name = msg['ToUserName']
+        if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8("%s\r\n%s"%(format_msg,msg_content)))
         else:
             pass
@@ -651,19 +666,19 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         把文本消息加入到聊天記錄裏
     '''
     def image_msg_handler(self,msg):
-        from_user_name = msg['FromUserName']
         if not self.current_chat_contact:
             pass
+        from_user_display_name = self.get_user_display_name(msg)
+        to_user_name = msg['ToUserName']
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
+        format_msg = ('(%s) %s:') % (st, from_user_display_name)
         msg_id = msg['MsgId']
         self.wxapi.webwx_get_msg_img(msg_id)
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
-        if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
+        if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
-            
             msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
             self.messages.append(msg_img)
         else:
@@ -672,10 +687,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         系統消息處理
     '''
     def sys_msg_handler(self,msg):
-        from_user_name = msg['FromUserName']
         if not self.current_chat_contact:
             pass
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
         xml_content = msg['Content']
         if xml_content:
             xml_content = xml_content.replace("&gt;",">")
@@ -688,10 +701,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #TODO 用old msg id 從歷史中刪去
         if replacemsg_nodes:
             replacemsg = str(replacemsg_nodes[0].firstChild.data)
-        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
+            
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        from_user_display_name = self.get_user_display_name(msg)
+        format_msg = ('(%s) %s:') % (st, from_user_display_name)
         
+        to_user_name = msg['ToUserName']
         # 如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
-        if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
+        if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(("%s\r\n%s")%(format_msg,replacemsg)))
         else:
             pass
@@ -699,10 +716,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def app_msg_handler(self,msg):
         '''把應用消息加入到聊天記錄裏，應該指的是由其他應用分享的消息
         '''
-        from_user_name = msg['FromUserName']
         if not self.current_chat_contact:
             pass
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
         xml_content = msg['Content']
         if xml_content:
             xml_content = xml_content.replace("&gt;",">")
@@ -719,27 +734,32 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             desc = desc_nodes[0].firstChild.data
         if app_url_nodes:
             app_url = app_url_nodes[0].firstChild.data
-        format_msg = ('(%s) %s:') % (st, from_user_name)
+        
+        from_user_display_name = self.get_user_display_name(msg)
+        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+        format_msg = ('(%s) %s:') % (st, from_user_display_name)
         
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
-        if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
+        to_user_name = msg['ToUserName']
+        if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
             self.messages.append(QtCore.QString.fromUtf8(format_msg))
             self.messages.append(QtCore.QString.fromUtf8(('%s %s %s')%(title,desc,app_url)))
         else:
             pass
         
-    '''
-    '''       
     def put_msg_cache(self,msg):
-        from_user_name = msg['FromUserName']
-        if self.msg_cache.has_key(from_user_name):
-            messages_list = self.msg_cache[from_user_name]
+        '''
+        s用ToUserName做Key把消息存起來，同時把此人置頂
+        '''   
+        to_user_name = msg['ToUserName']
+        if self.msg_cache.has_key(to_user_name):
+            messages_list = self.msg_cache[to_user_name]
         else:
             messages_list = []
         messages_list.append(msg)
-        self.msg_cache[from_user_name] = messages_list
+        self.msg_cache[to_user_name] = messages_list
         #TODO ADD TIPS
         '''
                         增加消息數量提示（提昇此人在會話列表中的位置）
@@ -751,7 +771,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             user_name_o = self.sessionTableModel.data(index)
             user_name = user_name_o.toString()
             #user_name = self.sessionTableModel.item(i,0).text()
-            if user_name and user_name == from_user_name:
+            if user_name and user_name == to_user_name:
                 exist = True
                 tip_index = self.sessionTableModel.index(row,3)
                 tips_count_obj = self.sessionTableModel.data(tip_index)
@@ -774,7 +794,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not exist:
             contact = {}
             for member in self.wxapi.member_list:
-                if member['UserName'] == from_user_name:
+                if member['UserName'] == to_user_name:
                     contact = member
                     break
             dn = contact['RemarkName']
@@ -840,14 +860,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             print("msg body:%s"%str(msg))
             msg_type = msg['MsgType']
             if msg_type:
-                from_user_name = msg['FromUserName']
+                to_user_name = msg['ToUserName']
                 if msg_type == 2 or msg_type == 51 or msg_type == 52:
                     continue
                 '''
                 没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中;
                 如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
                 '''
-                if (not self.current_chat_contact) or from_user_name != self.current_chat_contact['UserName']:
+                if (not self.current_chat_contact) or to_user_name != self.current_chat_contact['UserName']:
                     self.put_msg_cache(msg)
                 else:
                     if msg_type == 1:
@@ -934,12 +954,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             
 class MemberListWidget(QtGui.QDialog):
     WIDTH = 300
-    Signal_OneParameter = pyqtSignal(str)
+    membersChanged = pyqtSignal(str)
     
     def __init__(self,member_list,contacts,parent = None):
         super(MemberListWidget,self).__init__(parent)
         self.user_home = os.path.expanduser('~')
-        self.setAcceptDrops(True)
+        #self.setAcceptDrops(True)
         self.app_home = self.user_home + '/.wechat/'
         self.head_home = ("%s/heads"%(self.app_home))
         self.cache_home = ("%s/cache/"%(self.app_home))
@@ -977,12 +997,12 @@ class MemberListWidget(QtGui.QDialog):
         print("member_clicked")
         self.memberListWindow = ContactListWindow(self.contacts,self)
         self.memberListWindow.resize(400,600)
-        self.memberListWindow.Signal_OneParameter.connect(self.route)
+        self.memberListWindow.membersConfirmed.connect(self.route)
         self.memberListWindow.show()
     
     @pyqtSlot(str)
     def route(self,objectt):
-        self.Signal_OneParameter.emit(objectt)
+        self.membersChanged.emit(objectt)
         
     def append_row(self,members,data_model):
         ###############
@@ -1021,7 +1041,7 @@ class MemberListWidget(QtGui.QDialog):
     
 class ContactListWindow(QtGui.QDialog):
     WIDTH = 600
-    Signal_OneParameter = pyqtSignal(str)
+    membersConfirmed = pyqtSignal(str)
     
     def __init__(self,member_list,parent = None):
         super(ContactListWindow,self).__init__(parent)
@@ -1097,6 +1117,6 @@ class ContactListWindow(QtGui.QDialog):
         if len(selected_user_names) > 0:
             dictt = {}
             dictt['UserNames']=selected_user_names
-            self.Signal_OneParameter.emit(selected_user_names)
+            self.membersConfirmed.emit(selected_user_names)
         
         self.close()
