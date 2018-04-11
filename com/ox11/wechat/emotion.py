@@ -6,26 +6,32 @@ Created on 2018年4月10日
 @author: zhaohongxing
 '''
 import os
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 
 from PyQt4.QtGui import QStandardItemModel, QTableView,\
     QVBoxLayout, QAbstractItemView, QCursor
 from PyQt4.Qt import QIcon
 from PyQt4.QtCore import QSize, pyqtSignal
 
-class Emotion(QtGui.QDialog):
+class Emotion(QtGui.QWidget):
     EMOTION_DIR = "./resource/expression"
-    
+    WIDTH = 460
+    HEIGHT = 300
     selectChanged = pyqtSignal(str)
     
-    def __init__(self,parent=None):
+    def __init__(self,parent=None):#
         super(Emotion,self).__init__(parent)
-        self.setModal(True)
+        super(Emotion,self).setWindowFlags(QtCore.Qt.Popup)
+        self.resize(QSize(Emotion.WIDTH,Emotion.HEIGHT))
+        self.setWindowTitle("表情選擇")
+        #self.setModal(True)
         #self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
         self.emotion_initial()
         
     def emotion_initial(self):
         self.emotion_table = QTableView()
+        self.emotion_table.horizontalHeader().setVisible(False)
+        self.emotion_table.verticalHeader().setVisible(False)
         self.emotion_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.emotion_table.verticalHeader().setDefaultSectionSize(30)
         self.emotion_table.horizontalHeader().setDefaultSectionSize(30)
@@ -56,13 +62,15 @@ class Emotion(QtGui.QDialog):
             cells.append(item)
         self.emotion_model.appendRow(cells)
 
-    def eventFilter(self, event):
-        p = QCursor.pos() - self.pos()
+    #def eventFilter(self, event):
+        #p = QCursor.pos() - self.pos()
         #item = self.emotion_table
+        
     def emotion_click(self):
         row = self.emotion_table.currentIndex().row()
         column = self.emotion_table.currentIndex().column()
-        self.accept()
+        #self.accept()
+        self.close()
         self.selectChanged.emit(self.get_selected_emotion(row,column))
         
     def get_selected_emotion(self,row,column):

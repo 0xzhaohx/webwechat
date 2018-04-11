@@ -17,11 +17,10 @@ from PyQt4 import QtCore, QtGui, uic
 import xml.dom.minidom
 
 from api.msg import Msg
-from PyQt4.Qt import QIcon, Qt
+from PyQt4.Qt import QIcon, QImage, QCursor
 from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction,\
-    QTableView, QVBoxLayout, QStandardItem, QPushButton, QSpacerItem,\
-    QRadioButton, QDialog, QTextCursor
-from PyQt4.QtCore import QSize, pyqtSlot, pyqtSignal
+    QTableView, QVBoxLayout, QPushButton, QSpacerItem, QRadioButton
+from PyQt4.QtCore import QSize, pyqtSlot, pyqtSignal, QPoint
 import json
 from com.ox11.wechat.emotion import Emotion
 
@@ -866,18 +865,24 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
     def select_emotion(self):
         emotionWidget = Emotion(self)
-        emotionWidget.resize(QSize(460,300))
-        emotionWidget.setWindowTitle("----")
+        cursor_point = QCursor.pos()
+        #emotionWidget.move(cursor_point)
+        emotionWidget.move(QPoint(cursor_point.x(),cursor_point.y()-Emotion.HEIGHT))
         emotionWidget.selectChanged.connect(self.get_select_emotion)
-        emotionWidget.exec_()
+        emotionWidget.show()
+        '''
         if QDialog.Accepted == emotionWidget.accept():
             selected_emotion = emotionWidget.get_selected_emotion()
             print("selected_emotion %s"%selected_emotion)
-            
+        '''
     @pyqtSlot(str)
     def get_select_emotion(self,emotion):
+        cursor = self.draft.textCursor()
+        cursor.insertImage(QImage(os.path.join(Emotion.EMOTION_DIR,str(emotion))))
+        '''
         self.draft.moveCursor(QTextCursor.End)
         self.draft.append("<img src=%s>"%(os.path.join(Emotion.EMOTION_DIR,str(emotion))))
+        '''
         
     def select_document(self):
         fileDialog = QFileDialog(self)
