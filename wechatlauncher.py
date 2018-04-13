@@ -12,11 +12,11 @@ import sys
 import threading
 from time import sleep
 
-
 from com.ox11.wechat.api.requests.WeChatAPI import WeChatAPI
 from com.ox11.wechat.wechat import WeChat
-from PyQt4.Qt import QIcon
 import platform
+
+from PyQt4.Qt import QIcon
 from PyQt4 import QtGui, uic
 
 qtCreatorFile = "resource/ui/wechatlauncher-1.0.ui"

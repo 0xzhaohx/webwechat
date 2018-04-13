@@ -84,6 +84,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.sessionWidget.setIconSize(QSize(40,40))
         #self.sessionWidget.setColumnCount(4)
         #self.sessionWidget.setModel(self.sessionTableModel)
+        self.sessionWidget.horizontalHeader().setVisible(False)
         self.sessionWidget.setColumnHidden(0,True)
         self.sessionWidget.setColumnHidden(3,True)
         self.sessionWidget.setColumnWidth(1, 70);
@@ -593,16 +594,27 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.up_2_top()
         return send_response
         
-    def up_2_top(self):
+    def up_2_top(self,row=None):
+        '''
+        :param row the row which will be move to the top of the session table
+        '''
         #提昇from_user_name在會話列表中的位置
         #move this row to the top of the sessions
         #TODO FIX BUG
-        current_row = self.sessionWidget.currentIndex().row()
+        #current_row = self.sessionWidget.currentIndex().row()
+        if not row or row <= 0:
+            row_count = self.sessionWidget.rowCount()
+            for _row in range(row_count):
+                user_name_item = self.sessionWidget.item(_row,0)
+                user_name = user_name_item.text()
+                if user_name and user_name == self.current_chat_contact["UserName"]:
+                    row = _row
+                    break;
         cells= []
-        for i in self.sessionWidget.columnCount():
-            item = self.sessionWidget.item(current_row,i)
+        for i in range(self.sessionWidget.columnCount()):
+            item = self.sessionWidget.takeItem(row,i)
             cells.append(item)
-        self.sessionWidget.removeRow(current_row)
+        self.sessionWidget.removeRow(row)
         self.sessionWidget.insertRow(0)
         for i,cell in enumerate(cells):
             self.sessionWidget.setItem(0,i,cell)
@@ -857,9 +869,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     self.sessionWidget.setItem(row, 3, new_count_tips_item)
                     
                 head_item =self.sessionWidget.item(row,1)
-                head_item.setData(0, StarRating(count))
-                #提昇from_user_name在會話列表中的位置
+                user_head_icon = self.contact_head_home + user_name+".jpg"
+                head_item.setData(0, StarRating(count,image=user_head_icon))
+                #提昇to_user_name在會話列表中的位置
                 #move this row to the top of the sessions
+                '''
                 cells= []
                 for i in range(self.sessionWidget.columnCount()):
                     item = self.sessionWidget.takeItem(row,i)
@@ -869,9 +883,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 for i,cell in enumerate(cells):
                     self.sessionWidget.setItem(0,i,cell)
                 '''
-                taked_row = self.sessionTableModel.takeRow(row)
-                self.sessionTableModel.insertRow(0 ,taked_row)
-                '''
+                self.up_2_top(row)
                 break;
         #have not received a message before（如果此人没有在會話列表中，則加入之）
         if not exist:

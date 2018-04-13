@@ -64,7 +64,7 @@ class StarRating(object):
     
     MINI_MUM_SIZE = 70
     
-    DEFAULT_IMAGE = ("%s/.wechat/default.png")%(os.path.expanduser('~'))
+    DEFAULT_IMAGE = "./resource/images/default.png"
 
     def __init__(self, starCount=1, maxStarCount=5,image=None):
         self._starCount = starCount
