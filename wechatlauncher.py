@@ -6,7 +6,6 @@ Created on 2018年3月25日
 @author: zhaohongxing
 '''
 
-
 import os
 import sys
 import threading
@@ -23,6 +22,22 @@ qtCreatorFile = "resource/ui/wechatlauncher-1.0.ui"
 
 LauncherWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
+def get_os_name():
+        return platform.system()
+
+def machine():
+    if os.name == 'nt' and sys.version_info[:2] < (2,7):
+        return os.environ.get("PROCESSOR_ARCHITEW6432",
+               os.environ.get('PROCESSOR_ARCHITECTURE', ''))
+    else:
+        return platform.machine()
+
+
+def os_bits(machine=None):
+    if not machine:
+        machine =machine()
+    machine2bits = {'AMD64': 64, 'x86_64': 64, 'i386': 32, 'x86': 32}
+    return machine2bits.get(machine, None)
 
 class WeChatLauncher(QtGui.QDialog, LauncherWindow):
 
@@ -44,25 +59,6 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         self.launcher_thread.start()
         self.load_qr_code_image()
 
-    def get_os_name(self):
-        return os.name
-
-    def machine(self):
-        """Return type of machine."""
-        if os.name == 'nt' and sys.version_info[:2] < (2,7):
-            return os.environ.get("PROCESSOR_ARCHITEW6432",
-                   os.environ.get('PROCESSOR_ARCHITECTURE', ''))
-        else:
-            return platform.machine()
-
-
-    def os_bits(self,machine):
-        if not machine:
-            machine =self.machine()
-        """Return bitness of operating system, or None if unknown."""
-        machine2bits = {'AMD64': 64, 'x86_64': 64, 'i386': 32, 'x86': 32}
-        return machine2bits.get(machine, None)
-    
     def set_qr_timeout(self):
         WeChatLauncher.timeout = True
 
@@ -112,10 +108,12 @@ class WeChatLauncherThread(threading.Thread):
             sleep(2)
 
 if __name__ =="__main__":
-
+    
     #QtGui.QTextCodec.setCodecForTr(QtGui.QTextCodec.codecForName("utf8"))
     #QtGui.QTextCodec.setCodecForCStrings(QtGui.QTextCodec.codecForLocale())
     app = QtGui.QApplication(sys.argv)
+    if get_os_name() == "Windws":
+        print("")
     launcher = WeChatLauncher()
     launcher.show()
     if QtGui.QDialog.Accepted == launcher.exec_():

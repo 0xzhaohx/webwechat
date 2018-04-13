@@ -529,10 +529,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         msg_text = str(self.draft.toPlainText())
         msg = Msg(1, msg_text, self.current_chat_contact['UserName'])
         response = self.wxapi.webwx_send_msg(msg)
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
+        format_msg = self.msg_timestamp(self.wxapi.user['NickName'])
         self.messages.append(format_msg)
-        self.messages.append((msg_text))
+        self.messages.append(unicode(msg_text))
         self.draft.setText('')
         #TODO FIX BUG
         if False:
@@ -618,7 +617,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.sessionWidget.insertRow(0)
         for i,cell in enumerate(cells):
             self.sessionWidget.setItem(0,i,cell)
-        self.sessionWidget.selectRow(0)
+        #self.sessionWidget.selectRow(0)
+        self.sessionWidget.clearSelection()
         '''
         taked_row = self.sessionTableModel.takeRow(current_row)
         self.sessionTableModel.insertRow(0 ,taked_row)
@@ -664,7 +664,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def msg_timestamp(self,userName):
         st = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         msg_timestamp = ('%s %s:') % (userName, st)
-        return msg_timestamp
+        return unicode(msg_timestamp)
     
     '''
         默認的消息處理handler
@@ -686,8 +686,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         to_user_name = msg['ToUserName']
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append((format_msg))
-            self.messages.append(("請在手機端收聽語音"))
+            self.messages.append(format_msg)
+            self.messages.append(unicode("請在手機端收聽語音"))
         else:
             pass
     '''
@@ -697,15 +697,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not self.current_chat_contact:
             pass
         from_user_display_name = self.get_user_display_name(msg)
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('%s %s:') % (from_user_display_name, st)
+        format_msg = self.msg_timestamp(from_user_display_name)
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         to_user_name = msg['ToUserName']
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append((format_msg))
-            self.messages.append(("請在手機端觀看視頻"))
+            self.messages.append(format_msg)
+            self.messages.append(unicode("請在手機端觀看視頻"))
         else:
             pass
         
@@ -726,7 +725,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         to_user_name = msg['ToUserName']
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(("%s\r\n%s"%(unicode(format_msg),unicode(msg_content))))
+            self.messages.append(("%s\r\n%s"%(format_msg,unicode(msg_content))))
         else:
             pass
         
@@ -755,7 +754,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(unicode(format_msg))
+            self.messages.append(format_msg)
             msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
             self.messages.append(msg_img)
         else:
@@ -785,7 +784,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         to_user_name = msg['ToUserName']
         # 如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append((("%s\r\n%s")%(unicode(format_msg),unicode(replacemsg))))
+            self.messages.append((("%s\r\n%s")%(format_msg,unicode(replacemsg))))
         else:
             pass
         
@@ -819,7 +818,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         to_user_name = msg['ToUserName']
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(unicode(format_msg))
+            self.messages.append(format_msg)
             self.messages.append(unicode(('%s %s %s')%(title,desc,app_url)))
         else:
             pass
@@ -828,13 +827,19 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         s用ToUserName做Key把消息存起來，同時把此人置頂
         '''   
-        to_user_name = msg['ToUserName']
-        if self.msg_cache.has_key(to_user_name):
-            messages_list = self.msg_cache[to_user_name]
+        cache_key = None
+        from_user_name = msg['FromUserName']
+        if from_user_name.find("@@") >= 0:
+            cache_key = from_user_name
+        else:
+            cache_key = msg['ToUserName']
+            
+        if self.msg_cache.has_key(cache_key):
+            messages_list = self.msg_cache[cache_key]
         else:
             messages_list = []
         messages_list.append(msg)
-        self.msg_cache[to_user_name] = messages_list
+        self.msg_cache[cache_key] = messages_list
         #TODO ADD TIPS
         '''
                         增加消息數量提示（提昇此人在會話列表中的位置）
@@ -847,7 +852,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             user_name = user_name_item.text()
             count = 1
             #user_name = self.sessionTableModel.item(i,0).text()
-            if user_name and user_name == to_user_name:
+            if user_name and user_name == cache_key:
                 exist = True
                 #tip_index = self.sessionTableModel.index(row,3)
                 count_tips_item =self.sessionWidget.item(row,3)
@@ -857,10 +862,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     if tips_count:
                         count = int(tips_count)+1
                         count_tips_item.setText(str(count))
-                        
-                        
-                        #self.sessionWidget.removeCellWidget(row,3)
-                        #new_count_tips_item = QtGui.QTableWidgetItem(count+1)
                     else:
                         new_count_tips_item = QtGui.QTableWidgetItem(str(count))
                         self.sessionWidget.setItem(row, 3, new_count_tips_item)
@@ -889,7 +890,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not exist:
             contact = {}
             for member in self.wxapi.member_list:
-                if member['UserName'] == to_user_name:
+                if member['UserName'] == cache_key:
                     contact = member
                     break
             dn = contact['RemarkName']
@@ -1030,7 +1031,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def sync(self):
         while (True):
             st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-            #st = time.localtime()
             print('sync %s' %(st))
             (code, selector) = self.wxapi.sync_check()
             if code == -1 and selector == -1:
