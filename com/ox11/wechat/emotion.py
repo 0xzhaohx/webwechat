@@ -76,6 +76,6 @@ class Emotion(QtGui.QWidget):
     def get_selected_emotion(self,row,column):
         emotion = self.emotion_model.data(self.emotion_model.index(row, column))
         if emotion:
-            return str(emotion.toString())
+            return str(emotion)
         else:
             return "N/A"

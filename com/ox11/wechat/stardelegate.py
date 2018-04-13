@@ -47,6 +47,7 @@ import sip
 sip.setapi('QString', 2)
 sip.setapi('QVariant', 2)
 
+import os
 import math
 
 from PyQt4.Qt import QPixmap, QColor, QPainter
@@ -62,6 +63,8 @@ class StarRating(object):
     HEAD_IMG_WIDTH = HEAD_IMG_HEIGHT = 45
     
     MINI_MUM_SIZE = 70
+    
+    DEFAULT_IMAGE = ("%s/.wechat/default.png")%(os.path.expanduser('~'))
 
     def __init__(self, starCount=1, maxStarCount=5,image=None):
         self._starCount = starCount
@@ -114,8 +117,8 @@ class StarRating(object):
         head_image_y_offset = 10
         head_image_x = rect_x + head_image_x_offset
         head_image_y = rect_y + head_image_y_offset
-        if not self.image() or len(self.image()) == 0:
-            self.setImage("C:/Users/zhaohongxing/Pictures/aaaa.jpg")
+        if not self.image() or len(self.image()) == 0 or (not os.path.exists(self.image())):
+            self.setImage(StarRating.DEFAULT_IMAGE)
             
         painter.drawPixmap(head_image_x,head_image_y,StarRating.HEAD_IMG_WIDTH,StarRating.HEAD_IMG_HEIGHT, QPixmap(self.image()))
         if self.msgCount() and self.msgCount() > 0:

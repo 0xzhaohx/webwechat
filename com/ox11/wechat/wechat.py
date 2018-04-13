@@ -596,10 +596,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def up_2_top(self):
         #提昇from_user_name在會話列表中的位置
         #move this row to the top of the sessions
+        #TODO FIX BUG
         current_row = self.sessionWidget.currentIndex().row()
         cells= []
         for i in self.sessionWidget.columnCount():
-            item = self.sessionWidget.takeItem(current_row,i)
+            item = self.sessionWidget.item(current_row,i)
             cells.append(item)
         self.sessionWidget.removeRow(current_row)
         self.sessionWidget.insertRow(0)
