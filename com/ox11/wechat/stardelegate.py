@@ -103,7 +103,7 @@ class StarRating(object):
         self._maxStarCount = maxStarCount
 
     def sizeHint(self):
-        return self.PaintingScaleFactor * QtCore.QSize(self._maxStarCount, 1)
+        return StarRating.MINI_MUM_SIZE
 
     def paint(self, painter, rect, palette, editMode):
         painter.save()
@@ -114,7 +114,7 @@ class StarRating(object):
         head_image_y_offset = 10
         head_image_x = rect_x + head_image_x_offset
         head_image_y = rect_y + head_image_y_offset
-        if not self.image():
+        if not self.image() or len(self.image()) == 0:
             self.setImage("C:/Users/zhaohongxing/Pictures/aaaa.jpg")
             
         painter.drawPixmap(head_image_x,head_image_y,StarRating.HEAD_IMG_WIDTH,StarRating.HEAD_IMG_HEIGHT, QPixmap(self.image()))

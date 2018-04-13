@@ -11,9 +11,9 @@ import os
 import threading
 from time import sleep
 import time
-from com.ox11.wechat.stardelegate import StarDelegate
-from api.msg import Msg
+from com.ox11.wechat.stardelegate import StarDelegate, StarRating
 from com.ox11.wechat.emotion import Emotion
+from api.msg import Msg
 
 import xml.dom.minidom
 import json
@@ -85,13 +85,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #self.sessionWidget.setColumnCount(4)
         #self.sessionWidget.setModel(self.sessionTableModel)
         self.sessionWidget.setColumnHidden(0,True)
-        self.sessionWidget.setColumnWidth(1, 40);
-        self.sessionWidget.setColumnWidth(3, 40);
+        self.sessionWidget.setColumnHidden(3,True)
+        self.sessionWidget.setColumnWidth(1, 70);
+        self.sessionWidget.setColumnWidth(3, 30);
         self.memberWidget.setModel(self.memberTableModel)
         self.memberWidget.setIconSize(QSize(40,40))
         self.memberWidget.setColumnHidden(0,True)
-        self.memberWidget.setColumnWidth(1, 40);
-        self.memberWidget.setColumnWidth(3, 40);
+        self.memberWidget.setColumnWidth(1, 70);
+        self.memberWidget.setColumnWidth(3, 30);
         self.readerWidget.setModel(self.readerTableModel)
 
         self.sessionButton.clicked.connect(self.session_button_clicked)
@@ -241,8 +242,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         user_name_item = QtGui.QTableWidgetItem(user_name)
         cells.append(user_name_item)
         
-        user_head_icon_path = self.contact_head_home + contact['UserName']+".jpg"
-        item = QtGui.QTableWidgetItem(QIcon(user_head_icon_path),"")
+        user_head_icon = self.contact_head_home + contact['UserName']+".jpg"
+        item = QtGui.QTableWidgetItem()
+        item.setData(0, StarRating(0,image=user_head_icon))
         cells.append(item)
         
         dn = contact['RemarkName']
@@ -386,6 +388,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         tips_item = self.sessionWidget.item(current_row,3)
         if tips_item:
             tips_item.setText("")
+        
+        head_item = self.sessionWidget.item(current_row,1)
+        if head_item:
+            head_item.setData(0, StarRating(0))
         #if message_count:
         #    count = int(message_count)
         user_name_item = self.sessionWidget.item(current_row,0)
@@ -699,7 +705,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         to_user_name = msg['ToUserName']
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(("%s\r\n%s"%(format_msg,msg_content)))
+            self.messages.append(("%s\r\n%s"%(unicode(format_msg),unicode(msg_content))))
         else:
             pass
         
@@ -729,7 +735,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append((format_msg))
+            self.messages.append(unicode(format_msg))
             msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
             self.messages.append(msg_img)
         else:
@@ -760,7 +766,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         to_user_name = msg['ToUserName']
         # 如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append((("%s\r\n%s")%(format_msg,replacemsg)))
+            self.messages.append((("%s\r\n%s")%(unicode(format_msg),unicode(replacemsg))))
         else:
             pass
         
@@ -795,8 +801,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         to_user_name = msg['ToUserName']
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append((format_msg))
-            self.messages.append((('%s %s %s')%(title,desc,app_url)))
+            self.messages.append(unicode(format_msg))
+            self.messages.append(unicode(('%s %s %s')%(title,desc,app_url)))
         else:
             pass
         
@@ -816,30 +822,50 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         增加消息數量提示（提昇此人在會話列表中的位置）
         '''
         exist = False#此人是否在會話列表中
-        row_count = self.sessionTableModel.rowCount()
+        row_count = self.sessionWidget.rowCount()
         for row in range(row_count):
-            index = self.sessionTableModel.index(row,0)
-            user_name_o = self.sessionTableModel.data(index)
-            user_name = user_name_o.toString()
+            #index = self.sessionTableModel.index(row,0)
+            user_name_item = self.sessionWidget.item(row,0)
+            user_name = user_name_item.text()
+            count = 1
             #user_name = self.sessionTableModel.item(i,0).text()
             if user_name and user_name == to_user_name:
                 exist = True
-                tip_index = self.sessionTableModel.index(row,3)
-                tips_count_obj = self.sessionTableModel.data(tip_index)
-                if tips_count_obj:
-                    tips_count = tips_count_obj.toInt()
+                #tip_index = self.sessionTableModel.index(row,3)
+                count_tips_item =self.sessionWidget.item(row,3)
+                new_count_tips_item = None
+                if count_tips_item:
+                    tips_count = count_tips_item.text()
                     if tips_count:
-                        count = tips_count[0]
-                        self.sessionTableModel.setData(tip_index, str(count+1))
+                        count = int(tips_count)+1
+                        count_tips_item.setText(str(count))
+                        
+                        
+                        #self.sessionWidget.removeCellWidget(row,3)
+                        #new_count_tips_item = QtGui.QTableWidgetItem(count+1)
                     else:
-                        self.sessionTableModel.setData(tip_index, "1")
+                        new_count_tips_item = QtGui.QTableWidgetItem(str(count))
+                        self.sessionWidget.setItem(row, 3, new_count_tips_item)
                 else:
-                    count_tips_item = QtGui.QStandardItem("1")
-                    self.sessionTableModel.setItem(row, 3, count_tips_item)
+                    new_count_tips_item = QtGui.QTableWidgetItem(str(count))
+                    self.sessionWidget.setItem(row, 3, new_count_tips_item)
+                    
+                head_item =self.sessionWidget.item(row,1)
+                head_item.setData(0, StarRating(count))
                 #提昇from_user_name在會話列表中的位置
                 #move this row to the top of the sessions
+                cells= []
+                for i in range(self.sessionWidget.columnCount()):
+                    item = self.sessionWidget.takeItem(row,i)
+                    cells.append(item)
+                self.sessionWidget.removeRow(row)
+                self.sessionWidget.insertRow(0)
+                for i,cell in enumerate(cells):
+                    self.sessionWidget.setItem(0,i,cell)
+                '''
                 taked_row = self.sessionTableModel.takeRow(row)
                 self.sessionTableModel.insertRow(0 ,taked_row)
+                '''
                 break;
         #have not received a message before（如果此人没有在會話列表中，則加入之）
         if not exist:
