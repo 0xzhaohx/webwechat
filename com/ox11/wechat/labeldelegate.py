@@ -47,8 +47,7 @@ class LabelDelegate(QStyledItemDelegate):
             if not os.path.exists(image):
                 image = LabelDelegate.DEFAULT_IMAGE
             painter.drawPixmap(head_image_x,head_image_y,LabelDelegate.HEAD_IMG_WIDTH,LabelDelegate.HEAD_IMG_HEIGHT, QPixmap(image))
-            msg_numbers = msgCount
-            if msg_numbers and msg_numbers > 0:
+            if msgCount and msgCount > 0:
                 white = QColor(255, 0, 0)
                 painter.setPen(white)
                 painter.setBrush(white)
@@ -61,15 +60,15 @@ class LabelDelegate(QStyledItemDelegate):
                 painter.setPen(red)
                 painter.setBrush(red)
                 
-                msg_count_x = rect_x+LabelDelegate.HEAD_IMG_WIDTH+0.5
+                msg_count_x = rect_x+LabelDelegate.HEAD_IMG_WIDTH+2.5
                 
-                if msg_numbers >= 10 and msg_numbers < 100:
-                    msg_count_x = msg_count_x-0.5
-                elif msg_numbers >= 100 and msg_numbers < 1000:
+                if msgCount >= 10 and msgCount < 100:
+                    msg_count_x = msg_count_x - 0.5
+                elif msgCount >= 100 and msgCount < 1000:
                     msg_count_x = msg_count_x - 3.5
-                elif msg_numbers >= 1000 and msg_numbers < 10000:
+                elif msgCount >= 1000 and msgCount < 10000:
                     msg_count_x = msg_count_x - 5
-                msg_count_y = rect_y+head_image_y_offset+5
-                painter.drawText(msg_count_x,msg_count_y, str(msg_numbers))
+                msg_count_y = rect_y+head_image_y_offset + 5
+                painter.drawText(msg_count_x,msg_count_y, msgCount)
         else:
             super(LabelDelegate, self).paint(painter, option, index)

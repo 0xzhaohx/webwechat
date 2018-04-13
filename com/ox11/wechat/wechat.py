@@ -14,8 +14,8 @@ import os
 import threading
 from time import sleep
 import time
-from com.ox11.wechat.stardelegate import StarDelegate, StarRating
 from com.ox11.wechat.emotion import Emotion
+from com.ox11.wechat.about import About
 from api.msg import Msg
 
 import xml.dom.minidom
@@ -122,9 +122,15 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         
     def addMenu4SettingButton(self):
         menu = QMenu()
-        aboutAction = QAction(("關於"),self)
+        aboutAction = QAction(unicode("關於"),self)
         menu.addAction(aboutAction)
         self.settingButton.setMenu(menu)
+        
+        aboutAction.triggered.connect(self.showAbout)
+        
+    def showAbout(self):
+        about = About()
+        about.exec_()
         
     def do_logout(self):
         print("logout..............")
@@ -535,7 +541,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 cells.append(count_tips_item)
                 
                 self.sessionTableModel.insertRow(0,cells)
-        self.up_2_top()
+        self.stick()
     '''
         把圖片發送出去
     '''
@@ -545,17 +551,15 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         media_id = json_upload_response['MediaId']
         msg = Msg(3, str(media_id), self.current_chat_contact['UserName'])
         send_response = self.wxapi.webwx_send_msg_img(msg)
-        self.up_2_top()
+        self.stick()
         return send_response
         
-    def up_2_top(self,row=None):
+    def stick(self,row=None):
         '''
         :param row the row which will be move to the top of the session table
         '''
         #提昇from_user_name在會話列表中的位置
-        #move this row to the top of the sessions
-        #TODO FIX BUG
-        #current_row = self.sessionWidget.currentIndex().row()
+        #move this row to the top of the session table
         if not row or row <= 0:
             row_count = self.sessionTableModel.rowCount()
             for _row in range(row_count):
@@ -725,9 +729,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         from_user_display_name = self.get_user_display_name(msg)
         format_msg = self.msg_timestamp(from_user_display_name)
         
-        to_user_name = msg['ToUserName']
+        user_name = msg['ToUserName']
+        msg_type = msg['MsgType']
+        if msg_type == 10002:
+            user_name = msg["FromUserName"]
         # 如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
-        if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
+        if self.current_chat_contact and user_name == self.current_chat_contact['UserName']:
             self.messages.append((("%s\r\n%s")%(format_msg,unicode(replacemsg))))
         else:
             pass
@@ -773,7 +780,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''   
         cache_key = None
         from_user_name = msg['FromUserName']
-        if from_user_name.find("@@") >= 0:
+        msg_type = msg['MsgType']
+        if from_user_name.find("@@") >= 0 or msg_type == 10002:
             cache_key = from_user_name
         else:
             cache_key = msg['ToUserName']
