@@ -88,6 +88,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.sessionWidget.setColumnHidden(3,True)
         self.sessionWidget.setColumnWidth(1, 70);
         self.sessionWidget.setColumnWidth(3, 30);
+        self.sessionWidget.horizontalHeader().setStretchLastSection(True)
         self.memberWidget.setModel(self.memberTableModel)
         self.memberWidget.setIconSize(QSize(40,40))
         self.memberWidget.setColumnHidden(0,True)
@@ -389,13 +390,15 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if tips_item:
             tips_item.setText("")
         
-        head_item = self.sessionWidget.item(current_row,1)
-        if head_item:
-            head_item.setData(0, StarRating(0))
         #if message_count:
         #    count = int(message_count)
         user_name_item = self.sessionWidget.item(current_row,0)
         user_name = str(user_name_item.text())
+        
+        head_item = self.sessionWidget.item(current_row,1)
+        if head_item:
+            head_item.setData(0, StarRating(0,image= self.contact_head_home + user_name+".jpg"))
+            
         contact = self.get_contact(user_name)
         if not contact:
             contact = self.get_member(user_name)
@@ -643,6 +646,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             from_user_display_name = from_user_name
         
         return from_user_display_name
+    
+    
+    def msg_timestamp(self,userName):
+        st = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        msg_timestamp = ('%s %s:') % (userName, st)
+        return msg_timestamp
+    
     '''
         默認的消息處理handler
     '''
@@ -657,8 +667,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pass
         
         from_user_display_name = self.get_user_display_name(msg)
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s:') % (st, from_user_display_name)
+        format_msg = self.msg_timestamp(from_user_display_name)
         '''
         Note:如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
@@ -676,7 +685,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pass
         from_user_display_name = self.get_user_display_name(msg)
         st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s:') % (st, from_user_display_name)
+        format_msg = ('%s %s:') % (from_user_display_name, st)
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
@@ -698,8 +707,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         
         msg_content = msg['Content']
             
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s:') % (st, from_user_display_name)
+        format_msg = self.msg_timestamp(from_user_display_name)
         '''
         Note:如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
@@ -727,8 +735,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pass
         from_user_display_name = self.get_user_display_name(msg)
         to_user_name = msg['ToUserName']
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s:') % (st, from_user_display_name)
+        format_msg = self.msg_timestamp(from_user_display_name)
         msg_id = msg['MsgId']
         self.wxapi.webwx_get_msg_img(msg_id)
         '''
@@ -759,9 +766,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if replacemsg_nodes:
             replacemsg = str(replacemsg_nodes[0].firstChild.data)
             
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
         from_user_display_name = self.get_user_display_name(msg)
-        format_msg = ('(%s) %s:') % (st, from_user_display_name)
+        format_msg = self.msg_timestamp(from_user_display_name)
         
         to_user_name = msg['ToUserName']
         # 如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
@@ -793,8 +799,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             app_url = app_url_nodes[0].firstChild.data
         
         from_user_display_name = self.get_user_display_name(msg)
-        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-        format_msg = ('(%s) %s:') % (st, from_user_display_name)
+        format_msg = self.msg_timestamp(from_user_display_name)
         
         '''
             如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
