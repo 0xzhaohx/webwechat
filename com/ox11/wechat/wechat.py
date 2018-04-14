@@ -12,10 +12,12 @@ sip.setapi('QVariant', 2)
 import sys
 import os
 import threading
+import re
 from time import sleep
 import time
 from com.ox11.wechat.emotion import Emotion
 from com.ox11.wechat.about import About
+from com.ox11.wechat import property
 from api.msg import Msg
 
 import xml.dom.minidom
@@ -34,11 +36,15 @@ sys.setdefaultencoding('utf-8')
 
 qtCreatorFile = "resource/ui/wechat-0.5.ui"
 
+
 WeChatWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
 
 class WeChat(QtGui.QMainWindow, WeChatWindow):
 
+    I18N = "resource/i18n/expression.properties"
+    
+    EMOTION_DIR = "resource/expression"
     '''
         webwx_init
         ->(webwx_geticon|webwx_batch_getheadimg)
@@ -82,6 +88,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.init_session()
         self.init_member()
         self.init_reader()
+        self.emotionRelationInitial()
         
         self.chatWidget.setVisible(False)
         self.sessionWidget.setItemDelegate(LabelDelegate())
@@ -131,6 +138,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def showAbout(self):
         about = About()
         about.exec_()
+        
+    def emotionRelationInitial(self):
+        self.emotions = property.parse(WeChat.I18N).properties or {}
         
     def do_logout(self):
         print("logout..............")
@@ -203,7 +213,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def dragMoveEvent(self, event):
         print("dragMoveEvent")
     
-    def is_image(self,path):
+    def isImage(self,path):
         if not path:
             return False
         if path.endswith("jpg") or path.endswith("jpeg") or path.endswith("png"):
@@ -215,7 +225,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             #遍历输出拖动进来的所有文件路径
             for url in event.mimeData().urls():
                 file_name = str(url.toLocalFile())
-                if self.is_image(file_name):
+                if self.isImage(file_name):
                     self.draft.append("<img src=%s width=80 height=80>"%(file_name))
             event.acceptProposedAction()
         else:
@@ -240,6 +250,18 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if user_head_image.load(self.default_head_icon):
                 self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
 
+    def emotionReplace(self,msg):
+        emotionPattern =re.compile(u"\[[\u4e00-\u9fa5]{1,3}\]")
+        result=re.findall(emotionPattern,msg.decode("utf-8"))
+        for emotion in result:
+            #print emotion
+            for key,val in self.emotions.items():
+                if emotion ==("[%s]")%val:
+                    epath = os.path.join(WeChat.EMOTION_DIR,("%s.gif")%key)
+                    #absepath = os.path.abspath(epath)
+                    msg = msg.replace(emotion,("<img src=%s>")%(epath))
+                    break
+        return msg
         
     def append_contact_row(self,contact,data_model,action="APPEND",row=None):
         '''
@@ -358,6 +380,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         tips_item = self.sessionTableModel.data(tip_index)
         if tips_item:
             self.sessionTableModel.setData(tip_index, "")
+        head_tips_index = self.sessionTableModel.index(current_row,0)
+        tips_item = self.sessionTableModel.data(head_tips_index)
         #if message_count:
         #    count = int(message_count)
         user_name = str(user_name_o)
@@ -373,6 +397,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             self.currentChatUser.setText(unicode(dn))
         self.messages.setText('')
+        msgss = self.msg_cache.get(user_name)
+        print("user_name %s,msgss size:%s"%(user_name,len(msgss)))
         for (key,messages_list) in self.msg_cache.items():
             if user_name == key:
                 for message in messages_list:
@@ -671,9 +697,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         Note:如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
-        to_user_name = msg['ToUserName']
-        if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(("%s\r\n%s"%(format_msg,unicode(msg_content))))
+        from_user_name = msg['FromUserName']
+        user_name = None
+        if from_user_name.find("@@") >= 0:
+            user_name = from_user_name
+        else:
+            user_name = msg['ToUserName']
+        if self.current_chat_contact and user_name == self.current_chat_contact['UserName']:
+            msg_content = self.emotionReplace(msg_content)
+            self.messages.append("%s"%(format_msg))
+            self.messages.append("%s"%(unicode(msg_content)))
         else:
             pass
         
@@ -941,7 +974,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             fileNames = fileDialog.selectedFiles()
             for fileName in fileNames:
                 fileName = str(fileName)
-                if self.is_image(fileName):
+                if self.isImage(fileName):
                     send_response = self.upload_send_msg_image(self.current_chat_contact,fileName)
                     json_send_response = json.loads(send_response)
                     
