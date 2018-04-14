@@ -42,7 +42,7 @@ WeChatWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
 class WeChat(QtGui.QMainWindow, WeChatWindow):
 
-    I18N = "resource/i18n/expression.properties"
+    I18N = "resource/i18n/resource.properties"
     
     EMOTION_DIR = "resource/expression"
     '''
