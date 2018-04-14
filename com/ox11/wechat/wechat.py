@@ -18,17 +18,17 @@ import time
 from com.ox11.wechat.emotion import Emotion
 from com.ox11.wechat.about import About
 from com.ox11.wechat import property
+from com.ox11.wechat.labeldelegate import LabelDelegate
 from api.msg import Msg
 
 import xml.dom.minidom
 import json
 
-from PyQt4.Qt import QIcon, QImage, QCursor
+from PyQt4.Qt import QIcon, QImage, QCursor, Qt
 from PyQt4 import  QtGui, uic
 from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction,\
-    QTableView, QVBoxLayout, QPushButton, QSpacerItem, QRadioButton
+    QTableView, QVBoxLayout, QPushButton, QSpacerItem
 from PyQt4.QtCore import QSize, pyqtSlot, pyqtSignal, QPoint
-from com.ox11.wechat.labeldelegate import LabelDelegate
 
 reload(sys)
 
@@ -1024,6 +1024,7 @@ class MemberListWidget(QtGui.QDialog):
     
     def __init__(self,member_list,contacts,parent = None):
         super(MemberListWidget,self).__init__(parent)
+        self.setMinimumSize(200, 600)
         self.user_home = os.path.expanduser('~')
         #self.setAcceptDrops(True)
         self.app_home = self.user_home + '/.wechat/'
@@ -1041,7 +1042,7 @@ class MemberListWidget(QtGui.QDialog):
         self.membersTable.horizontalHeader().setDefaultSectionSize(60)
         self.membersTable.horizontalHeader().setVisible(False)
         #More
-        self.more = QPushButton(('顯示更多'))
+        self.more = QPushButton(unicode('顯示更多'))
         self.verticalSpacer = QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         
         self.membersTableModel = QStandardItemModel(1,4)
@@ -1082,7 +1083,7 @@ class MemberListWidget(QtGui.QDialog):
             dn = member['DisplayName']
             if not dn:
                 dn = member['NickName']
-            item = QtGui.QStandardItem(QIcon(user_head_path),(dn))
+            item = QtGui.QStandardItem(QIcon(user_head_path),unicode(dn))
             cells.append(item)
         data_model.appendRow(cells)
         i = 3
@@ -1098,7 +1099,7 @@ class MemberListWidget(QtGui.QDialog):
                 dn = member['DisplayName']
                 if not dn:
                     dn = member['NickName']
-                item = QtGui.QStandardItem(QIcon(user_head_path),(dn))
+                item = QtGui.QStandardItem(QIcon(user_head_path),unicode(dn))
                 cells.append(item)
             i = i + 4
             data_model.appendRow(cells)
@@ -1121,22 +1122,37 @@ class ContactListWindow(QtGui.QDialog):
         self.default_head_icon = '%s/default/default.png'%(self.head_home)
         self.members = member_list
         self.membersTable = QTableView()
+        self.membersTable.horizontalHeader().setStretchLastSection(True)
         self.membersTable.verticalHeader().setDefaultSectionSize(60)
-        self.membersTable.verticalHeader().setVisible(False)
         #self.membersTable.horizontalHeader().setDefaultSectionSize(60)
+        self.membersTable.setColumnWidth(0, 10);
+        self.membersTable.setColumnWidth(1, 60);
+        self.membersTable.verticalHeader().setVisible(False)
         self.membersTable.horizontalHeader().setVisible(False)
         #confirm
-        self.confirm = QPushButton(("確定"),self)
-        self.membersTableModel = QStandardItemModel(1,4)
+        self.confirm = QPushButton(unicode("確定"),self)
+        self.membersTableModel = QStandardItemModel(0,2)
+        self.membersTableModel.itemChanged.connect(self.itemChanged)
         self.initinal_member_list_widget()
         mainLayout=QVBoxLayout()
         mainLayout.addWidget(self.membersTable)
         mainLayout.addWidget(self.confirm)
         self.setLayout(mainLayout)
-        #connected
-        self.membersTable.clicked.connect(self.member_item_clicked)
+        #self.membersTable.clicked.connect(self.contact_item_clicked)
         self.confirm.clicked.connect(self.do_confirm)
+        self.selectedRowCount = 0
         
+    def itemChanged(self,item):
+        if item.checkState() == Qt.Checked:
+            self.selectedRowCount += 1
+        else:
+            self.selectedRowCount -= 1
+            
+        if self.selectedRowCount > 0:
+            self.confirm.setText(unicode("確定(%d)"%(self.selectedRowCount)))
+        else:
+            self.confirm.setText(unicode("確定"))
+            
     def initinal_member_list_widget(self):
         self.append_row(self.members, self.membersTableModel)
         self.membersTable.setModel(self.membersTableModel)
@@ -1146,43 +1162,38 @@ class ContactListWindow(QtGui.QDialog):
         for (i,member) in enumerate(members):
             cells = []
             user_name = member['UserName']
-            user_name_cell = QtGui.QStandardItem((user_name))
+            user_name_cell = QtGui.QStandardItem(user_name)
+            user_name_cell.setCheckable(True)
             cells.append(user_name_cell)
             
-            user_head_path = self.contact_head_home + member['UserName']+".jpg"
-            if not os.path.exists(user_head_path):
-                user_head_path = self.default_head_icon
+            user_avatar = self.contact_head_home + member['UserName']+".jpg"
+            if not os.path.exists(user_avatar):
+                user_avatar = self.default_head_icon
             dn = member['DisplayName']
             if not dn:
                 dn = member['NickName']
-            item = QtGui.QStandardItem(QIcon(user_head_path),(dn))
+            item = QtGui.QStandardItem(QIcon(user_avatar),unicode(dn))
             cells.append(item)
             data_model.appendRow(cells)
-            rb = QRadioButton("0000",self)
-            self.membersTable.setIndexWidget(data_model.index(i,3),rb)
     
-    def member_item_clicked(self):
-        selections = self.membersTable.selectionModel()
-        selectedIndexes = selections.selectedIndexes()
-        self.confirm.setText(("確定(%s)"%len(selectedIndexes)))
-        
     def do_confirm(self):
-        selections = self.membersTable.selectionModel()
-        selectedIndexes = selections.selectedIndexes()
+        rowCount = self.membersTableModel.rowCount()        
         selected_user_names = ""
-        for index in selectedIndexes:
-            row = index.row()
-            index = self.membersTableModel.index(row,0)
-            user_name_obj = self.membersTableModel.data(index)
-            if user_name_obj:
-                user_name = user_name_obj.toString()
-                user = {}
-                user['UserName']=str(user_name)
-                selected_user_names=selected_user_names+(user_name)
-                selected_user_names=selected_user_names+(";")
+        for row in range(rowCount):
+            item = self.membersTableModel.item(row,0)
+            if item.checkState() == Qt.Checked:
+                index = self.membersTableModel.index(row,0)
+                user_name_obj = self.membersTableModel.data(index)
+                if user_name_obj:
+                    user_name = user_name_obj
+                    user = {}
+                    user['UserName']=str(user_name)
+                    selected_user_names=selected_user_names+(user_name)
+                    selected_user_names=selected_user_names+(";")
+                
         if len(selected_user_names) > 0:
             dictt = {}
             dictt['UserNames']=selected_user_names
             self.membersConfirmed.emit(selected_user_names)
         
-        self.close()
+            self.close()

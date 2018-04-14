@@ -10,7 +10,7 @@ from PyQt4 import QtGui, QtCore
 
 from PyQt4.QtGui import QStandardItemModel, QTableView,\
     QVBoxLayout, QAbstractItemView, QCursor
-from PyQt4.Qt import QIcon
+from PyQt4.Qt import QIcon, QToolTip
 from PyQt4.QtCore import QSize, pyqtSignal
 
 class Emotion(QtGui.QWidget):
@@ -32,10 +32,12 @@ class Emotion(QtGui.QWidget):
         self.emotion_table = QTableView()
         self.emotion_table.horizontalHeader().setVisible(False)
         self.emotion_table.verticalHeader().setVisible(False)
+        self.emotion_table.setMouseTracking(True)
         self.emotion_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.emotion_table.verticalHeader().setDefaultSectionSize(30)
         self.emotion_table.horizontalHeader().setDefaultSectionSize(30)
         self.emotion_table.setIconSize(QSize(30,30))
+        self.emotion_table.entered.connect(self.showEmotionTips)
         self.emotion_model = QStandardItemModel()
         
         emotions = os.listdir(Emotion.EMOTION_DIR)
@@ -51,6 +53,9 @@ class Emotion(QtGui.QWidget):
         mainLayout.addWidget(self.emotion_table)
         self.setLayout(mainLayout)
         #self.
+    def showEmotionTips(self,index):
+        if index.isValid():
+            QToolTip.showText(QCursor.pos(), "Hello", None)
     
     def add_emotion(self,emotions):
         '''
