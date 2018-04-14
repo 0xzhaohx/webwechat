@@ -398,7 +398,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.currentChatUser.setText(unicode(dn))
         self.messages.setText('')
         msgss = self.msg_cache.get(user_name)
-        print("user_name %s,msgss size:%s"%(user_name,len(msgss)))
+        if msgss:
+            print("user_name %s,msgss size:%s"%(user_name,len(msgss)))
         for (key,messages_list) in self.msg_cache.items():
             if user_name == key:
                 for message in messages_list:
@@ -518,6 +519,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         response = self.wxapi.webwx_send_msg(msg)
         format_msg = self.msg_timestamp(self.wxapi.user['NickName'])
         self.messages.append(format_msg)
+        msg_text = self.emotionReplace(msg_text)
         self.messages.append(unicode(msg_text))
         self.draft.setText('')
         #TODO FIX BUG
