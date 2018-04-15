@@ -24,7 +24,7 @@ from api.msg import Msg
 import xml.dom.minidom
 import json
 
-from PyQt4.Qt import QIcon, QImage, QCursor, Qt
+from PyQt4.Qt import QIcon, QImage, QCursor, Qt, QTextImageFormat
 from PyQt4 import  QtGui, uic
 from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction,\
     QTableView, QVBoxLayout, QPushButton, QSpacerItem
@@ -44,7 +44,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
 
     I18N = "resource/i18n/resource.properties"
     
-    EMOTION_DIR = "resource/expression"
+    EMOTION_DIR = "./resource/expression"
     '''
         webwx_init
         ->(webwx_geticon|webwx_batch_getheadimg)
@@ -250,7 +250,31 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if user_head_image.load(self.default_head_icon):
                 self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
 
-    def emotionReplace(self,msg):
+    def emotioncode(self,msg):
+        imagepattern=re.compile(r'src="([.*\S]*\.gif)"',re.I)
+        ppattern = re.compile(r'<p style=".*\S">(.+?)</p>', re.I)
+        pimages = []
+        ps = ppattern.findall(msg)
+        for p in ps:
+            pimage = {}
+            pimage["p"]=p
+            images = imagepattern.findall(p,re.I)
+            for image in images:
+                print("emotion:%s"%image)
+                for key,emotioncode in self.emotions.items():
+                    epath = os.path.join(WeChat.EMOTION_DIR,("%s.gif")%key)
+                    imagemark = ('<img src="%s" />')%(epath)
+                    if image ==epath:
+                        print('[%s]'%((emotioncode)))
+                        pcode = p.replace(imagemark,'[%s]'%(emotioncode))
+                        print("p coded:%s"%pcode)
+                        pimage["p"]=pcode
+                        break
+            pimage["images"]=images
+            pimages.append(pimage)
+        return pimages
+    
+    def emotiondecode(self,msg):
         emotionPattern =re.compile(u"\[[\u4e00-\u9fa5]{1,3}\]")
         result=re.findall(emotionPattern,msg.decode("utf-8"))
         for emotion in result:
@@ -467,10 +491,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         user = {}
         user['UserName']=self.current_chat_contact["UserName"]
         member_list.append(user)
-        #i
-        i = {}
-        i['UserName']=self.wxapi.user["UserName"]
-        #member_list.append(i)
         
         response_data = self.wxapi.webwx_create_chatroom(member_list)
         print("webwx_create_chatroom response:%s"%response_data)
@@ -514,12 +534,22 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 把消息發送出去
     '''
     def send_msg(self):
-        msg_text = str(self.draft.toPlainText())
-        msg = Msg(1, msg_text, self.current_chat_contact['UserName'])
+        msg_html = self.draft.toHtml()
+        rr = re.search(r'<img src="([.*\S]*\.gif)"',msg_html,re.I)
+        msgBody = ""
+        if rr:
+            pimages = self.emotioncode(msg_html)
+            for pimage in pimages:
+                p = pimage["p"]
+                msgBody+=p
+        else:
+            msgBody = self.draft.toPlainText()
+        #msg_text = str(self.draft.toPlainText())
+        msg = Msg(1, msgBody, self.current_chat_contact['UserName'])
         response = self.wxapi.webwx_send_msg(msg)
         format_msg = self.msg_timestamp(self.wxapi.user['NickName'])
         self.messages.append(format_msg)
-        msg_text = self.emotionReplace(msg_text)
+        msg_text = self.emotiondecode(msgBody)
         self.messages.append(unicode(msg_text))
         self.draft.setText('')
         #TODO FIX BUG
@@ -706,7 +736,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             user_name = msg['ToUserName']
         if self.current_chat_contact and user_name == self.current_chat_contact['UserName']:
-            msg_content = self.emotionReplace(msg_content)
+            msg_content = self.emotiondecode(msg_content)
             self.messages.append("%s"%(format_msg))
             self.messages.append("%s"%(unicode(msg_content)))
         else:
@@ -964,7 +994,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     @pyqtSlot(str)
     def get_select_emotion(self,emotion):
         cursor = self.draft.textCursor()
-        cursor.insertImage(QImage(os.path.join(Emotion.EMOTION_DIR,str(emotion))))
+        imageFormat =QTextImageFormat();
+
+        imageFormat.setName(os.path.join(Emotion.EMOTION_DIR,str(emotion)));
+        cursor.insertImage(imageFormat)
         '''
         self.draft.moveCursor(QTextCursor.End)
         self.draft.append("<img src=%s>"%(os.path.join(Emotion.EMOTION_DIR,str(emotion))))

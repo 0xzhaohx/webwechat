@@ -4,7 +4,11 @@
 import re
 import os
 import tempfile
+import sys
 
+reload(sys)
+
+sys.setdefaultencoding('utf8')
 
 class Properties:
 
