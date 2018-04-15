@@ -13,6 +13,15 @@ from PyQt4.QtGui import QStandardItemModel, QTableView,\
 from PyQt4.Qt import QIcon, QToolTip
 from PyQt4.QtCore import QSize, pyqtSignal
 
+def emotioncmp(x,y):
+    xs = x.split(".")
+    yx = y.split(".")
+    if int(xs[0]) > int(yx[0]):
+        return 1
+    elif int(xs[0]) < int(yx[0]):
+        return -1
+    else:
+        return 0
 class Emotion(QtGui.QWidget):
     EMOTION_DIR = "./resource/expression"
     WIDTH = 460
@@ -43,6 +52,7 @@ class Emotion(QtGui.QWidget):
         emotions = os.listdir(Emotion.EMOTION_DIR)
         i = 0
         emotions_size = len(emotions)
+        emotions = sorted(emotions,cmp=emotioncmp)
         while i < emotions_size:
             self.add_emotion(emotions[i:i+14])
             i = i + 14

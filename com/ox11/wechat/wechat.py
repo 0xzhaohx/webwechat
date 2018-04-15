@@ -88,7 +88,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.init_session()
         self.init_member()
         self.init_reader()
-        self.emotionRelationInitial()
+        self.emotionscodeinitial()
         
         self.chatWidget.setVisible(False)
         self.sessionWidget.setItemDelegate(LabelDelegate())
@@ -139,8 +139,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         about = About()
         about.exec_()
         
-    def emotionRelationInitial(self):
-        self.emotions = property.parse(WeChat.I18N).properties or {}
+    def emotionscodeinitial(self):
+        self.emotionscode = property.parse(WeChat.I18N).properties or {}
         
     def do_logout(self):
         print("logout..............")
@@ -261,7 +261,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             images = imagepattern.findall(p,re.I)
             for image in images:
                 print("emotion:%s"%image)
-                for key,emotioncode in self.emotions.items():
+                for key,emotioncode in self.emotionscode.items():
                     epath = os.path.join(WeChat.EMOTION_DIR,("%s.gif")%key)
                     imagemark = ('<img src="%s" />')%(epath)
                     if image ==epath:
@@ -279,10 +279,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         result=re.findall(emotionPattern,msg.decode("utf-8"))
         for emotion in result:
             #print emotion
-            for key,val in self.emotions.items():
+            for key,val in self.emotionscode.items():
                 if emotion ==("[%s]")%val:
                     epath = os.path.join(WeChat.EMOTION_DIR,("%s.gif")%key)
-                    #absepath = os.path.abspath(epath)
                     msg = msg.replace(emotion,("<img src=%s>")%(epath))
                     break
         return msg
