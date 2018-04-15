@@ -114,6 +114,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.emotionButton.clicked.connect(self.select_emotion)
         self.selectImageFileButton.clicked.connect(self.select_document)
         self.currentChatUser.clicked.connect(self.current_chat_user_click)
+        self.showMemberButton.clicked.connect(self.showMembers)
         self.addMenu4SendButton()
         self.addMenu4SettingButton()
         #self.synct = WeChatSync(self.wxapi)
@@ -445,6 +446,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                             self.default_msg_handler(message)
                 break
 
+    def showMembers(self):
+        self.current_chat_user_click()
+        
     def current_chat_user_click(self):
         if self.memberListWidget:
             print("visible ddd%s:"+str(self.memberListWidget.isHidden()))
@@ -630,7 +634,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if row > 1:
             taked_row = self.sessionTableModel.takeRow(row)
             self.sessionTableModel.insertRow(0 ,taked_row)
-            #self.sessionWidget.selectRow(1)
+            #self.sessionWidget.selectRow(0)
         
     def get_user_display_name(self,msg):
         
@@ -1080,7 +1084,7 @@ class MemberListWidget(QtGui.QDialog):
         self.more = QPushButton(unicode('顯示更多'))
         self.verticalSpacer = QSpacerItem(20, 20, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         
-        self.membersTableModel = QStandardItemModel(1,4)
+        self.membersTableModel = QStandardItemModel(0,4)
         self.initinal_member_list_widget(self.members)
         mainLayout=QVBoxLayout()
         mainLayout.addWidget(self.membersTable)
