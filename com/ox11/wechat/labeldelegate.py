@@ -69,6 +69,6 @@ class LabelDelegate(QStyledItemDelegate):
                 elif msgCount >= 1000 and msgCount < 10000:
                     msg_count_x = msg_count_x - 5
                 msg_count_y = rect_y+head_image_y_offset + 5
-                painter.drawText(msg_count_x,msg_count_y, msgCount)
+                painter.drawText(msg_count_x,msg_count_y, str(msgCount))
         else:
             super(LabelDelegate, self).paint(painter, option, index)

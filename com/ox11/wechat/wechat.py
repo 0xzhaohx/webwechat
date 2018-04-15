@@ -78,8 +78,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.setup_user()
         self.batch_get_contact()
         self.wxapi.webwx_get_contact()
-        self.sessionTableModel = QStandardItemModel(1,4)
-        self.memberTableModel = QStandardItemModel(1,4)
+        self.sessionTableModel = QStandardItemModel(0,4)
+        self.memberTableModel = QStandardItemModel(0,4)
         self.readerTableModel = QStandardItemModel()
         
         self.memberListWidget = None
@@ -94,6 +94,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.sessionWidget.setItemDelegate(LabelDelegate())
         self.sessionWidget.setIconSize(QSize(40,40))
         self.sessionWidget.setModel(self.sessionTableModel)
+        self.sessionWidget.selectionModel().selectionChanged.connect(self.session_item_clicked)
         self.sessionWidget.setColumnHidden(0,True)
         self.sessionWidget.setColumnHidden(3,True)
         self.sessionWidget.setColumnWidth(1, 70);
@@ -260,14 +261,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pimage["p"]=p
             images = imagepattern.findall(p,re.I)
             for image in images:
-                print("emotion:%s"%image)
+                #print("emotion:%s"%image)
                 for key,emotioncode in self.emotionscode.items():
                     epath = os.path.join(WeChat.EMOTION_DIR,("%s.gif")%key)
                     imagemark = ('<img src="%s" />')%(epath)
                     if image ==epath:
-                        print('[%s]'%((emotioncode)))
+                        #print('[%s]'%((emotioncode)))
                         pcode = p.replace(imagemark,'[%s]'%(emotioncode))
-                        print("p coded:%s"%pcode)
+                        #print("p coded:%s"%pcode)
                         pimage["p"]=pcode
                         break
             pimage["images"]=images
@@ -342,7 +343,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 self.append_contact_row(session,self.sessionTableModel)
             '''
             '''
-        self.sessionWidget.clicked.connect(self.session_item_clicked)
+        #self.sessionWidget.clicked.connect(self.session_item_clicked)
 
     def init_member(self):
         ''''''
@@ -626,8 +627,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 if user_name and user_name == self.current_chat_contact["UserName"]:
                     row = _row
                     break;
-        taked_row = self.sessionTableModel.takeRow(row)
-        self.sessionTableModel.insertRow(0 ,taked_row)
+        if row > 1:
+            taked_row = self.sessionTableModel.takeRow(row)
+            self.sessionTableModel.insertRow(0 ,taked_row)
+            #self.sessionWidget.selectRow(1)
         
     def get_user_display_name(self,msg):
         
