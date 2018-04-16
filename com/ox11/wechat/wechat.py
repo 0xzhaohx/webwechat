@@ -410,9 +410,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #if message_count:
         #    count = int(message_count)
         user_name = str(user_name_o)
-        contact = self.get_contact(user_name)
-        if not contact:
+        if user_name.find("@@") > 0:
             contact = self.get_member(user_name)
+        else:
+            contact = self.get_contact(user_name)
         self.current_chat_contact = contact
         dn = contact['RemarkName'] or contact['NickName']
         #if not dn:
