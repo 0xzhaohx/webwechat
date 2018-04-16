@@ -453,25 +453,26 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.current_chat_user_click()
         
     def current_chat_user_click(self):
+        memebers = [self.current_chat_contact]
+        if self.current_chat_contact['UserName'].find('@@') >= 0:
+            memebers = self.current_chat_contact["MemberList"]
         if self.memberListWidget:
             print("visible ddd%s:"+str(self.memberListWidget.isHidden()))
             if self.memberListWidget.isHidden():
                 rect = self.geometry()
+                #update memberlist
+                self.memberListWidget.updatemembers(memebers)
                 self.memberListWidget.resize(QSize(MemberListWidget.WIDTH,rect.height()+self.frameGeometry().height()-self.geometry().height()))
                 self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
                 self.memberListWidget.show()
-                print("show")
             else:
                 self.memberListWidget.hide()
-                print("hide")
         else:
             rect = self.geometry()
             print(rect.left(), rect.top())
             print(self.frameGeometry())
             print(rect.width(), rect.height())
-            memebers = [self.current_chat_contact]
-            if self.current_chat_contact['UserName'].find('@@') >= 0:
-                memebers = self.current_chat_contact["MemberList"]
+            
             self.memberListWidget = MemberListWidget(memebers,self.wxapi.member_list,self)
             self.memberListWidget.resize(QSize(MemberListWidget.WIDTH,rect.height()+self.frameGeometry().height()-self.geometry().height()))
             self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
@@ -1102,6 +1103,11 @@ class MemberListWidget(QtGui.QDialog):
         mainLayout.addItem(self.verticalSpacer)
         self.setLayout(mainLayout)
         
+    def updatemembers(self,members):
+        self.members = members
+        self.membersTableModel.removeRows(0, self.membersTableModel.rowCount())
+        self.append_row(self.members, self.membersTableModel)
+        
     def initinal_member_list_widget(self,member_list):
         #self.membersTableModel.setHorizontalHeaderItem(0,QStandardItem("0000"))
         self.append_row(member_list, self.membersTableModel)
@@ -1152,8 +1158,6 @@ class MemberListWidget(QtGui.QDialog):
                 cells.append(item)
             i = i + 4
             data_model.appendRow(cells)
-    def update_memebers(self,member_list):
-        pass
     
 class ContactListWindow(QtGui.QDialog):
     WIDTH = 600
