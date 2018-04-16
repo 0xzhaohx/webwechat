@@ -28,6 +28,7 @@ class LabelDelegate(QStyledItemDelegate):
     
     def paint(self, painter, option,index):
         if index.column() ==1:
+            painter.save()
             model = index.model()
             userNameIndex = model.index(index.row(),LabelDelegate.USER_NAME_COLUMN)
             msgCountIndex = model.index(index.row(),LabelDelegate.MSG_COUNT_COLUMN)
@@ -70,5 +71,6 @@ class LabelDelegate(QStyledItemDelegate):
                     msg_count_x = msg_count_x - 5
                 msg_count_y = rect_y+head_image_y_offset + 5
                 painter.drawText(msg_count_x,msg_count_y, str(msgCount))
+            painter.restore()
         else:
             super(LabelDelegate, self).paint(painter, option, index)

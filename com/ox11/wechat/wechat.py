@@ -303,9 +303,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         item = QtGui.QStandardItem(QIcon(user_head_icon_path),"")
         cells.append(item)
         
-        dn = contact['RemarkName']
-        if not dn:
-            dn = contact['NickName']
+        dn = contact['RemarkName'] or contact['NickName']
+        #if not dn:
+            #dn = contact['NickName']
         # user remark or nick name
         remark_nick_name_item = QtGui.QStandardItem(unicode(dn))
         cells.append(remark_nick_name_item)
@@ -414,9 +414,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not contact:
             contact = self.get_member(user_name)
         self.current_chat_contact = contact
-        dn = contact['RemarkName']
-        if not dn:
-            dn = contact['NickName']
+        dn = contact['RemarkName'] or contact['NickName']
+        #if not dn:
+        #    dn = contact['NickName']
         if user_name.find('@@') >= 0:
             self.currentChatUser.setText(("%s (%d)")%(unicode(dn),contact["MemberCount"]))
         else:
@@ -525,7 +525,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         user_name = user_name_o.toString()
         contact = self.get_member(user_name)
         self.current_chat_contact = contact
-        dn = contact['RemarkName']
+        dn = contact['RemarkName'] or contact['NickName']
         if not dn:
             dn = contact['NickName']
         self.currentChatUser.setText((dn))
@@ -538,6 +538,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 把消息發送出去
     '''
     def send_msg(self):
+        self.stick()
+        self.sessionWidget.selectRow(0)
         msg_html = self.draft.toHtml()
         rr = re.search(r'<img src="([.*\S]*\.gif)"',msg_html,re.I)
         msgBody = ""
@@ -592,7 +594,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 item = QtGui.QStandardItem(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"),"")
                 cells.append(item)
                 
-                dn = self.current_chat_contact['RemarkName']
+                dn = self.current_chat_contact['RemarkName'] or self.current_chat_contact['NickName']
                 if not dn:
                     dn = self.current_chat_contact['NickName']
                 # user remark or nick name
@@ -603,7 +605,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 cells.append(count_tips_item)
                 
                 self.sessionTableModel.insertRow(0,cells)
-        self.stick()
     '''
         把圖片發送出去
     '''
@@ -634,7 +635,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if row > 1:
             taked_row = self.sessionTableModel.takeRow(row)
             self.sessionTableModel.insertRow(0 ,taked_row)
-            #self.sessionWidget.selectRow(0)
         
     def get_user_display_name(self,msg):
         
@@ -658,12 +658,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             members = from_user["MemberList"]
             for member in members:
                 if from_member_name == member['UserName']:
-                    from_user_display_name = member['RemarkName'] if member.has_key("RemarkName") else ""
+                    from_user_display_name = member['RemarkName'] if member.has_key("RemarkName") else None or member['NickName'] if member.has_key("NickName") else None
                     if not from_user_display_name:
-                        from_user_display_name = member['NickName'] if member.has_key("NickName") else ""
+                        from_user_display_name = from_member_name
                     break
         else:
-            from_user_display_name = from_user['RemarkName']
+            from_user_display_name = from_user['RemarkName'] or from_user['NickName']
             if not from_user_display_name:
                 from_user_display_name = from_user['NickName']
                 
@@ -899,7 +899,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 if member['UserName'] == cache_key:
                     contact = member
                     break
-            dn = contact['RemarkName']
+            dn = contact['RemarkName'] or contact['NickName']
             if not dn:
                 dn = contact['NickName']
             user_name = contact['UserName']
@@ -1127,8 +1127,8 @@ class MemberListWidget(QtGui.QDialog):
         data_model.appendRow(cells)
         i = 3
         members_len = len(members)
-        if members_len > 15:
-            members_len = 15
+        if members_len > 19:
+            members_len = 19
         while i < members_len:
             cells = []
             for member in members[i:i+4]:
