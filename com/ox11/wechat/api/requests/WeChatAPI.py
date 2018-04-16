@@ -117,10 +117,9 @@ class WeChatAPI(object):
         self.user = []
         #會話列表
         self.session_list = []
+        #聯系人列表（包含會話列表）
         self.member_count = 0
         self.member_list = []
-        #群組列表
-        self.group_list = []
         self.fun = 'new'
         self.lang = 'zh_TW'
         self.timeout = 30
@@ -378,8 +377,9 @@ class WeChatAPI(object):
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
         contacts_dict = json.loads(data, object_hook=_decode_data)
-        self.member_list = contacts_dict['MemberList']
-        self.member_count = contacts_dict['MemberCount']
+        #see #webwx_batch_get_contact()
+        self.member_list.extend(contacts_dict['MemberList'])
+        self.member_count += int(contacts_dict['MemberCount'])
         # TODO download the user head icon
         for member in self.member_list:
             user_name = member['UserName']
@@ -434,6 +434,7 @@ class WeChatAPI(object):
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'))
         dictt = json.loads(data, object_hook=_decode_data)
+                   
         return dictt
 
     '''

@@ -166,9 +166,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if session_response['Count'] and session_response['Count'] > 0:
             session_list = session_response['ContactList']
             for x in session_list:
-                for ss in self.wxapi.session_list:
+                for i,ss in enumerate(self.wxapi.session_list):
                     if ss["UserName"] == x["UserName"]:
-                        ss = x
+                        self.wxapi.session_list[i] = x
                         break
             session_list.sort(key=lambda mm: mm['AttrStatus'],reverse=True)
             #self.wxapi.session_list.extend(session_list)
@@ -384,11 +384,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.sessionWidget.setVisible(False)
 
     def get_contact(self,user_name):
-        for contact in self.wxapi.session_list:
-            if user_name == contact['UserName']:
-                return contact
+        return self.get_member(user_name)
 
     def get_member(self,user_name):
+        for member in self.wxapi.session_list:
+            if user_name == member['UserName']:
+                return member
+            
         for member in self.wxapi.member_list:
             if user_name == member['UserName']:
                 return member
@@ -410,7 +412,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #if message_count:
         #    count = int(message_count)
         user_name = str(user_name_o)
-        if user_name.find("@@") > 0:
+        if user_name.find("@@") >= 0:
             contact = self.get_member(user_name)
         else:
             contact = self.get_contact(user_name)
@@ -650,6 +652,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #如果是群消息
         msg_content = msg['Content']
         if from_user_name.find('@@') >= 0:
+            print("get_user_display_name msg_content:%s"%msg_content)
             index = msg_content.index(":")
             
             if index > 0:
@@ -730,7 +733,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         
         from_user_display_name = self.get_user_display_name(msg)
         
-        msg_content = msg['Content']
             
         format_msg = self.msg_timestamp(from_user_display_name)
         '''
@@ -743,6 +745,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             user_name = msg['ToUserName']
         if self.current_chat_contact and user_name == self.current_chat_contact['UserName']:
+            msg_content = msg['Content']
+            if from_user_name.find('@@') >= 0:
+                index = msg_content.index(":")
+                
+                if index > 0:
+                    msg_content = msg_content[index:len(msg_content)]
             msg_content = self.emotiondecode(msg_content)
             self.messages.append("%s"%(format_msg))
             self.messages.append("%s"%(unicode(msg_content)))
@@ -1073,6 +1081,7 @@ class MemberListWidget(QtGui.QDialog):
         self.cache_image_home = "%s/image/"%(self.cache_home)
         self.contact_head_home = ("%s/contact/"%(self.head_home))
         self.default_head_icon = '%s/default/default.png'%(self.head_home)
+        self.default_member_icon = './resource/images/webwxgeticon.png'
         self.members = member_list
         self.contacts = contacts
         #self.setWindowFlags(Qt.FramelessWindowHint)#|Qt.Popup
@@ -1119,8 +1128,8 @@ class MemberListWidget(QtGui.QDialog):
         for member in members[0:3]:
             user_head_path = self.contact_head_home + member['UserName']+".jpg"
             if not os.path.exists(user_head_path):
-                user_head_path = self.default_head_icon
-            dn = member['DisplayName']
+                user_head_path = self.default_member_icon
+            dn = member['DisplayName'] or member['NickName']
             if not dn:
                 dn = member['NickName']
             item = QtGui.QStandardItem(QIcon(user_head_path),unicode(dn))
@@ -1135,8 +1144,8 @@ class MemberListWidget(QtGui.QDialog):
             for member in members[i:i+4]:
                 user_head_path = self.contact_head_home + member['UserName']+".jpg"
                 if not os.path.exists(user_head_path):
-                    user_head_path = self.default_head_icon
-                dn = member['DisplayName']
+                    user_head_path = self.default_member_icon
+                dn = member['DisplayName'] or member['NickName']
                 if not dn:
                     dn = member['NickName']
                 item = QtGui.QStandardItem(QIcon(user_head_path),unicode(dn))
