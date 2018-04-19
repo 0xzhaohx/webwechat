@@ -11,6 +11,7 @@ class Msg(object):
     msg_type = {
         '1':'文本消息',
         '3':'图片消息',
+        '6':'非图片消息',
         '34':'语音消息',
         '37':'好友确认消息',
         '40':'POSSIBLEFRIEND_MSG',
@@ -37,7 +38,7 @@ class Msg(object):
         :param to_user_name:
         '''
         self.type = type
-        if type == 1:
+        if type == 1 or type == 6:
             self.content = content
         elif type == 3:
             self.media_id = content

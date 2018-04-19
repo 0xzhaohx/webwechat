@@ -507,8 +507,7 @@ class WeChatAPI(object):
               '?fun=sys&pass_ticket=%s' % (
                   self.pass_ticket
               )
-        local_id = client_msg_id = str(int(time.time() * 1000)) + \
-            str(random.random())[:5].replace('.', '')
+        local_id = client_msg_id = self.get_client_msg_id()
         
         self.resetdeviceid()
         params = {
@@ -536,8 +535,7 @@ class WeChatAPI(object):
               '?f=json&fun=async&pass_ticket=%s' % (
                   self.pass_ticket
               )
-        local_id = client_msg_id = str(int(time.time() * 1000)) + \
-            str(random.random())[:5].replace('.', '')
+        local_id = client_msg_id = self.get_client_msg_id()
         headers = {
             "Content-Type": "application/json; charset=UTF-8"
         }
@@ -560,7 +558,7 @@ class WeChatAPI(object):
             params['Msg']["Content"]=""
         else:
             pass
-        print("send msg body:\r\n%s"%json.dumps(params, ensure_ascii=False).encode('utf8'))
+        #print("senddd msg body:\r\n%s"%unicode(json.dumps(params, ensure_ascii=False).encode('utf8')))
         data = self.post_json(url,params,headers=headers)
         return data
     
@@ -569,8 +567,7 @@ class WeChatAPI(object):
               '?f=json&fun=async&pass_ticket=%s' % (
                   self.pass_ticket
               )
-        local_id = client_msg_id = str(int(time.time() * 1000)) + \
-            str(random.random())[:5].replace('.', '')
+        local_id = client_msg_id = self.get_client_msg_id()
         headers = {
             "Content-Type": "application/json; charset=UTF-8"
         }
@@ -595,14 +592,49 @@ class WeChatAPI(object):
             pass
         data = self.post_json(url,params,headers=headers)
         return data
-
+    
+    def webwx_send_app_msg(self,msg):
+        url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg' + \
+              '?f=json&fun=async&pass_ticket=%s' % (
+                  self.pass_ticket
+              )
+        local_id = client_msg_id = self.get_client_msg_id()
+        headers = {
+            "Content-Type": "application/json; charset=UTF-8"
+        }
+        self.resetdeviceid()
+        params = {
+            'BaseRequest': self.base_request,
+            'Msg': {
+                "Type":msg.type,
+                "FromUserName":self.user['UserName'],
+                "ToUserName":msg.to_user_name,
+                "LocalID":local_id,
+                "ClientMsgId":client_msg_id,
+                "Content":msg.content
+            },
+            "Scene":0
+        }
+        if msg.type == 1:
+            params['Msg']["Content"]=msg.content
+        elif msg.type == 3:
+            params['Msg']["MediaId"]=msg.media_id
+            params['Msg']["Content"]=""
+        else:
+            pass
+        data = self.post_json(url,params,headers=headers)
+        return data
+    
+    def get_client_msg_id(self):
+        client_msg_id = "%d%s"%(int(time.time() * 1000) ,str(random.random())[:5].replace('.', ''))
+        return client_msg_id
+    
     def webwx_revoke_msg(self,msg):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg" + \
               '?pass_ticket=%s' % (
                   self.pass_ticket
               )
-        local_id = client_msg_id = str(int(time.time() * 1000)) + \
-            str(random.random())[:5].replace('.', '')
+        local_id = client_msg_id = self.get_client_msg_id()
 
         self.resetdeviceid()
         params = {
@@ -805,10 +837,12 @@ class WeChatAPI(object):
                 self.log(url, response_text)
                 response.close()
                 return response_text
-            except (KeyboardInterrupt, SystemExit):
+            except (KeyboardInterrupt, SystemExit) ,e:
+                print(e)
                 raise
                 return False
-            except:
+            except Exception,e:
+                print(e)
                 return False
     
     def options(self, url, data=None, headers={}):

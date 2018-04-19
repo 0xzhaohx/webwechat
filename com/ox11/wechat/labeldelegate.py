@@ -33,8 +33,8 @@ class LabelDelegate(QStyledItemDelegate):
             userNameIndex = model.index(index.row(),LabelDelegate.USER_NAME_COLUMN)
             msgCountIndex = model.index(index.row(),LabelDelegate.MSG_COUNT_COLUMN)
             
-            userName = model.data(userNameIndex)
-            msgCount = model.data(msgCountIndex)
+            userName = model.data(userNameIndex).toString()
+            msgCount = model.data(msgCountIndex).toString()
             
             if option.state & QStyle.State_Selected:
                 painter.fillRect(option.rect, option.palette.highlight())

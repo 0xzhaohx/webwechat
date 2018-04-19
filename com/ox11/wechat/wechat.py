@@ -6,8 +6,8 @@ Created on 2018年3月25日
 @author: zhaohongxing
 '''
 import sip
-sip.setapi('QString', 2)
-sip.setapi('QVariant', 2)
+sip.setapi('QString', 1)
+sip.setapi('QVariant', 1)
 
 import sys
 import os
@@ -24,8 +24,8 @@ from api.msg import Msg
 import xml.dom.minidom
 import json
 
-from PyQt4.Qt import QIcon, QImage, QCursor, Qt, QTextImageFormat
-from PyQt4 import  QtGui, uic
+from PyQt4.Qt import QIcon, QCursor, Qt, QTextImageFormat
+from PyQt4 import QtGui, uic
 from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction,\
     QTableView, QVBoxLayout, QPushButton, QSpacerItem
 from PyQt4.QtCore import QSize, pyqtSlot, pyqtSignal, QPoint
@@ -47,6 +47,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     EMOTION_DIR = "./resource/expression"
     '''
         webwx_init
+        ->webwxstatusnotify()
         ->(webwx_geticon|webwx_batch_getheadimg)
         ->webwx_getcontact
         ->first call webwx_batch_getcontact
@@ -155,12 +156,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             'List': groups
         }
         self.batch_get_contact(data=params)
-        #應該會返回msg_type=51，用來初始化會詁列表
-        #syncresponse = self.wxapi.webwx_sync()
-        #do download icon/headimg
-        #invoke batchgetcontact second pass the data response from self.wxapi.webwx_sync() 
-        #self.batch_get_contact()
-        #self.wxapi.webwx_get_contact()
     
     def addMenu4SendButton(self):
         menu = QMenu()
@@ -313,7 +308,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     imagemark = ('<img src="%s" />')%(epath)
                     if image ==epath:
                         #print('[%s]'%((emotioncode)))
-                        pcode = p.replace(imagemark,'[%s]'%(emotioncode))
+                        pcode = p.replace(imagemark,'[%s]'%(unicode(emotioncode)))
                         #print("p coded:%s"%pcode)
                         pimage["p"]=pcode
                         break
@@ -323,7 +318,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     
     def emotiondecode(self,msg):
         emotionPattern =re.compile(u"\[[\u4e00-\u9fa5]{1,3}\]")
-        result=re.findall(emotionPattern,msg.decode("utf-8"))
+        result=re.findall(emotionPattern,str(msg).decode("utf-8"))
         for emotion in result:
             #print emotion
             for key,val in self.emotionscode.items():
@@ -456,7 +451,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         tips_item = self.sessionTableModel.data(head_tips_index)
         #if message_count:
         #    count = int(message_count)
-        user_name = str(user_name_o)
+        user_name = str(user_name_o.toString())
         if user_name.find("@@") >= 0:
             contact = self.get_member(user_name)
         else:
@@ -532,7 +527,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         if not users:
             return
-        print(str(users))
         #dictt = json.loads(str(users))
         user_list = str(users).split(";")
         member_list = []
@@ -587,8 +581,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 把消息發送出去
     '''
     def send_msg(self):
-        self.stick()
-        self.sessionWidget.selectRow(0)
         msg_html = self.draft.toHtml()
         rr = re.search(r'<img src="([.*\S]*\.gif)"',msg_html,re.I)
         msgBody = ""
@@ -599,12 +591,20 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 msgBody+=p
         else:
             msgBody = self.draft.toPlainText()
+        #print("xxxx %s"%msgBody)
         #msg_text = str(self.draft.toPlainText())
+        #msgBody = str(msgBody)
         msg = Msg(1, msgBody, self.current_chat_contact['UserName'])
         response = self.wxapi.webwx_send_msg(msg)
+        if not response or response is False:
+            return False
+        #if send success
+        self.stick(select=True)
+        #self.sessionWidget.selectRow(0)
         format_msg = self.msg_timestamp(self.wxapi.user['NickName'])
         self.messages.append(format_msg)
-        msg_text = self.emotiondecode(msgBody)
+        msg_text = self.emotiondecode(msgBody) if rr else msgBody
+        #msg_text = self.emotiondecode(msgBody)
         self.messages.append(unicode(msg_text))
         self.draft.setText('')
         #TODO FIX BUG
@@ -657,16 +657,24 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     '''
         把圖片發送出去
     '''
-    def upload_send_msg_image(self,contact,image):
-        upload_response = self.wxapi.webwx_upload_media(contact,image)
+    def upload_send_msg_image(self,contact,ffile):
+        upload_response = self.wxapi.webwx_upload_media(contact,ffile)
         json_upload_response = json.loads(upload_response)
         media_id = json_upload_response['MediaId']
-        msg = Msg(3, str(media_id), self.current_chat_contact['UserName'])
-        send_response = self.wxapi.webwx_send_msg_img(msg)
-        self.stick()
+        if self.isImage(ffile):
+            msg = Msg(3, str(media_id), self.current_chat_contact['UserName'])
+            send_response = self.wxapi.webwx_send_msg_img(msg)
+        else:
+            #parameter: appid,title,type=6,totallen,attachid(mediaid),fileext
+            fileext = os.path.splitext(ffile)[1]
+            if fileext and len(fileext) > 1 and fileext.startswith("."):
+                fileext = fileext[1:(len(fileext))]
+            content = "<appmsg appid='wxeb7ec651dd0aefa9' sdkver=''><title>%s</title><des></des><action></action><type>6</type><content></content><url></url><lowurl></lowurl><appattach><totallen>%d</totallen><attachid>%s</attachid><fileext>%s</fileext></appattach><extinfo></extinfo></appmsg>"%(os.path.basename(ffile),os.path.getsize(ffile),media_id,fileext)
+            msg = Msg(6, content, self.current_chat_contact['UserName'])
+            send_response = self.wxapi.webwx_send_app_msg(msg)
         return send_response
         
-    def stick(self,row=None):
+    def stick(self,row=None,select=False):
         '''
         :param row the row which will be move to the top of the session table
         '''
@@ -684,6 +692,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if row > 1:
             taked_row = self.sessionTableModel.takeRow(row)
             self.sessionTableModel.insertRow(0 ,taked_row)
+            if select:
+                self.sessionWidget.selectRow(0)
         
     def get_user_display_name(self,msg):
         
@@ -945,6 +955,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             xmlContent = xmlContent.replace("&gt;",">")
             xmlContent = xmlContent.replace("&lt;","<")
             xmlContent = xmlContent.replace("<br/>","")
+        print("xmlContent %s"%xmlContent)
         if msg["FromUserName"].find("@@") >=0:
             index = xmlContent.find(":")
             if index > 0:
@@ -955,11 +966,15 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         title_nodes = doc.getElementsByTagName("title")
         desc_nodes = doc.getElementsByTagName("des")
         app_url_nodes = doc.getElementsByTagName("url")
-        if title_nodes:
+        
+        title = ""
+        desc = ""
+        app_url = ""
+        if title_nodes and title_nodes[0] and title_nodes[0].firstChild:
             title = title_nodes[0].firstChild.data
-        if desc_nodes:
+        if desc_nodes and desc_nodes[0] and desc_nodes[0].firstChild:
             desc = desc_nodes[0].firstChild.data
-        if app_url_nodes:
+        if app_url_nodes and app_url_nodes[0] and app_url_nodes[0].firstChild:
             app_url = app_url_nodes[0].firstChild.data
         
         from_user_display_name = self.get_user_display_name(msg)
@@ -1009,9 +1024,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 tip_index = self.sessionTableModel.index(row,3)
                 tips_count_obj = self.sessionTableModel.data(tip_index)
                 if tips_count_obj:
-                    tips_count = int(tips_count_obj)
+                    tips_count = tips_count_obj.toString()
                     if tips_count:
-                        self.sessionTableModel.setData(tip_index, str(tips_count+1))
+                        self.sessionTableModel.setData(tip_index, str(int(tips_count)+1))
                     else:
                         self.sessionTableModel.setData(tip_index, "1")
                 else:
@@ -1147,27 +1162,32 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def select_document(self):
         fileDialog = QFileDialog(self)
         if fileDialog.exec_():
-            fileNames = fileDialog.selectedFiles()
-            for fileName in fileNames:
-                fileName = str(fileName)
-                if self.isImage(fileName):
-                    send_response = self.upload_send_msg_image(self.current_chat_contact,fileName)
-                    json_send_response = json.loads(send_response)
-                    
-                    msg_id = json_send_response["MsgID"]
-                    #send success append the image to history;failed append to draft 
-                    if msg_id:
-                        self.wxapi.webwx_get_msg_img(msg_id)
-                        st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-                        format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
-                        self.messages.append(format_msg)
+            selectedFiles = fileDialog.selectedFiles()
+            for ffile in selectedFiles:
+                ffile = str(ffile)
+                send_response = self.upload_send_msg_image(self.current_chat_contact,ffile)
+                send_response_dict = json.loads(send_response)
+                
+                msg_id = send_response_dict["MsgID"]
+                #send success append the image to history;failed append to draft 
+                if msg_id:
+                    self.stick(select=True)
+                    self.wxapi.webwx_get_msg_img(msg_id)
+                    #st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+                    #format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
+                    format_msg = self.msg_timestamp(self.wxapi.user['NickName'])
+                    self.messages.append(format_msg)
+                    if self.isImage(ffile):
                         msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
-                        self.messages.append(msg_img)
                     else:
-                        #fileName=QtCore.QString.fromUtf8(fileName)
-                        self.draft.append("<img src=%s width=80 height=80>"%(fileName))
+                        msg_img = ffile
+                    self.messages.append(msg_img)
                 else:
-                    print(fileName)
+                    #fileName=QtCore.QString.fromUtf8(fileName)
+                    if self.isImage(ffile):
+                        self.draft.append("<img src=%s width=80 height=80>"%(ffile))
+                    else:
+                        print(ffile)
                     
     def keyPressEvent(self,event):
         print("keyPressEvent")

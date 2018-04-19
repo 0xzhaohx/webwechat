@@ -23,7 +23,7 @@ qtCreatorFile = "resource/ui/wechatlauncher-1.0.ui"
 LauncherWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
 def getosname():
-        return platform.system()
+    return platform.system()
 
 def machine():
     if os.name == 'nt' and sys.version_info[:2] < (2,7):
@@ -31,7 +31,6 @@ def machine():
                os.environ.get('PROCESSOR_ARCHITECTURE', ''))
     else:
         return platform.machine()
-
 
 def osbits(machine=None):
     if not machine:
