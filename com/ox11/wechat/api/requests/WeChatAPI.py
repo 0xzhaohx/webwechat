@@ -129,7 +129,19 @@ class WeChatAPI(object):
         )
         self.version='0.1'
         self.wxversion = 'v2'
-
+        self.logtruncate()
+        
+    def logtruncate(self):
+        os.remove("log.log")
+        with open("log.log","w") as log:
+            log.seek(0)
+            log.truncate()
+            st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
+            log.write("\r\n%s"%st)
+            
+    def resetdeviceid(self):
+        self.base_request["DeviceID"]='e%s'%repr(random.random())[2:17]
+        
     def get_uuid(self):
         url = "https://login.wx.qq.com/jslogin";
         params = {
@@ -182,6 +194,7 @@ class WeChatAPI(object):
 
     def webwx_stat_report(self):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxstatreport?fun=new&lang="+self.lang;
+        self.resetdeviceid()
         params = {
             'BaseRequest': self.base_request,
             'Count': 0,
@@ -272,6 +285,7 @@ class WeChatAPI(object):
               '?pass_ticket=%s&r=%s&lang=%s' % (
                   self.pass_ticket, int(time.time()), self.lang
               )
+        self.resetdeviceid()
         params = {
             'BaseRequest': self.base_request
         }
@@ -288,20 +302,7 @@ class WeChatAPI(object):
         self.session_list = sessions_dict['ContactList']
         #download and setup logined user head img
         self.webwx_get_icon(self.user['UserName'], self.user['HeadImgUrl'])
-        #TODO download the user head icon
-        for contact in self.session_list:
-            user_name = contact['UserName']
-            head_img_url = contact['HeadImgUrl']
-            if not user_name or not head_img_url:
-                continue
-            if user_name.startswith('@'):
-                self.webwx_get_icon(user_name,head_img_url)
-            elif user_name.startswith('@@'):
-                self.webwx_get_head_img(user_name,head_img_url)
-            else:
-                pass
         self.update_sync_key(sessions_dict)
-
         return sessions_dict
 
     def update_sync_key(self,dict):
@@ -313,23 +314,18 @@ class WeChatAPI(object):
         self.sync_key = '|'.join(
             [foo(keyVal) for keyVal in self.sync_key_dic['List']])
 
-    def webwx_status_notify(self):
+    def webwxstatusnotify(self):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxstatusnotify" + \
-              '?pass_ticket=%s&lang=%s' % (
-                  self.pass_ticket, self.lang
+              '?pass_ticket=%s' % (
+                  self.pass_ticket
               )
+        self.resetdeviceid()
         params = {
             'BaseRequest': self.base_request,
             'Code' : 3,
             'FromUserName': self.user['UserName'],
             'ToUserName': self.user['UserName'],
             'ClientMsgId': int(time.time())
-        }
-        headers = {
-            'user-agent': self.user_agent,
-            "content-type": "application/json; charset=UTF-8",
-            'connection': 'keep-alive',
-            "referer": "https://wx.qq.com/"
         }
         data = self.post_json(url, params)
         return data
@@ -339,32 +335,34 @@ class WeChatAPI(object):
         data = self.get(url,stream=True)
         if not data:
             pass
-        img_folder = ('%s/heads/'%(self.app_home))
-        if not os.path.exists(img_folder):
-            os.mkdir(img_folder)
-        image = self.app_home + '/heads/contact/'+user_name+'.jpg'
+        image = '%s/heads/contact/%s.jpg'%(self.app_home,user_name)
         with open(image, 'wb') as image:
             image.write(data)
-    '''
-    用於取群
-    '''
+            
     def webwx_get_head_img(self,user_name,head_img_url):
+        '''
+        #用於取群圖標
+        '''
         url = 'https://wx.qq.com/'+((head_img_url))
-        data = self.get(url,stream=True)
-        if not data:
+        streamdata = self.get(url,stream=True)
+        if not streamdata:
             pass
-        img_folder = ('%s/heads/contact/'%(self.app_home))
-        if not os.path.exists(img_folder):
-            os.mkdir(img_folder)
-        image = img_folder+user_name+'.jpg'
+        image = '%s/heads/contact/%s.jpg'%(self.app_home,user_name)
         with open(image, 'wb') as image:
-            image.write(data)
+            image.write(streamdata)
 
     def webwx_get_contact(self):
+        '''
+        #賬號類型：
+        #
+        #VerifyFlag
+        #
+        '''
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact" + \
               '?pass_ticket=%s&lang=%s' % (
                   self.pass_ticket, self.lang
               )
+        self.resetdeviceid()
         params = {
             'BaseRequest': self.base_request
         }
@@ -460,7 +458,7 @@ class WeChatAPI(object):
             'skey': str(self.skey),
             'sid': str(self.sid),
             'uin': int(self.uin),
-            'deviceid': str(self.device_id),
+            'deviceid': 'e%s'%repr(random.random())[2:17],
             'synckey': str(self.sync_key),
             '_': int(time.time())
         }
@@ -486,6 +484,7 @@ class WeChatAPI(object):
             '?sid=%s&skey=%s&pass_ticket=%s' % (
                 self.sid, self.skey, self.pass_ticket
             )
+        self.resetdeviceid()
         params = {
             'BaseRequest': self.base_request,
             'SyncKey':self.sync_key_dic,
@@ -510,7 +509,8 @@ class WeChatAPI(object):
               )
         local_id = client_msg_id = str(int(time.time() * 1000)) + \
             str(random.random())[:5].replace('.', '')
-
+        
+        self.resetdeviceid()
         params = {
             'BaseRequest': self.base_request,
             'Msg': {
@@ -541,6 +541,7 @@ class WeChatAPI(object):
         headers = {
             "Content-Type": "application/json; charset=UTF-8"
         }
+        self.resetdeviceid()
         params = {
             'BaseRequest': self.base_request,
             'Msg': {
@@ -573,6 +574,7 @@ class WeChatAPI(object):
         headers = {
             "Content-Type": "application/json; charset=UTF-8"
         }
+        self.resetdeviceid()
         params = {
             'BaseRequest': self.base_request,
             'Msg': {
@@ -602,6 +604,7 @@ class WeChatAPI(object):
         local_id = client_msg_id = str(int(time.time() * 1000)) + \
             str(random.random())[:5].replace('.', '')
 
+        self.resetdeviceid()
         params = {
             'BaseRequest': self.base_request,
             'Msg': {
@@ -655,6 +658,7 @@ class WeChatAPI(object):
             
         webwx_data_ticket = self.session.cookies['webwx_data_ticket']
         client_media_id =int(time.time())
+        self.resetdeviceid()
         uploadmediarequest = json.dumps({
             "UploadType":2,
             "BaseRequest": self.base_request,
@@ -708,6 +712,7 @@ class WeChatAPI(object):
               '?r=%s&lang=%s&pass_ticket=%s' %(
                   int(time.time()),self.lang,self.pass_ticket
                )
+        self.resetdeviceid()
         data = {
             "BaseRequest": self.base_request,
             "MemberCount":len(member_list),
@@ -716,6 +721,13 @@ class WeChatAPI(object):
         }
         response = self.post_json(url=url,data=data)
         return response
+    def log(self,url,data):
+        with open("log.log","a+") as log:
+            log.write("\r\nURL:%s"%url)
+            log.write("\r\nURL RESPONSE:")
+            log.write("\r\n")
+            log.write(data)
+            log.write("\r\n==========================================================")
     def get(self, url, data= {},stream=False):
         _headers = {
             'Connection': 'keep-alive',
@@ -732,6 +744,7 @@ class WeChatAPI(object):
             else:
                 response.encoding = 'utf-8'
                 data = response.text
+                self.log(url, data)
             response.close()
             return data
             '''
@@ -762,6 +775,7 @@ class WeChatAPI(object):
                 else:
                     response.encoding='utf-8'
                     data = response.text
+                    self.log(url, data)
                 response.close()
                 return data
             except (KeyboardInterrupt, SystemExit):
@@ -788,6 +802,7 @@ class WeChatAPI(object):
                 response = self.session.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=_headers)
                 response.encoding='utf-8'
                 response_text = response.text
+                self.log(url, response_text)
                 response.close()
                 return response_text
             except (KeyboardInterrupt, SystemExit):

@@ -74,10 +74,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"))
         self.wxapi.login()
-        self.wxapi.webwx_init()
-        self.setup_user()
-        self.batch_get_contact()
-        self.wxapi.webwx_get_contact()
+        
+        self.wxinitial()
+        #self.synct = WeChatSync(self.wxapi)
+        #self.synct.start()
+        timer = threading.Timer(10, self.synccheck)
+        timer.setDaemon(True)
+        timer.start()
         self.sessionTableModel = QStandardItemModel(0,4)
         self.memberTableModel = QStandardItemModel(0,4)
         self.readerTableModel = QStandardItemModel()
@@ -117,12 +120,48 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.showMemberButton.clicked.connect(self.showMembers)
         self.addMenu4SendButton()
         self.addMenu4SettingButton()
-        #self.synct = WeChatSync(self.wxapi)
-        #self.synct.start()
-        timer = threading.Timer(5, self.sync)
-        timer.setDaemon(True)
-        timer.start()
+    
+    def wxinitial(self):
+        sessions_dict = self.wxapi.webwx_init()
+        res = self.wxapi.webwxstatusnotify()
+        self.setupwxuser()
         
+        #TODO download the head image or icon of contact
+        #fetch the icon or head image that init api response
+        groups = []
+        for contact in sessions_dict['ContactList']:
+            user_name = contact['UserName']
+            head_img_url = contact['HeadImgUrl']
+            if not user_name or not head_img_url:
+                continue
+            if user_name.startswith('@'):
+                self.wxapi.webwx_get_icon(user_name,head_img_url)
+            elif user_name.startswith('@@'):
+                #prepare arguments for batch_get_contact api
+                group = {}
+                group['UserName'] = contact['UserName']
+                group['ChatRoomId'] = ''
+                groups.append(group)
+                #doanload head image
+                self.wxapi.webwx_get_head_img(user_name,head_img_url)
+            else:
+                pass
+        #do downlaod icon
+        self.wxapi.webwx_get_contact()
+        self.synccheck(loop=False)
+        params = {
+            'BaseRequest': self.wxapi.base_request,
+            'Count': len(groups),
+            'List': groups
+        }
+        self.batch_get_contact(data=params)
+        #應該會返回msg_type=51，用來初始化會詁列表
+        #syncresponse = self.wxapi.webwx_sync()
+        #do download icon/headimg
+        #invoke batchgetcontact second pass the data response from self.wxapi.webwx_sync() 
+        #self.batch_get_contact()
+        #self.wxapi.webwx_get_contact()
+    
     def addMenu4SendButton(self):
         menu = QMenu()
         enterAction = QAction(("按Enter發送消息"),self)
@@ -147,22 +186,26 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def do_logout(self):
         print("logout..............")
     
-    def batch_get_contact(self):
-        groups = []
-        for contact in self.wxapi.session_list:
-            if contact['UserName'].find('@@') >= 0:
-                group = {}
-                group['UserName'] = contact['UserName']
-                group['ChatRoomId'] = ''
-                groups.append(group)
-
-        params = {
-            'BaseRequest': self.wxapi.base_request,
-            'Count': len(groups),
-            'List': groups
-        }
+    def batch_get_contact(self,data=None):
+        if not data:
+            groups = []
+            for contact in self.wxapi.session_list:
+                if contact['UserName'].find('@@') >= 0:
+                    group = {}
+                    group['UserName'] = contact['UserName']
+                    group['ChatRoomId'] = ''
+                    groups.append(group)
+    
+            params = {
+                'BaseRequest': self.wxapi.base_request,
+                'Count': len(groups),
+                'List': groups
+            }
+        else:
+            params = data
+            
         session_response = self.wxapi.webwx_batch_get_contact(params)
-        
+            
         if session_response['Count'] and session_response['Count'] > 0:
             session_list = session_response['ContactList']
             for x in session_list:
@@ -170,8 +213,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     if ss["UserName"] == x["UserName"]:
                         self.wxapi.session_list[i] = x
                         break
-            session_list.sort(key=lambda mm: mm['AttrStatus'],reverse=True)
+            #session_list.sort(key=lambda mm: mm['AttrStatus'],reverse=True)
             #self.wxapi.session_list.extend(session_list)
+        return session_response
     
     def prepare4Environment(self):
         if os.path.exists(self.app_home):
@@ -242,11 +286,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if use_default:
                 image.load(self.app_home)
 
-    def setup_user(self):
-        self.userNameLabel.setText((self.wxapi.user['NickName']))
-        user_icon_file = self.contact_head_home + self.wxapi.user['UserName'] + ".jpg"
+    def setupwxuser(self):
+        userName = self.wxapi.user['NickName']
+        self.userNameLabel.setText(unicode(userName))
+        user_icon = self.contact_head_home + self.wxapi.user['UserName'] + ".jpg"
         user_head_image = QtGui.QImage()
-        if user_head_image.load(user_icon_file):
+        if user_head_image.load(user_icon):
             self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
         else:
             if user_head_image.load(self.default_head_icon):
@@ -326,7 +371,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         column 1:user name(will be hidden)
         column 2:head icon
         column 3:remark or nick name
-        column 4:message count tips
+        column 4:message count tips(will be hidden)
         :return:
         '''
         #self.sessionWidget.setColumnCount(4)
@@ -334,7 +379,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         for contact in self.wxapi.session_list:
             self.append_contact_row(contact,self.sessionTableModel)
             
-        
+        '''
         for session in sorted([x for x in self.wxapi.member_list if x["AttrStatus"] and x["AttrStatus"] > 0],key=lambda ct: ct["AttrStatus"],reverse=True):
             exist = False
             for contact in self.wxapi.session_list:
@@ -342,8 +387,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     exist = True
             if not exist:
                 self.append_contact_row(session,self.sessionTableModel)
-            '''
-            '''
+        '''
         #self.sessionWidget.clicked.connect(self.session_item_clicked)
 
     def init_member(self):
@@ -655,9 +699,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         msg_content = msg['Content']
         if from_user_name.find('@@') >= 0:
             print("get_user_display_name msg_content:%s"%msg_content)
-            index = msg_content.index(":")
+            index = msg_content.find(":")
             
-            if index > 0:
+            if  msg_content.startswith("@") and index > 0:
                 from_user_display_name = from_member_name = msg_content[0:index]
                 msg_content = msg_content[index:len(msg_content)]
                 
@@ -686,9 +730,74 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     
     def default_msg_handler(self,msg):
         '''
-            #默認的消息處理handler
+        #默認的消息處理handler
         '''
         self.text_msg_handler(msg)
+        
+    def wxinitial_msg_handler(self,msg):
+        '''
+        #msg_type =51
+        #微信初化消息處理handler，
+        #我認為主要是初始化會話列表
+        #用返回的數据更新會話列表
+        '''
+        statusNotifyUserName = msg["StatusNotifyUserName"]
+        if statusNotifyUserName:
+            statusNotifyUserNames = statusNotifyUserName.split(",")
+            lists = []
+            for userName in statusNotifyUserNames:
+                exist = False
+                for tl in self.wxapi.session_list:
+                    if userName == tl["UserName"]:
+                        exist = True
+                        break
+                if exist:
+                    continue
+                
+                if userName.startswith("@@"):
+                    #prepare arguments for batch_get_contact api
+                    group = {}
+                    group['UserName'] = userName
+                    group['ChatRoomId'] = ''
+                    lists.append(group)
+            params = {
+                'BaseRequest': self.wxapi.base_request,
+                'Count': len(lists),
+                'List': lists
+            }
+            #update member list and download head image
+            batch_get_contact_response = self.batch_get_contact(data=params)
+            for contact in batch_get_contact_response['ContactList']:
+                user_name = contact['UserName']
+                head_img_url = contact['HeadImgUrl']
+                if not user_name or not head_img_url:
+                    continue
+                image = '%s/heads/contact/%s.jpg'%(self.app_home,user_name)
+                if not os.path.exists(image):
+                    self.wxapi.webwx_get_head_img(user_name,head_img_url)
+                    
+                for member in self.wxapi.member_list:
+                    exist = False
+                    if contact["UserName"] == member["UserName"]:
+                        exist = True
+                        break
+                if exist is False:
+                    self.wxapi.member_list.append(contact)
+                        
+            #update chat session list
+            tmp_list = self.wxapi.session_list[:]
+            for userName in statusNotifyUserNames:
+                exist = False
+                for tl in tmp_list:
+                    if userName == tl["UserName"]:
+                        exist = True
+                        break
+                if exist:
+                    continue
+                for member in self.wxapi.member_list:
+                    if userName == member["UserName"]:
+                        self.wxapi.session_list.append(member)
+                        break
     
     def voice_msg_handler(self,msg):
         '''
@@ -749,10 +858,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.current_chat_contact and user_name == self.current_chat_contact['UserName']:
             msg_content = msg['Content']
             if from_user_name.find('@@') >= 0:
-                index = msg_content.index(":")
+                index = msg_content.find(":")
                 
-                if index > 0:
-                    msg_content = msg_content[index:len(msg_content)]
+                if msg_content.startswith(":") and index > 0:
+                    msg_content = msg_content[index+1:]
                     if msg_content.startswith("<br/>"):
                         msg_content = msg_content.replace("<br/>","",1)
             msg_content = self.emotiondecode(msg_content)
@@ -803,8 +912,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             xml_content = xml_content.replace("&lt;","<")
             xml_content = xml_content.replace("<br/>","")
         if msg["FromUserName"].find("@@") >=0:
-            index = xml_content.index(":")
-            if index > 0:
+            index = xml_content.find(":")
+            if xml_content.startswith("@") and index > 0:
                 xml_content = xml_content[index+1:len(msg)]
         doc = xml.dom.minidom.parseString(xml_content)
         replacemsg_nodes = doc.getElementsByTagName("replacemsg")
@@ -837,11 +946,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             xmlContent = xmlContent.replace("&lt;","<")
             xmlContent = xmlContent.replace("<br/>","")
         if msg["FromUserName"].find("@@") >=0:
-            index = xmlContent.index(":")
+            index = xmlContent.find(":")
             if index > 0:
                 xmlContent = xmlContent[index+1:len(msg)]
         
-        print("xml_content %s"%xmlContent)
+        #print("xml_content %s"%xmlContent)
         doc = xml.dom.minidom.parseString(xmlContent)
         title_nodes = doc.getElementsByTagName("title")
         desc_nodes = doc.getElementsByTagName("des")
@@ -945,14 +1054,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         @param data
         MSTTYPE:
-        MSGTYPE_TEXT: 1,
-        MSGTYPE_IMAGE: 3,
-        MSGTYPE_VOICE: 34,
+        MSGTYPE_TEXT: 1,文本消息
+        MSGTYPE_IMAGE: 3,图片消息
+        MSGTYPE_VOICE: 34,语音消息
+        37,好友确认消息
         MSGTYPE_VIDEO: 43,
         MSGTYPE_MICROVIDEO: 62,
         MSGTYPE_EMOTICON: 47,
         MSGTYPE_APP: 49,
         MSGTYPE_VOIPMSG: 50,
+        51,微信初始化消息
         MSGTYPE_VOIPNOTIFY: 52,
         MSGTYPE_VOIPINVITE: 53,
         MSGTYPE_LOCATION: 48,
@@ -983,9 +1094,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             msg_type = msg['MsgType']
             print("webwx_sync_process() will processing ,msgtype %s,msg body:%s"%(str(msg_type),str(msg)))
             if msg_type:
-                to_user_name = msg['ToUserName']
-                if msg_type == 2 or msg_type == 51 or msg_type == 52:
+                if msg_type == 51:
+                    self.wxinitial_msg_handler(msg)
                     continue
+                if msg_type == 2 or msg_type == 52:
+                    continue
+                to_user_name = msg['ToUserName']
                 '''
                 #没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中;
                 #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
@@ -1058,10 +1172,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def keyPressEvent(self,event):
         print("keyPressEvent")
         
-    def sync(self):
+    def synccheck(self,loop=True):
         while (True):
             st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-            print('sync %s' %(st))
+            print('push#synccheck %s' %(st))
             (code, selector) = self.wxapi.sync_check()
             if code == -1 and selector == -1:
                 print("self.wxapi.sync_check() error")
@@ -1076,6 +1190,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         #print("WeChatSync.run#webwx_sync:")
                         #print(sync_response)
                         self.webwx_sync_process(sync_response)
+            if loop is False:
+                break
             sleep(11)
             
 class MemberListWidget(QtGui.QDialog):
