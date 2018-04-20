@@ -5,6 +5,9 @@ Created on 2018年3月25日
 
 @author: zhaohongxing
 '''
+
+__date__='2018年3月25日'
+
 import sip
 sip.setapi('QString', 1)
 sip.setapi('QVariant', 1)
@@ -23,6 +26,7 @@ from api.msg import Msg
 
 import xml.dom.minidom
 import json
+import logging
 
 from PyQt4.Qt import QIcon, QCursor, Qt, QTextImageFormat
 from PyQt4 import QtGui, uic
@@ -45,6 +49,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     I18N = "resource/i18n/resource.properties"
     
     EMOTION_DIR = "./resource/expression"
+    
+    LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
     '''
         webwx_init
         ->webwxstatusnotify()
@@ -60,6 +66,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.config = {
            
         }
+        logging.basicConfig(filename='./wechat.log',level=logging.DEBUG,format=WeChat.LOG_FORMAT)
         self.user_home = os.path.expanduser('~')
         self.setAcceptDrops(True)
         self.app_home = self.user_home + '/.wechat/'
@@ -112,8 +119,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.friendsWidget.setColumnWidth(3, 30);
         self.publicWidget.setModel(self.publicModel)
 
-        self.chatButton.clicked.connect(self.switchChat)
-        self.friendButton.clicked.connect(self.switchFriend)
+        self.chatButton.clicked.connect(self.switch_chat)
+        self.friendButton.clicked.connect(self.switch_friend)
 
         self.sendButton.clicked.connect(self.send_msg)
         self.emotionButton.clicked.connect(self.select_emotion)
@@ -411,16 +418,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #self.readerListWidget.addItem("readers")
         #self.readerListWidget.clicked.connect(self.contact_cell_clicked)
 
-    def switchChat(self):
+    def switch_chat(self):
         self.friendsWidget.setVisible(False)
         self.chatsWidget.setVisible(True)
 
-    def read_button_clicked(self):
+    def public_button_clicked(self):
         self.friendsWidget.setVisible(False)
         self.chatsWidget.setVisible(False)
         self.publicWidget.setVisible(True)
 
-    def switchFriend(self):
+    def switch_friend(self):
         self.friendsWidget.setVisible(True)
         self.chatsWidget.setVisible(False)
 
@@ -755,6 +762,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #用返回的數据更新會話列表
         '''
         statusNotifyUserName = msg["StatusNotifyUserName"]
+        #
+        #StatusNotifyCode = 2,4,5
+        #4:初始化時所有的會話列表人員信息
+        #2，5還不清楚
+        #
+        statusNotifyCode = msg["StatusNotifyCode"]
         if statusNotifyUserName:
             statusNotifyUserNames = statusNotifyUserName.split(",")
             lists = []
@@ -796,22 +809,25 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         break
                 if exist is False:
                     self.wxapi.friend_list.append(contact)
-                        
-            #update chat session list
-            tmp_list = self.wxapi.chat_list[:]
-            for userName in statusNotifyUserNames:
-                exist = False
-                for tl in tmp_list:
-                    if userName == tl["UserName"]:
-                        exist = True
-                        break
-                if exist:
-                    continue
-                for member in self.wxapi.friend_list:
-                    if userName == member["UserName"]:
-                        self.wxapi.chat_list.append(member)
-                        #self.append_contact_row(member,self.chatsModel)
-                        break
+            logging.debug('statusNotifyCode:%s'%statusNotifyCode)
+            if statusNotifyCode == 4:
+                #update chat list
+                tmp_list = self.wxapi.chat_list[:]
+                for userName in statusNotifyUserNames:
+                    exist = False
+                    for tl in tmp_list:
+                        if userName == tl["UserName"]:
+                            exist = True
+                            break
+                    if exist:
+                        continue
+                    for member in self.wxapi.friend_list:
+                        if userName == member["UserName"]:
+                            self.wxapi.chat_list.append(member)
+                            #self.append_contact_row(member,self.chatsModel)
+                            break
+            else:
+                logging.warn('statusNotifyCode is %s not process'%statusNotifyCode)
     
     def voice_msg_handler(self,msg):
         '''

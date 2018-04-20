@@ -10,6 +10,7 @@ import os
 import sys
 import threading
 from time import sleep
+import logging
 
 from com.ox11.wechat.api.requests.WeChatAPI import WeChatAPI
 from com.ox11.wechat.wechat import WeChat
@@ -47,6 +48,8 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         LauncherWindow.__init__(self)
         #threading.Thread.__init__(self,name='wechat launcher')
         #self.setDaemon(True)
+        
+        logging.basicConfig(filename='./wechat.log',level=logging.DEBUG,format=logging.BASIC_FORMAT)
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
         self.wxapi = WeChatAPI()
@@ -111,9 +114,8 @@ if __name__ =="__main__":
     #QtGui.QTextCodec.setCodecForTr(QtGui.QTextCodec.codecForName("utf8"))
     #QtGui.QTextCodec.setCodecForCStrings(QtGui.QTextCodec.codecForLocale())
     app = QtGui.QApplication(sys.argv)
-    print(getosname())
     if getosname() == "Windows":
-        print("The os name is Windows,will be exit!")
+        logging.error("The OS name is Windows,will be exit!")
     launcher = WeChatLauncher()
     launcher.show()
     if QtGui.QDialog.Accepted == launcher.exec_():

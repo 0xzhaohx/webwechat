@@ -10,7 +10,7 @@ reload(sys)
 
 sys.setdefaultencoding('utf8')
 
-class Properties:
+class Properties(object):
 
     def __init__(self, pfile):
         self.pfile = pfile

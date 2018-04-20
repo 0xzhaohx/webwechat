@@ -14,9 +14,10 @@ import re
 import xml.dom.minidom
 import json
 import os
-import sys
 import hashlib
 import mimetypes
+import logging
+from cgi import logfile
 
 '''
 1.ContactFlag:
@@ -54,7 +55,6 @@ def _decode_data(data):
 
 
 class WeChatAPI(object):
-
     def __init__(self):
         self.hosts = {
             "weixin.qq.com":{
@@ -88,6 +88,7 @@ class WeChatAPI(object):
                 'push':'webpush.web2.wechat.com'
             }
         }
+        logging.basicConfig(filename='./wechat.log',level=logging.DEBUG,format=logging.BASIC_FORMAT)
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
         self.cache_home = ("%s/cache/"%(self.app_home))
@@ -129,16 +130,7 @@ class WeChatAPI(object):
         )
         self.version='0.1'
         self.wxversion = 'v2'
-        self.logtruncate()
         
-    def logtruncate(self):
-        os.remove("log.log")
-        with open("log.log","w") as log:
-            log.seek(0)
-            log.truncate()
-            st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-            log.write("\r\n%s"%st)
-            
     def resetdeviceid(self):
         self.base_request["DeviceID"]='e%s'%repr(random.random())[2:17]
         
@@ -753,13 +745,6 @@ class WeChatAPI(object):
         }
         response = self.post_json(url=url,data=data)
         return response
-    def log(self,url,data):
-        with open("log.log","a+") as log:
-            log.write("\r\nURL:%s"%url)
-            log.write("\r\nURL RESPONSE:")
-            log.write("\r\n")
-            log.write(data)
-            log.write("\r\n==========================================================")
     def get(self, url, data= {},stream=False):
         _headers = {
             'Connection': 'keep-alive',
@@ -776,7 +761,8 @@ class WeChatAPI(object):
             else:
                 response.encoding = 'utf-8'
                 data = response.text
-                self.log(url, data)
+                logging.debug(url)
+                logging.debug(data)
             response.close()
             return data
             '''
@@ -807,14 +793,18 @@ class WeChatAPI(object):
                 else:
                     response.encoding='utf-8'
                     data = response.text
-                    self.log(url, data)
                 response.close()
                 return data
-            except (KeyboardInterrupt, SystemExit):
+            except KeyboardInterrupt,e:
+                logging.error(e)
+                raise
+                return False
+            except SystemExit,e:
+                logging.error(e)
                 raise
                 return False
             except Exception,e:
-                print(str(e))
+                logging.error(e)
                 return False
 
     def post_json(self, url, data, headers={}):
@@ -834,15 +824,16 @@ class WeChatAPI(object):
                 response = self.session.post(url=url, data=json.dumps(data, ensure_ascii=False).encode('utf8'), headers=_headers)
                 response.encoding='utf-8'
                 response_text = response.text
-                self.log(url, response_text)
+                logging.debug(url)
+                logging.debug(response_text)
                 response.close()
                 return response_text
             except (KeyboardInterrupt, SystemExit) ,e:
-                print(e)
+                logging.error(e)
                 raise
                 return False
             except Exception,e:
-                print(e)
+                logging.error(e)
                 return False
     
     def options(self, url, data=None, headers={}):
@@ -853,17 +844,18 @@ class WeChatAPI(object):
 
         for (key,value) in headers.items():
             _headers[key]=value
-
         try:
             response = self.session.options(url=url,headers=_headers)
             response.encoding='utf-8'
             data = response.text
             response.close()
             return data
-        except (KeyboardInterrupt, SystemExit):
+        except (KeyboardInterrupt, SystemExit),e:
+            logging.error(e)
             raise
             return False
-        except:
+        except Exception,e:
+            logging.error(e)
             return False
 
 
