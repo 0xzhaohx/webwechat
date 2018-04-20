@@ -74,6 +74,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.wxapi = wxapi
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"))
+        self.sessionTableModel = QStandardItemModel(0,4)
+        self.friendsModel = QStandardItemModel(0,4)
+        self.readerTableModel = QStandardItemModel()
+        #after initial model,do login
         self.wxapi.login()
         
         self.wxinitial()
@@ -82,37 +86,34 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer = threading.Timer(10, self.synccheck)
         timer.setDaemon(True)
         timer.start()
-        self.sessionTableModel = QStandardItemModel(0,4)
-        self.memberTableModel = QStandardItemModel(0,4)
-        self.readerTableModel = QStandardItemModel()
         
         self.memberListWidget = None
-        self.memberWidget.setVisible(False)
+        self.friendsWidget.setVisible(False)
         self.readerWidget.setVisible(False)
         self.init_session()
         self.init_member()
         self.init_reader()
         self.emotionscodeinitial()
         
-        self.chatWidget.setVisible(False)
-        self.sessionWidget.setItemDelegate(LabelDelegate())
-        self.sessionWidget.setIconSize(QSize(40,40))
-        self.sessionWidget.setModel(self.sessionTableModel)
-        self.sessionWidget.selectionModel().selectionChanged.connect(self.session_item_clicked)
-        self.sessionWidget.setColumnHidden(0,True)
-        self.sessionWidget.setColumnHidden(3,True)
-        self.sessionWidget.setColumnWidth(1, 70);
-        self.sessionWidget.setColumnWidth(3, 30);
-        #self.sessionWidget.horizontalHeader().setStretchLastSection(True)
-        self.memberWidget.setModel(self.memberTableModel)
-        self.memberWidget.setIconSize(QSize(40,40))
-        self.memberWidget.setColumnHidden(0,True)
-        self.memberWidget.setColumnWidth(1, 70);
-        self.memberWidget.setColumnWidth(3, 30);
+        self.chatAreaWidget.setVisible(False)
+        self.chatsWidget.setItemDelegate(LabelDelegate())
+        self.chatsWidget.setIconSize(QSize(40,40))
+        self.chatsWidget.setModel(self.sessionTableModel)
+        self.chatsWidget.selectionModel().selectionChanged.connect(self.session_item_clicked)
+        self.chatsWidget.setColumnHidden(0,True)
+        self.chatsWidget.setColumnHidden(3,True)
+        self.chatsWidget.setColumnWidth(1, 70);
+        self.chatsWidget.setColumnWidth(3, 30);
+        #self.chatsWidget.horizontalHeader().setStretchLastSection(True)
+        self.friendsWidget.setModel(self.friendsModel)
+        self.friendsWidget.setIconSize(QSize(40,40))
+        self.friendsWidget.setColumnHidden(0,True)
+        self.friendsWidget.setColumnWidth(1, 70);
+        self.friendsWidget.setColumnWidth(3, 30);
         self.readerWidget.setModel(self.readerTableModel)
 
-        self.sessionButton.clicked.connect(self.session_button_clicked)
-        self.memberButton.clicked.connect(self.member_button_clicked)
+        self.chatButton.clicked.connect(self.switchChat)
+        self.friendButton.clicked.connect(self.switchFriend)
 
         self.sendButton.clicked.connect(self.send_msg)
         self.emotionButton.clicked.connect(self.select_emotion)
@@ -369,7 +370,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         column 4:message count tips(will be hidden)
         :return:
         '''
-        #self.sessionWidget.setColumnCount(4)
+        #self.chatsWidget.setColumnCount(4)
         ''''''
         for contact in self.wxapi.session_list:
             self.append_contact_row(contact,self.sessionTableModel)
@@ -383,45 +384,45 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if not exist:
                 self.append_contact_row(session,self.sessionTableModel)
         '''
-        #self.sessionWidget.clicked.connect(self.session_item_clicked)
+        #self.chatsWidget.clicked.connect(self.session_item_clicked)
 
     def init_member(self):
         ''''''
-        #self.memberTableModel.setColumnHidden(0,True)
+        #self.friendsModel.setColumnHidden(0,True)
         '''
         /***/
         /*去掉每行的行号*/ 
         QHeaderView *headerView = table->verticalHeader();  
         headerView->setHidden(true);  
         '''
-        self.memberWidget.setColumnHidden(1,True)
+        self.friendsWidget.setColumnHidden(1,True)
         group_contact_list = []
         for member in self.wxapi.member_list:
             group_contact_list.append(member)
         group_contact_list.sort(key=lambda mm: mm['PYInitial'])
 
         for member in group_contact_list:#.sort(key=lambda m: m['PYInitial'])
-            self.append_contact_row(member,self.memberTableModel)
+            self.append_contact_row(member,self.friendsModel)
             
-        self.memberWidget.clicked.connect(self.member_item_clicked)
+        self.friendsWidget.clicked.connect(self.member_item_clicked)
 
     def init_reader(self):
         pass
         #self.readerListWidget.addItem("readers")
         #self.readerListWidget.clicked.connect(self.contact_cell_clicked)
 
-    def session_button_clicked(self):
-        self.memberWidget.setVisible(False)
-        self.sessionWidget.setVisible(True)
+    def switchChat(self):
+        self.friendsWidget.setVisible(False)
+        self.chatsWidget.setVisible(True)
 
     def read_button_clicked(self):
-        self.memberWidget.setVisible(False)
-        self.sessionWidget.setVisible(False)
+        self.friendsWidget.setVisible(False)
+        self.chatsWidget.setVisible(False)
         self.readerWidget.setVisible(True)
 
-    def member_button_clicked(self):
-        self.memberWidget.setVisible(True)
-        self.sessionWidget.setVisible(False)
+    def switchFriend(self):
+        self.friendsWidget.setVisible(True)
+        self.chatsWidget.setVisible(False)
 
     def get_contact(self,user_name):
         return self.get_member(user_name)
@@ -436,10 +437,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 return member
             
     def session_item_clicked(self):
-        self.chatWidget.setVisible(True)
+        self.chatAreaWidget.setVisible(True)
         self.label.setVisible(False)
         #self.memberListWidget.destroy()
-        current_row = self.sessionWidget.currentIndex().row()
+        current_row = self.chatsWidget.currentIndex().row()
         user_name_index = self.sessionTableModel.index(current_row,0)
         user_name_o = self.sessionTableModel.data(user_name_index)
 
@@ -560,11 +561,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             
         
     def member_item_clicked(self):
-        self.chatWidget.setVisible(True)
+        self.chatAreaWidget.setVisible(True)
         self.label.setVisible(False)
-        current_row =self.memberWidget.currentIndex().row()
-        user_name_index = self.memberTableModel.index(current_row,0)
-        user_name_o = self.memberTableModel.data(user_name_index)
+        current_row =self.friendsWidget.currentIndex().row()
+        user_name_index = self.friendsModel.index(current_row,0)
+        user_name_o = self.friendsModel.data(user_name_index)
         user_name = user_name_o.toString()
         contact = self.get_member(user_name)
         self.current_chat_contact = contact
@@ -577,10 +578,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             messages_list = self.msg_cache[user_name]
             for message in messages_list:
                 self.messages.append((message))
-    '''
-                把消息發送出去
-    '''
+    
     def send_msg(self):
+        '''
+        #把消息發送出去
+        '''
         msg_html = self.draft.toHtml()
         rr = re.search(r'<img src="([.*\S]*\.gif)"',msg_html,re.I)
         msgBody = ""
@@ -593,14 +595,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             msgBody = self.draft.toPlainText()
         #print("xxxx %s"%msgBody)
         #msg_text = str(self.draft.toPlainText())
-        #msgBody = str(msgBody)
+        msgBody = unicode(msgBody)
         msg = Msg(1, msgBody, self.current_chat_contact['UserName'])
         response = self.wxapi.webwx_send_msg(msg)
         if not response or response is False:
             return False
         #if send success
         self.stick(select=True)
-        #self.sessionWidget.selectRow(0)
+        #self.chatsWidget.selectRow(0)
         format_msg = self.msg_timestamp(self.wxapi.user['NickName'])
         self.messages.append(format_msg)
         msg_text = self.emotiondecode(msgBody) if rr else msgBody
@@ -654,10 +656,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 cells.append(count_tips_item)
                 
                 self.sessionTableModel.insertRow(0,cells)
-    '''
-        把圖片發送出去
-    '''
+    
     def upload_send_msg_image(self,contact,ffile):
+        '''
+        #把圖片發送出去
+        '''
         upload_response = self.wxapi.webwx_upload_media(contact,ffile)
         json_upload_response = json.loads(upload_response)
         media_id = json_upload_response['MediaId']
@@ -693,7 +696,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             taked_row = self.sessionTableModel.takeRow(row)
             self.sessionTableModel.insertRow(0 ,taked_row)
             if select:
-                self.sessionWidget.selectRow(0)
+                self.chatsWidget.selectRow(0)
         
     def get_user_display_name(self,msg):
         
@@ -807,6 +810,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 for member in self.wxapi.member_list:
                     if userName == member["UserName"]:
                         self.wxapi.session_list.append(member)
+                        #self.append_contact_row(member,self.sessionTableModel)
                         break
     
     def voice_msg_handler(self,msg):

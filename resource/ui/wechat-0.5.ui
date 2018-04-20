@@ -77,21 +77,21 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_7">
          <item>
-          <widget class="QPushButton" name="sessionButton">
+          <widget class="QPushButton" name="chatButton">
            <property name="text">
             <string>聊天</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="readButton">
+          <widget class="QPushButton" name="publicButton">
            <property name="text">
             <string>閱讀</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="memberButton">
+          <widget class="QPushButton" name="friendButton">
            <property name="text">
             <string>聯係人</string>
            </property>
@@ -100,7 +100,7 @@
         </layout>
        </item>
        <item>
-        <widget class="QTableView" name="sessionWidget">
+        <widget class="QTableView" name="chatsWidget">
          <property name="frameShape">
           <enum>QFrame::NoFrame</enum>
          </property>
@@ -159,7 +159,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QTableView" name="memberWidget">
+        <widget class="QTableView" name="friendsWidget">
          <property name="frameShape">
           <enum>QFrame::NoFrame</enum>
          </property>
@@ -206,7 +206,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="chatWidget" native="true">
+        <widget class="QWidget" name="chatAreaWidget" native="true">
          <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,7,0,2,0">
           <property name="margin">
            <number>1</number>
