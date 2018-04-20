@@ -97,6 +97,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.memberListWidget = None
         self.friendsWidget.setVisible(False)
         self.publicWidget.setVisible(False)
+        self.profileWidget.setVisible(False)
         self.init_chats()
         self.init_friends()
         self.init_public()
@@ -419,8 +420,17 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #self.readerListWidget.clicked.connect(self.contact_cell_clicked)
 
     def switch_chat(self):
-        self.friendsWidget.setVisible(False)
+        current_row =self.chatsWidget.currentIndex().row()
+        if current_row > 0:
+            self.chatAreaWidget.setVisible(True)
+            self.label.setVisible(False)
+        else:
+            self.label.setVisible(True)
+            self.chatAreaWidget.setVisible(False)
+            
         self.chatsWidget.setVisible(True)
+        self.friendsWidget.setVisible(False)
+        self.profileWidget.setVisible(False)
 
     def public_button_clicked(self):
         self.friendsWidget.setVisible(False)
@@ -428,8 +438,17 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.publicWidget.setVisible(True)
 
     def switch_friend(self):
+        current_row =self.friendsWidget.currentIndex().row()
+        if current_row > 0:
+            self.label.setVisible(False)
+            self.profileWidget.setVisible(True)
+        else:
+            self.label.setVisible(True)
+            self.profileWidget.setVisible(False)
+            
         self.friendsWidget.setVisible(True)
         self.chatsWidget.setVisible(False)
+        self.chatAreaWidget.setVisible(False)
 
     def get_contact(self,user_name):
         return self.get_member(user_name)
@@ -568,24 +587,39 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             
         
     def member_item_clicked(self):
-        self.chatAreaWidget.setVisible(True)
+        self.profileWidget.setVisible(True)
+        self.chatAreaWidget.setVisible(False)
         self.label.setVisible(False)
         current_row =self.friendsWidget.currentIndex().row()
         user_name_index = self.friendsModel.index(current_row,0)
         user_name_o = self.friendsModel.data(user_name_index)
         user_name = user_name_o.toString()
         contact = self.get_member(user_name)
+        if contact:
+            user_icon = self.contact_head_home + contact['UserName'] + ".jpg"
+            user_head_image = QtGui.QImage()
+            if user_head_image.load(user_icon):
+                self.avater_label.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(132, 132))
+            else:
+                if user_head_image.load(self.default_head_icon):
+                    self.avater_label.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(132, 132))
+            
+            self.nickname_label.setText(unicode(contact['NickName']))
+            self.signature_label.setText(unicode(contact['Signature']) if contact.has_key("Signature")  else "")
+            self.remark_label.setText(unicode(contact['RemarkName']))
+            self.province_label.setText(unicode(contact['RemarkName']))
+        '''
         self.current_chat_contact = contact
         dn = contact['RemarkName'] or contact['NickName']
         if not dn:
             dn = contact['NickName']
-        self.currentChatUser.setText((dn))
+        self.currentChatUser.setText(unicode(dn))
         self.messages.setText('')
         if self.msg_cache.has_key(user_name):
             messages_list = self.msg_cache[user_name]
             for message in messages_list:
                 self.messages.append((message))
-    
+        '''
     def send_msg(self):
         '''
         #把消息發送出去
