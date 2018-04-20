@@ -116,10 +116,10 @@ class WeChatAPI(object):
         #the user had login
         self.user = []
         #會話列表
-        self.session_list = []
+        self.chat_list = []
         #聯系人列表（包含會話列表）
         self.member_count = 0
-        self.member_list = []
+        self.friend_list = []
         self.fun = 'new'
         self.lang = 'zh_TW'
         self.timeout = 30
@@ -297,13 +297,13 @@ class WeChatAPI(object):
         }
 
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
-        sessions_dict = json.loads(data, object_hook=_decode_data)
-        self.user = sessions_dict['User']
-        self.session_list = sessions_dict['ContactList']
+        chats_dict = json.loads(data, object_hook=_decode_data)
+        self.user = chats_dict['User']
+        self.chat_list = chats_dict['ContactList']
         #download and setup logined user head img
         self.webwx_get_icon(self.user['UserName'], self.user['HeadImgUrl'])
-        self.update_sync_key(sessions_dict)
-        return sessions_dict
+        self.update_sync_key(chats_dict)
+        return chats_dict
 
     def update_sync_key(self,dict):
         self.sync_key_dic = dict['SyncKey']
@@ -376,10 +376,10 @@ class WeChatAPI(object):
         data = self.post(url=url, data=json.dumps(params, ensure_ascii=False).encode('utf8'), headers=headers)
         contacts_dict = json.loads(data, object_hook=_decode_data)
         #see #webwx_batch_get_contact()
-        self.member_list.extend(contacts_dict['MemberList'])
+        self.friend_list.extend(contacts_dict['MemberList'])
         self.member_count += int(contacts_dict['MemberCount'])
         # TODO download the user head icon
-        for member in self.member_list:
+        for member in self.friend_list:
             user_name = member['UserName']
             head_img_url = member['HeadImgUrl']
             if not user_name or not head_img_url:

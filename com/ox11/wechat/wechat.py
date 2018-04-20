@@ -185,7 +185,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def batch_get_contact(self,data=None):
         if not data:
             groups = []
-            for contact in self.wxapi.session_list:
+            for contact in self.wxapi.chat_list:
                 if contact['UserName'].find('@@') >= 0:
                     group = {}
                     group['UserName'] = contact['UserName']
@@ -205,12 +205,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if session_response['Count'] and session_response['Count'] > 0:
             session_list = session_response['ContactList']
             for x in session_list:
-                for i,ss in enumerate(self.wxapi.session_list):
+                for i,ss in enumerate(self.wxapi.chat_list):
                     if ss["UserName"] == x["UserName"]:
-                        self.wxapi.session_list[i] = x
+                        self.wxapi.chat_list[i] = x
                         break
-            #session_list.sort(key=lambda mm: mm['AttrStatus'],reverse=True)
-            #self.wxapi.session_list.extend(session_list)
+            #chat_list.sort(key=lambda mm: mm['AttrStatus'],reverse=True)
+            #self.wxapi.chat_list.extend(session_list)
         return session_response
     
     def prepare4Environment(self):
@@ -372,13 +372,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         #self.chatsWidget.setColumnCount(4)
         ''''''
-        for chat_contact in self.wxapi.session_list:
+        for chat_contact in self.wxapi.chat_list:
             self.append_contact_row(chat_contact,self.chatsModel)
             
         '''
-        for session in sorted([x for x in self.wxapi.member_list if x["AttrStatus"] and x["AttrStatus"] > 0],key=lambda ct: ct["AttrStatus"],reverse=True):
+        for session in sorted([x for x in self.wxapi.friend_list if x["AttrStatus"] and x["AttrStatus"] > 0],key=lambda ct: ct["AttrStatus"],reverse=True):
             exist = False
-            for contact in self.wxapi.session_list:
+            for contact in self.wxapi.chat_list:
                 if contact["UserName"] == session["UserName"]:
                     exist = True
             if not exist:
@@ -397,7 +397,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         self.friendsWidget.setColumnHidden(1,True)
         group_contact_list = []
-        for member in self.wxapi.member_list:
+        for member in self.wxapi.friend_list:
             group_contact_list.append(member)
         group_contact_list.sort(key=lambda mm: mm['PYInitial'])
 
@@ -428,11 +428,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         return self.get_member(user_name)
 
     def get_member(self,user_name):
-        for member in self.wxapi.session_list:
+        for member in self.wxapi.chat_list:
             if user_name == member['UserName']:
                 return member
             
-        for member in self.wxapi.member_list:
+        for member in self.wxapi.friend_list:
             if user_name == member['UserName']:
                 return member
             
@@ -514,7 +514,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             print(self.frameGeometry())
             print(rect.width(), rect.height())
             
-            self.memberListWidget = MemberListWidget(memebers,self.wxapi.member_list,self)
+            self.memberListWidget = MemberListWidget(memebers,self.wxapi.friend_list,self)
             self.memberListWidget.resize(QSize(MemberListWidget.WIDTH,rect.height()+self.frameGeometry().height()-self.geometry().height()))
             self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
             
@@ -555,7 +555,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 new_contact = batch_response['ContactList'][0]
                 remark_name = ("%s,%s,%s")%(self.wxapi.user["NickName"],self.current_chat_contact["NickName"],"")
                 new_contact["RemarkName"]=remark_name
-                self.wxapi.member_list.append(new_contact)
+                self.wxapi.friend_list.append(new_contact)
                 self.wxapi.webwx_get_head_img(new_contact["UserName"], new_contact["HeadImgUrl"])
                 self.append_contact_row(new_contact,self.chatsModel,action="INSERT",row=0)
             
@@ -760,7 +760,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             lists = []
             for userName in statusNotifyUserNames:
                 exist = False
-                for tl in self.wxapi.session_list:
+                for tl in self.wxapi.chat_list:
                     if userName == tl["UserName"]:
                         exist = True
                         break
@@ -789,16 +789,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 if not os.path.exists(image):
                     self.wxapi.webwx_get_head_img(user_name,head_img_url)
                     
-                for member in self.wxapi.member_list:
+                for member in self.wxapi.friend_list:
                     exist = False
                     if contact["UserName"] == member["UserName"]:
                         exist = True
                         break
                 if exist is False:
-                    self.wxapi.member_list.append(contact)
+                    self.wxapi.friend_list.append(contact)
                         
             #update chat session list
-            tmp_list = self.wxapi.session_list[:]
+            tmp_list = self.wxapi.chat_list[:]
             for userName in statusNotifyUserNames:
                 exist = False
                 for tl in tmp_list:
@@ -807,9 +807,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         break
                 if exist:
                     continue
-                for member in self.wxapi.member_list:
+                for member in self.wxapi.friend_list:
                     if userName == member["UserName"]:
-                        self.wxapi.session_list.append(member)
+                        self.wxapi.chat_list.append(member)
                         #self.append_contact_row(member,self.chatsModel)
                         break
     
@@ -1044,7 +1044,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #have not received a message before（如果此人没有在會話列表中，則加入之）
         if not exist:
             contact = {}
-            for member in self.wxapi.member_list:
+            for member in self.wxapi.friend_list:
                 if member['UserName'] == cache_key:
                     contact = member
                     break
