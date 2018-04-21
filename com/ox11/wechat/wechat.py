@@ -1155,12 +1155,17 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 logging.warn('msg not process:')
                 logging.warn('msg type %d'%msg_type)
                 return
-            to_user_name = msg['ToUserName']
+            user_name = msg['FromUserName']
+            if user_name.startswith("@@") >= 0:
+                #user_name = from_user_name
+                pass
+            else:
+                user_name = msg['ToUserName']
             '''
             #没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中;
             #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
             '''
-            if (not self.current_chat_contact) or to_user_name != self.current_chat_contact['UserName']:
+            if (not self.current_chat_contact) or user_name != self.current_chat_contact['UserName']:
                 self.put_msg_cache(msg)
             else:
                 if msg_type == 1:
@@ -1169,6 +1174,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     self.image_msg_handler(msg) 
                 elif msg_type == 34:
                     self.voice_msg_handler(msg)
+                elif msg_type == 47:
+                    self.default_msg_handler(msg)
                 elif msg_type == 49:
                     self.app_msg_handler(msg)
                 elif msg_type == 10002:
