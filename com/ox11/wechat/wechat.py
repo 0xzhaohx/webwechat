@@ -95,7 +95,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.wxinitial()
         #self.synct = WeChatSync(self.wxapi)
         #self.synct.start()
-        timer = threading.Timer(15, self.synccheck)
+        timer = threading.Timer(5, self.synccheck)
         timer.setDaemon(True)
         timer.start()
         
@@ -271,9 +271,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #删除下载的头像文件
         '''
         for i in os.listdir(self.contact_head_home):
-            head_path = os.path.join(self.contact_head_home,i)
-            if os.path.isfile(head_path):
-                os.remove(head_path)
+            head_icon = os.path.join(self.contact_head_home,i)
+            if os.path.isfile(head_icon):
+                os.remove(head_icon)
     
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -368,8 +368,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         user_name_item = QtGui.QStandardItem(unicode(user_name))
         cells.append(user_name_item)
         
-        user_head_icon_path = self.contact_head_home + contact['UserName']+".jpg"
-        item = QtGui.QStandardItem(QIcon(user_head_icon_path),"")
+        user_head_icon = self.contact_head_home + contact['UserName']+".jpg"
+        item = QtGui.QStandardItem(QIcon(user_head_icon),"")
         cells.append(item)
         
         dn = contact['RemarkName'] or contact['NickName']
@@ -512,29 +512,30 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             self.currentChatUser.setText(unicode(dn))
         self.messages.setText('')
-        msgss = self.msg_cache.get(user_name)
+        msgss = self.msg_cache.get(user_name) or []
         if msgss:
             print("user_name %s,msgss size:%s"%(user_name,len(msgss)))
-        for (key,messages_list) in self.msg_cache.items():
-            if user_name == key:
-                for message in messages_list:
-                    msg_type = message['MsgType']
-                    if msg_type:
-                        if msg_type == 2 or msg_type == 51 or msg_type == 52:
-                            continue
-                        if msg_type == 1:
-                            self.text_msg_handler(message)
-                        elif msg_type == 3:
-                            self.image_msg_handler(message)
-                        elif msg_type == 34:
-                            self.voice_msg_handler(message)
-                        elif msg_type == 49:
-                            self.app_msg_handler(message)
-                        elif msg_type == 10002:
-                            self.sys_msg_handler(message)
-                        else:
-                            self.default_msg_handler(message)
-                break
+        #for (key,messages_list) in self.msg_cache.items():
+        #for (key,messages_list) in msgss:
+            #if user_name == key:
+        for message in msgss:
+            msg_type = message['MsgType']
+            if msg_type:
+                if msg_type == 2 or msg_type == 51 or msg_type == 52:
+                    continue
+                if msg_type == 1:
+                    self.text_msg_handler(message)
+                elif msg_type == 3:
+                    self.image_msg_handler(message)
+                elif msg_type == 34:
+                    self.voice_msg_handler(message)
+                elif msg_type == 49:
+                    self.app_msg_handler(message)
+                elif msg_type == 10002:
+                    self.sys_msg_handler(message)
+                else:
+                    self.default_msg_handler(message)
+                #break
 
     def showMembers(self):
         self.current_chat_user_click()
@@ -645,6 +646,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #把消息發送出去
         '''
         msg_html = self.draft.toHtml()
+        if not msg_html or len(msg_html) <= 0:
+            return
         rr = re.search(r'<img src="([.*\S]*\.gif)"',msg_html,re.I)
         msgBody = ""
         if rr:
@@ -707,8 +710,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 cells.append(item)
                 
                 dn = self.current_chat_contact['RemarkName'] or self.current_chat_contact['NickName']
-                if not dn:
-                    dn = self.current_chat_contact['NickName']
+                #if not dn:
+                    #dn = self.current_chat_contact['NickName']
                 # user remark or nick name
                 remark_nick_name_item = QtGui.QStandardItem((dn))
                 cells.append(remark_nick_name_item)
@@ -788,13 +791,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     break
         else:
             from_user_display_name = from_user['RemarkName'] or from_user['NickName']
-            if not from_user_display_name:
-                from_user_display_name = from_user['NickName']
+            #if not from_user_display_name:
+                #from_user_display_name = from_user['NickName']
                 
         if not from_user_display_name:
             from_user_display_name = from_user_name
         
-        return from_user_display_name
+        return from_user_display_name or from_user_name
     
     
     def msg_timestamp(self,userName):
@@ -819,7 +822,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #
         #StatusNotifyCode = 2,4,5
         #4:初始化時所有的會話列表人員信息
-        #2，5還不清楚
+        #2應該是新增會話，就是要把此人加入會話列表
+        #5還不清楚
         #
         statusNotifyCode = msg["StatusNotifyCode"]
         if statusNotifyUserName:
@@ -1124,8 +1128,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 logging.warn('the contact %s not found in friends'%cache_key)
                 return False
             dn = contact['RemarkName'] or contact['NickName']
-            if not dn:
-                dn = contact['NickName']
+            #if not dn:
+                #dn = contact['NickName']
             user_name = contact['UserName']
             cells = []
             # user name item
@@ -1155,12 +1159,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 logging.warn('msg not process:')
                 logging.warn('msg type %d'%msg_type)
                 return
-            user_name = msg['FromUserName']
+            user_name = msg['ToUserName']
             if user_name.startswith("@@") >= 0:
                 #user_name = from_user_name
-                pass
+                user_name = msg['FromUserName']
             else:
-                user_name = msg['ToUserName']
+                pass
             '''
             #没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中;
             #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
@@ -1303,7 +1307,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.webwx_sync_process(sync_response)
             if loop is False:
                 break
-            sleep(11)
+            sleep(5)
             
 class MemberListWidget(QtGui.QDialog):
     WIDTH = 300
@@ -1370,13 +1374,13 @@ class MemberListWidget(QtGui.QDialog):
         item = QtGui.QStandardItem(("+"))
         cells.append(item)
         for member in members[0:3]:
-            user_head_path = self.contact_head_home + member['UserName']+".jpg"
-            if not os.path.exists(user_head_path):
-                user_head_path = self.default_member_icon
+            user_head_icon = self.contact_head_home + member['UserName']+".jpg"
+            if not os.path.exists(user_head_icon):
+                user_head_icon = self.default_member_icon
             dn = member['DisplayName'] or member['NickName']
             if not dn:
                 dn = member['NickName']
-            item = QtGui.QStandardItem(QIcon(user_head_path),unicode(dn))
+            item = QtGui.QStandardItem(QIcon(user_head_icon),unicode(dn))
             cells.append(item)
         data_model.appendRow(cells)
         i = 3
@@ -1386,13 +1390,13 @@ class MemberListWidget(QtGui.QDialog):
         while i < members_len:
             cells = []
             for member in members[i:i+4]:
-                user_head_path = self.contact_head_home + member['UserName']+".jpg"
-                if not os.path.exists(user_head_path):
-                    user_head_path = self.default_member_icon
+                user_head_icon = self.contact_head_home + member['UserName']+".jpg"
+                if not os.path.exists(user_head_icon):
+                    user_head_icon = self.default_member_icon
                 dn = member['DisplayName'] or member['NickName']
                 if not dn:
                     dn = member['NickName']
-                item = QtGui.QStandardItem(QIcon(user_head_path),unicode(dn))
+                item = QtGui.QStandardItem(QIcon(user_head_icon),unicode(dn))
                 cells.append(item)
             i = i + 4
             data_model.appendRow(cells)
