@@ -56,6 +56,11 @@
          </item>
          <item>
           <widget class="QLabel" name="userNameLabel">
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>TextLabel</string>
            </property>
@@ -220,8 +225,8 @@
            <widget class="QLabel" name="detail_label">
             <property name="font">
              <font>
-              <weight>75</weight>
-              <bold>true</bold>
+              <weight>50</weight>
+              <bold>false</bold>
              </font>
             </property>
             <property name="text">
@@ -400,6 +405,13 @@
              </item>
              <item>
               <widget class="QPushButton" name="showMemberButton">
+               <property name="font">
+                <font>
+                 <pointsize>9</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
                <property name="focusPolicy">
                 <enum>Qt::NoFocus</enum>
                </property>
@@ -527,9 +539,12 @@ p, li { white-space: pre-wrap; }
                </item>
                <item>
                 <widget class="QWidget" name="widget_2" native="true">
-                 <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0">
                   <property name="spacing">
                    <number>0</number>
+                  </property>
+                  <property name="sizeConstraint">
+                   <enum>QLayout::SetDefaultConstraint</enum>
                   </property>
                   <property name="margin">
                    <number>0</number>
@@ -543,6 +558,12 @@ p, li { white-space: pre-wrap; }
                   </item>
                   <item>
                    <widget class="QPushButton" name="sendSetButton">
+                    <property name="maximumSize">
+                     <size>
+                      <width>20</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
                     <property name="text">
                      <string/>
                     </property>

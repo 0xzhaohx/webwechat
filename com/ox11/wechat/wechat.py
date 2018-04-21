@@ -60,6 +60,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         ->(webwx_geticon|webwx_batch_getheadimg)
         ->second call webwx_batch_getcontact
     '''
+    
+    initialed = pyqtSignal()
+    
     def __init__(self,wxapi):
         QtGui.QMainWindow.__init__(self)
         WeChatWindow.__init__(self)
@@ -77,6 +80,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.default_head_icon = './resource/images/default.png'
         self.current_chat_contact = None
         self.msg_cache = {}
+        #没有來得及處理的新消息
+        self.new_msg_cache = []
         self.prepare4Environment()
         self.wxapi = wxapi
         self.setupUi(self)
@@ -90,7 +95,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.wxinitial()
         #self.synct = WeChatSync(self.wxapi)
         #self.synct.start()
-        timer = threading.Timer(10, self.synccheck)
+        timer = threading.Timer(15, self.synccheck)
         timer.setDaemon(True)
         timer.start()
         
@@ -102,6 +107,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.init_friends()
         self.init_public()
         self.emotionscodeinitial()
+        self.initialed.connect(self.process_new_msg_cache)
+        self.initialed.emit()
         
         self.chatAreaWidget.setVisible(False)
         self.chatsWidget.setItemDelegate(LabelDelegate())
@@ -130,6 +137,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.showMemberButton.clicked.connect(self.showMembers)
         self.addMenu4SendButton()
         self.addMenu4SettingButton()
+    
+    def process_new_msg_cache(self):
+        logging.debug('start process new_msg_cache')
+        for msg in self.new_msg_cache:
+            self.msg_handle(msg)
     
     def wxinitial(self):
         sessions_dict = self.wxapi.webwx_init()
@@ -168,12 +180,20 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     
     def addMenu4SendButton(self):
         menu = QMenu()
-        enterAction = QAction(("按Enter發送消息"),self)
+        enterAction = QAction(unicode("按Enter發送消息"),self)
         menu.addAction(enterAction)
         self.sendSetButton.setMenu(menu)
         
     def addMenu4SettingButton(self):
         menu = QMenu()
+        createChatRoorAction = QAction(unicode("開始聊天"),self)
+        menu.addAction(createChatRoorAction)
+        notifySwitchAction = QAction(unicode("關閉通知"),self)
+        menu.addAction(notifySwitchAction)
+        soundSwitchAction = QAction(unicode("關閉聲音"),self)
+        menu.addAction(soundSwitchAction)
+        logoutAction = QAction(unicode("退出"),self)
+        menu.addAction(logoutAction)
         aboutAction = QAction(unicode("關於"),self)
         menu.addAction(aboutAction)
         self.settingButton.setMenu(menu)
@@ -181,8 +201,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         aboutAction.triggered.connect(self.showAbout)
         
     def showAbout(self):
-        about = About()
-        about.exec_()
+        about = About(self)
+        about.show()
         
     def emotionscodeinitial(self):
         self.emotionscode = property.parse(WeChat.I18N).properties or {}
@@ -1055,7 +1075,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             cache_key = from_user_name
         else:
             cache_key = msg['ToUserName']
-            
+        row_count = self.chatsModel.rowCount()
+        if row_count <= 0:
+            self.new_msg_cache.append(msg)
+            return False
         if self.msg_cache.has_key(cache_key):
             messages_list = self.msg_cache[cache_key]
         else:
@@ -1067,7 +1090,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #增加消息數量提示（提昇此人在會話列表中的位置）
         '''
         exist = False#此人是否在會話列表中
-        row_count = self.chatsModel.rowCount()
         for row in range(row_count):
             index = self.chatsModel.index(row,0)
             user_name_o = self.chatsModel.data(index)
@@ -1098,6 +1120,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 if member['UserName'] == cache_key:
                     contact = member
                     break
+            if not contact:
+                logging.warn('the contact %s not found in friends'%cache_key)
+                return False
             dn = contact['RemarkName'] or contact['NickName']
             if not dn:
                 dn = contact['NickName']
@@ -1119,6 +1144,38 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             
             self.chatsModel.insertRow(0,cells)
     
+    def msg_handle(self,msg):
+        msg_type = msg['MsgType']
+        print("msg_handle() will processing ,msgtype %s,msg body:%s"%(str(msg_type),str(msg)))
+        if msg_type:
+            if msg_type == 51:
+                self.wxinitial_msg_handler(msg)
+                return
+            if msg_type == 2 or msg_type == 52:
+                logging.warn('msg not process:')
+                logging.warn('msg type %d'%msg_type)
+                return
+            to_user_name = msg['ToUserName']
+            '''
+            #没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中;
+            #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
+            '''
+            if (not self.current_chat_contact) or to_user_name != self.current_chat_contact['UserName']:
+                self.put_msg_cache(msg)
+            else:
+                if msg_type == 1:
+                    self.text_msg_handler(msg)
+                elif msg_type == 3:
+                    self.image_msg_handler(msg) 
+                elif msg_type == 34:
+                    self.voice_msg_handler(msg)
+                elif msg_type == 49:
+                    self.app_msg_handler(msg)
+                elif msg_type == 10002:
+                    self.sys_msg_handler(msg)
+                else:
+                    self.default_msg_handler(msg)
+                    
     def webwx_sync_process(self, data):
         '''
         @param data
@@ -1160,34 +1217,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         msg_list = data['AddMsgList']
 
         for msg in msg_list:
-            msg_type = msg['MsgType']
-            print("webwx_sync_process() will processing ,msgtype %s,msg body:%s"%(str(msg_type),str(msg)))
-            if msg_type:
-                if msg_type == 51:
-                    self.wxinitial_msg_handler(msg)
-                    continue
-                if msg_type == 2 or msg_type == 52:
-                    continue
-                to_user_name = msg['ToUserName']
-                '''
-                #没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中;
-                #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
-                '''
-                if (not self.current_chat_contact) or to_user_name != self.current_chat_contact['UserName']:
-                    self.put_msg_cache(msg)
-                else:
-                    if msg_type == 1:
-                        self.text_msg_handler(msg)
-                    elif msg_type == 3:
-                        self.image_msg_handler(msg) 
-                    elif msg_type == 34:
-                        self.voice_msg_handler(msg)
-                    elif msg_type == 49:
-                        self.app_msg_handler(msg)
-                    elif msg_type == 10002:
-                        self.sys_msg_handler(msg)
-                    else:
-                        self.default_msg_handler(msg)
+            self.msg_handle(msg)
 
     def select_emotion(self):
         emotionWidget = Emotion(self)
