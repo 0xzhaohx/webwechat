@@ -156,9 +156,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             head_img_url = contact['HeadImgUrl']
             if not user_name or not head_img_url:
                 continue
-            if user_name.startswith('@'):
-                self.wxapi.webwx_get_icon(user_name,head_img_url)
-            elif user_name.startswith('@@'):
+            if user_name.startswith('@@'):
                 #prepare arguments for batch_get_contact api
                 group = {}
                 group['UserName'] = contact['UserName']
@@ -166,6 +164,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 groups.append(group)
                 #doanload head image
                 self.wxapi.webwx_get_head_img(user_name,head_img_url)
+            elif user_name.startswith('@'):
+                self.wxapi.webwx_get_icon(user_name,head_img_url)
             else:
                 pass
         #do downlaod icon
@@ -944,7 +944,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if from_user_name.find('@@') >= 0:
                 index = msg_content.find(":")
                 
-                if msg_content.startswith(":") and index > 0:
+                if msg_content.startswith("@") and index > 0:
                     msg_content = msg_content[index+1:]
                     if msg_content.startswith("<br/>"):
                         msg_content = msg_content.replace("<br/>","",1)

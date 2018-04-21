@@ -323,7 +323,7 @@ class WeChatAPI(object):
         return data
 
     def webwx_get_icon(self, user_name, head_img_url):
-        url = 'https://wx.qq.com' + head_img_url
+        url = 'https://wx.qq.com%s'%(head_img_url)
         data = self.get(url,stream=True)
         if not data:
             pass
@@ -335,7 +335,7 @@ class WeChatAPI(object):
         '''
         #用於取群圖標
         '''
-        url = 'https://wx.qq.com/'+((head_img_url))
+        url = 'https://wx.qq.com%s'%(head_img_url)
         streamdata = self.get(url,stream=True)
         if not streamdata:
             pass
