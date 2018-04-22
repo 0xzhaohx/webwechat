@@ -8,7 +8,7 @@ Created on 2018年4月13日
 from PyQt4 import QtGui
 
 from PyQt4.QtGui import QVBoxLayout
-from PyQt4.QtCore import QSize
+from PyQt4.QtCore import QSize, Qt
 
 class About(QtGui.QDialog):
     WIDTH = 460
@@ -25,5 +25,8 @@ class About(QtGui.QDialog):
     def about_initial(self):
         #
         mainLayout=QVBoxLayout()
+        label = QtGui.QLabel("v0.5")
+        label.setAlignment(Qt.AlignHCenter)
+        mainLayout.addWidget(label)
         #mainLayout.addWidget(self.emotion_table)
         self.setLayout(mainLayout)

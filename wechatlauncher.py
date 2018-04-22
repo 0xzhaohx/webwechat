@@ -10,6 +10,7 @@ import os
 import sys
 import threading
 from time import sleep
+import time
 import logging
 
 from com.ox11.wechat.api.requests.WeChatAPI import WeChatAPI
@@ -48,8 +49,9 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         LauncherWindow.__init__(self)
         #threading.Thread.__init__(self,name='wechat launcher')
         #self.setDaemon(True)
+        self.loggingclear()
         
-        logging.basicConfig(filename='./wechat.log',level=logging.DEBUG,format=logging.BASIC_FORMAT)
+        logging.basicConfig(filename='./wechat.log',level=logging.DEBUG,format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
         self.wxapi = WeChatAPI()
@@ -92,6 +94,10 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         uuid = self.wxapi.get_uuid()
         self.wxapi.generate_qrcode()
 
+    def loggingclear(self):
+        if os.path.exists('./wechat.log'):
+            os.remove('./wechat.log')
+            logging.debug(time.time())
 
 class WeChatLauncherThread(threading.Thread):
 

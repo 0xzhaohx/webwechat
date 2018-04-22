@@ -88,7 +88,7 @@ class WeChatAPI(object):
                 'push':'webpush.web2.wechat.com'
             }
         }
-        logging.basicConfig(filename='./wechat.log',level=logging.DEBUG,format=logging.BASIC_FORMAT)
+        logging.basicConfig(filename='./wechat.log',level=logging.DEBUG,format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
         self.cache_home = ("%s/cache/"%(self.app_home))

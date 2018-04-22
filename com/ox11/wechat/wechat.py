@@ -50,7 +50,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     
     EMOTION_DIR = "./resource/expression"
     
-    LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+    LOG_FORMAT = '%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s'
     '''
         webwx_init
         ->webwxstatusnotify()
@@ -1307,7 +1307,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.webwx_sync_process(sync_response)
             if loop is False:
                 break
-            sleep(5)
+            sleep(3)
             
 class MemberListWidget(QtGui.QDialog):
     WIDTH = 300
