@@ -578,6 +578,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             self.currentChatUser.setText(unicode(dn))
         self.messages.setText('')
+        self.draft.setText('')
         msgss = self.msg_cache.get(user_name) or []
         if msgss:
             print("user_name %s,msgss size:%s"%(user_name,len(msgss)))
