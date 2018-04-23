@@ -34,6 +34,39 @@ from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction,\
     QTableView, QVBoxLayout, QPushButton, QSpacerItem
 from PyQt4.QtCore import QSize, pyqtSlot, pyqtSignal, QPoint
 
+'''
+1.ContactFlag:
+    1是好友，值为3是公众号
+2."UserName" 用户名称:
+    一个"@"为好友，两个"@"为群组
+3."Sex": 
+    性别，0-未设置（公众号、保密），1-男，2-女
+4."StarFriend": 是否为星标朋友  0-否  1-是
+'''
+
+def _decode_data(data):
+    """
+    @brief      decode array or dict to utf-8
+    @param      data   array or dict
+    @return     utf-8
+    """
+    if isinstance(data, dict):
+        rv = {}
+        for key, value in data.iteritems():
+            if isinstance(key, unicode):
+                key = key.encode('utf-8')
+            rv[key] = _decode_data(value)
+        return rv
+    elif isinstance(data, list):
+        rv = []
+        for item in data:
+            item = _decode_data(item)
+            rv.append(item)
+        return rv
+    elif isinstance(data, unicode):
+        return data.encode('utf-8')
+    else:
+        return data
 reload(sys)
 
 sys.setdefaultencoding('utf-8')
@@ -62,6 +95,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     '''
     
     initialed = pyqtSignal()
+    messageReceived = pyqtSignal(str)
     
     def __init__(self,wxapi):
         QtGui.QMainWindow.__init__(self)
@@ -89,6 +123,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.chatsModel = QStandardItemModel(0,4)
         self.friendsModel = QStandardItemModel(0,3)
         self.publicModel = QStandardItemModel()
+        #connect the slot before #wxinitial()
+        self.messageReceived.connect(self.webwx_sync_process)
         #after initial model,do login
         self.wxapi.login()
         
@@ -1216,7 +1252,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     self.sys_msg_handler(msg)
                 else:
                     self.default_msg_handler(msg)
-                    
+    @pyqtSlot(str)    
     def webwx_sync_process(self, data):
         '''
         @param data
@@ -1244,6 +1280,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         ''' 
         if not data:
             return False
+        data = json.loads(str(data), object_hook=_decode_data)
         ret_code = data['BaseResponse']['Ret']
 
         if ret_code == 0:
@@ -1334,7 +1371,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         sync_response = self.wxapi.webwx_sync()
                         #print("WeChatSync.run#webwx_sync:")
                         #print(sync_response)
-                        self.webwx_sync_process(sync_response)
+                        
+                        self.messageReceived.emit(sync_response)
+                        #self.webwx_sync_process(sync_response)
             if loop is False:
                 break
             sleep(3)

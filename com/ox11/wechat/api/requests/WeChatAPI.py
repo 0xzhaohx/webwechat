@@ -492,7 +492,7 @@ class WeChatAPI(object):
         dictt = json.loads(data, object_hook=_decode_data)
         if dictt['BaseResponse']['Ret'] == 0:
             self.update_sync_key(dictt)
-        return dictt
+        return data
     
     def webwx_send_emoticon(self,msg):
         url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon" + \
