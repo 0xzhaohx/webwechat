@@ -87,7 +87,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"))
         self.chatsModel = QStandardItemModel(0,4)
-        self.friendsModel = QStandardItemModel(0,4)
+        self.friendsModel = QStandardItemModel(0,3)
         self.publicModel = QStandardItemModel()
         #after initial model,do login
         self.wxapi.login()
@@ -357,7 +357,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     break
         return msg
         
-    def append_contact_row(self,contact,data_model,action="APPEND",row=None):
+    def append_chat(self,contact,action="APPEND",row=None):
         '''
         :param action APPEND OR INSERT,APPEND value is default
         '''
@@ -368,7 +368,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         user_name_item = QtGui.QStandardItem(unicode(user_name))
         cells.append(user_name_item)
         
-        user_head_icon = self.contact_head_home + contact['UserName']+".jpg"
+        user_head_icon = self.contact_head_home + user_name+".jpg"
         item = QtGui.QStandardItem(QIcon(user_head_icon),"")
         cells.append(item)
         
@@ -382,11 +382,40 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         tips_count_item = QtGui.QStandardItem()
         cells.append(tips_count_item)
         if "APPEND" == action:
-            data_model.appendRow(cells)
+            self.chatsModel.appendRow(cells)
         elif "INSERT" == action and row >= 0:
-            data_model.insertRow(row,cells)
+            self.chatsModel.insertRow(row,cells)
         else:
-            data_model.appendRow(cells)
+            self.chatsModel.appendRow(cells)
+            
+    def append_friend(self,contact,action="APPEND",row=None):
+        '''
+        :param action APPEND OR INSERT,APPEND value is default
+        '''
+        ###############
+        cells = []
+        # user name item
+        user_name = contact['UserName']
+        user_name_item = QtGui.QStandardItem(unicode(user_name))
+        cells.append(user_name_item)
+        
+        user_head_icon = self.contact_head_home + user_name+".jpg"
+        item = QtGui.QStandardItem(QIcon(user_head_icon),"")
+        cells.append(item)
+        
+        _name = contact['RemarkName'] or contact['NickName']
+        #if not dn:
+            #dn = contact['NickName']
+        # user remark or nick name
+        _name_item = QtGui.QStandardItem(unicode(_name))
+        cells.append(_name_item)
+        #
+        if "APPEND" == action:
+            self.friendsModel.appendRow(cells)
+        elif "INSERT" == action and row >= 0:
+            self.friendsModel.insertRow(row,cells)
+        else:
+            self.friendsModel.appendRow(cells)
         
         
     def init_chats(self):
@@ -401,7 +430,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #self.chatsWidget.setColumnCount(4)
         ''''''
         for chat_contact in self.wxapi.chat_list:
-            self.append_contact_row(chat_contact,self.chatsModel)
+            self.append_chat(chat_contact)
             
         '''
         for session in sorted([x for x in self.wxapi.friend_list if x["AttrStatus"] and x["AttrStatus"] > 0],key=lambda ct: ct["AttrStatus"],reverse=True):
@@ -427,10 +456,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         group_contact_list = []
         for member in self.wxapi.friend_list:
             group_contact_list.append(member)
-        group_contact_list.sort(key=lambda mm: mm['PYInitial'])
+        group_contact_list.sort(key=lambda mm: mm['RemarkPYInitial'] or mm['PYInitial'])
+        #group_contact_list.sort(key=lambda mm: mm['RemarkPYQuanPin'] or mm['PYQuanPin'])
 
         for member in group_contact_list:#.sort(key=lambda m: m['PYInitial'])
-            self.append_contact_row(member,self.friendsModel)
+            self.append_friend(member)
             
         self.friendsWidget.clicked.connect(self.member_item_clicked)
 

@@ -43,7 +43,7 @@ def osbits(machine=None):
 class WeChatLauncher(QtGui.QDialog, LauncherWindow):
 
     timeout = False
-
+    LOG_FILE = './wechat.log'
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
         LauncherWindow.__init__(self)
@@ -51,7 +51,7 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         #self.setDaemon(True)
         self.loggingclear()
         
-        logging.basicConfig(filename='./wechat.log',level=logging.DEBUG,format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
+        logging.basicConfig(filename=WeChatLauncher.LOG_FILE,level=logging.DEBUG,format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
         self.wxapi = WeChatAPI()
@@ -95,9 +95,11 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         self.wxapi.generate_qrcode()
 
     def loggingclear(self):
-        if os.path.exists('./wechat.log'):
-            os.remove('./wechat.log')
-            logging.debug(time.time())
+        if os.path.exists(WeChatLauncher.LOG_FILE):
+            with open(WeChatLauncher.LOG_FILE,'w') as lf:
+                lf.seek(0)
+                lf.truncate()
+                logging.debug(time.time())
 
 class WeChatLauncherThread(threading.Thread):
 
