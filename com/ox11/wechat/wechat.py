@@ -712,8 +712,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #把消息發送出去
         '''
         msg_html = self.draft.toHtml()
-        if not msg_html or len(msg_html) <= 0:
-            return
         rr = re.search(r'<img src="([.*\S]*\.gif)"',msg_html,re.I)
         msgBody = ""
         if rr:
@@ -725,6 +723,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             msgBody = self.draft.toPlainText()
         #print("xxxx %s"%msgBody)
         #msg_text = str(self.draft.toPlainText())
+        if not msgBody or len(msgBody) <= 0:
+            return 
         msgBody = unicode(msgBody)
         msg = Msg(1, msgBody, self.current_chat_contact['UserName'])
         response = self.wxapi.webwx_send_msg(msg)
