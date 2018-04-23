@@ -1,0 +1,6 @@
+python2 >=2.7.14
+Qt4     >=4.8.7
+PyQt4   >=4.11.3
+request >=2.18.4
+hashlib >=2.4.0
+Arch Linux
