@@ -745,26 +745,73 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             for message in messages_list:
                 self.messages.append((message))
         '''
+    def make_msg(self,user_name,msg_body):
+        '''MSG TEMPLATE
+        {
+            id:'',
+            user:{
+                head_class='',
+                head_img = '<img src=xx.jpg/>'
+            },
+            body:{
+                content_class:'',
+                content:''
+            }
+        }
+        '''
+        """
+        _msg = 
+           {
+            id:'%s',
+            user:{
+               head_class='%s',
+               head_img = '%s'
+            },
+            body:{
+               content_class:'%s',
+               content:'%s'
+            }
+        } %(
+            '1',
+            ("divMyHead" if self.wxapi.user["UserName"] == user_name else "divotherhead"),
+            "<img src=%s.jpg/>"%(self.contact_head_home + user_name),
+            ("triangle-right right" if self.wxapi.user["UserName"] == user_name else "triangle-left left"),
+            unicode(msg_body)
+        )
+        """
+        _msg = {}
+        _msg['id'] = ""
+        _user = {}
+        _user['head_class']=("divMyHead" if self.wxapi.user["UserName"] == user_name else "divotherhead")
+        _user['head_img']="%s.jpg"%(self.contact_head_home + user_name)
+        _msg['user']=_user
+        _body = {}
+        _body['content_class']= ("triangle-right right" if self.wxapi.user["UserName"] == user_name else "triangle-left left")
+        _body['content'] = unicode(msg_body)
+        _msg['body']=_body
+
+        return _msg
+
     def send_msg(self):
         '''
         #把消息發送出去
         '''
         msg_html = self.draft.toHtml()
         rr = re.search(r'<img src="([.*\S]*\.gif)"',msg_html,re.I)
-        msgBody = ""
+        msg_body = ""
         if rr:
             pimages = self.emotioncode(msg_html)
             for pimage in pimages:
                 p = pimage["p"]
-                msgBody+=p
+                msg_body+=p
         else:
-            msgBody = self.draft.toPlainText()
+            msg_body = self.draft.toPlainText()
         #print("xxxx %s"%msgBody)
         #msg_text = str(self.draft.toPlainText())
-        if not msgBody or len(msgBody) <= 0:
+        if not msg_body or len(msg_body) <= 0:
             return 
-        msgBody = unicode(msgBody)
-        msg = Msg(1, msgBody, self.current_chat_contact['UserName'])
+        msg_body = unicode(msg_body)
+        msg = Msg(1, msg_body, self.current_chat_contact['UserName'])
         response = self.wxapi.webwx_send_msg(msg)
         if not response or response is False:
             return False
@@ -775,10 +822,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%msgBody)
         #TODO append msg
         #self.messages.append(format_msg)
-        msg_text = self.emotiondecode(msgBody) if rr else msgBody
+        msg_decode_body = self.emotiondecode(msg_body) if rr else msg_body
         #msg_text = self.emotiondecode(msgBody)
         #self.messages.append(unicode(msg_text))
-        self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_text))
+        _msg = self.make_msg(self.current_chat_contact['UserName'],msg_decode_body)
+        script = "nappend('%s','%s','%s','%s','%s');"%(_msg['id'],_msg['user']['head_class'],_msg['user']['head_img'],_msg['body']['content_class'],_msg['body']['content'])
+        print(script)
+        self.messages.page().mainFrame().evaluateJavaScript(script)
         self.draft.setText('')
         #TODO FIX BUG
         if False:
@@ -1010,7 +1060,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
             #self.messages.append(format_msg)
             #self.messages.append(unicode("請在手機端收聽語音"))
-            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode("請在手機端收聽語音"))
+            
+            _msg = self.make_msg(msg["UserName"],unicode("請在手機端收聽語音"))
+            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
+            #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode("請在手機端收聽語音"))
         else:
             pass
     def video_msg_handler(self,msg):
@@ -1028,7 +1081,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
             #self.messages.append(format_msg)
             #self.messages.append(unicode("請在手機端觀看視頻"))
-            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode("請在手機端觀看視頻"))
+            _msg = self.make_msg(msg["UserName"],unicode("請在手機端觀看視頻"))
+            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
+            #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode())
         else:
             pass
         
@@ -1041,7 +1096,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         
         from_user_display_name = self.get_user_display_name(msg)
         
-            
         format_msg = self.msg_timestamp(from_user_display_name)
         '''
         #:如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
@@ -1064,7 +1118,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             msg_content = self.emotiondecode(msg_content)
             #self.messages.append(format_msg)
             #self.messages.append(unicode(msg_content))
-            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_content))
+            from_user_name = msg['FromUserName']
+        
+            _msg = self.make_msg(user_name,unicode(msg_content))
+            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
+            #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_content))
         else:
             pass
         
@@ -1133,7 +1191,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.current_chat_contact and user_name == self.current_chat_contact['UserName']:
             new_msg = "%s\r\n%s"%(format_msg,unicode(replacemsg))
             #self.messages.append(new_msg)
-            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(new_msg))
+            _msg = self.make_msg(msg["UserName"],unicode(new_msg))
+            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
+            #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(new_msg))
         else:
             pass
         
@@ -1179,7 +1239,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
             #self.messages.append(format_msg)
             #self.messages.append(unicode(('%s %s %s')%(title,desc,app_url)))
-            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(('%s %s %s')%(title,desc,app_url)))
+            _msg = self.make_msg(msg["UserName"],unicode(('%s %s %s')%(title,desc,app_url)))
+            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
+            #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(('%s %s %s')%(title,desc,app_url)))
         else:
             pass
         
@@ -1393,7 +1455,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     else:
                         msg_img = ffile
                     #self.messages.append(msg_img)
-                    self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_img))
+                    _msg = self.make_msg(self.wxapi.user['UserName'],unicode(msg_img))
+                    self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
+                    #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_img))
                 else:
                     #fileName=QtCore.QString.fromUtf8(fileName)
                     if self.isImage(ffile):
