@@ -31,8 +31,8 @@ import logging
 from PyQt4.Qt import QIcon, QCursor, Qt, QTextImageFormat
 from PyQt4 import QtGui, uic
 from PyQt4.QtGui import QStandardItemModel, QFileDialog, QMenu, QAction,\
-    QTableView, QVBoxLayout, QPushButton, QSpacerItem
-from PyQt4.QtCore import QSize, pyqtSlot, pyqtSignal, QPoint
+    QTableView, QVBoxLayout, QPushButton, QSpacerItem, QDialog, QLabel
+from PyQt4.QtCore import QSize, pyqtSlot, pyqtSignal, QPoint, QUrl
 
 '''
 1.ContactFlag:
@@ -83,6 +83,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     
     EMOTION_DIR = "./resource/expression"
     
+    MESSAGE_TEMPLATE = "./resource/messages.html"
+    
     LOG_FORMAT = '%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s'
     '''
         webwx_init
@@ -125,6 +127,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.publicModel = QStandardItemModel()
         #connect the slot before #wxinitial()
         self.messageReceived.connect(self.webwx_sync_process)
+        self.messages.loadFinished.connect(self.loadFinished)
         #after initial model,do login
         self.wxapi.login()
         
@@ -136,6 +139,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         timer.start()
         
         self.memberListWidget = None
+        self.showImageDialog = None
         self.friendsWidget.setVisible(False)
         self.publicWidget.setVisible(False)
         self.profileWidget.setVisible(False)
@@ -174,6 +178,29 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.addMenu4SendButton()
         self.addMenu4SettingButton()
     
+    @pyqtSlot()
+    def loadFinished(self):
+        print('loadFinished')
+        self.messages.page().mainFrame().addToJavaScriptWindowObject("Wechat", self)
+        
+    @pyqtSlot(str)
+    def showImage(self,image):
+        if self.showImageDialog:
+            print(image)
+            self.showImageDialog.show()
+        else:
+            self.showImageDialog = QDialog(self)
+            #self.showImageDialog.setModal(True)
+            mainLayout = QVBoxLayout()
+            image_label = QLabel()
+            s_image = QtGui.QImage()
+            user_icon = self.contact_head_home + self.wxapi.user['UserName'] + ".jpg"
+            if s_image.load(user_icon):
+                image_label.setPixmap(QtGui.QPixmap.fromImage(s_image))
+            mainLayout.addWidget(image_label)
+            self.showImageDialog.setLayout(mainLayout)
+            self.showImageDialog.show()
+        
     def process_new_msg_cache(self):
         logging.debug('start process new_msg_cache')
         for msg in self.new_msg_cache:
@@ -453,6 +480,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             self.friendsModel.appendRow(cells)
         
+    def messages_clear(self):
+        #ap = os.path.abspath(WeChat.MESSAGE_TEMPLATE)
+        #self.messages.load(QUrl.fromLocalFile(ap))
+        self.messages.page().mainFrame().evaluateJavaScript("clearr();")
         
     def init_chats(self):
         '''
@@ -549,9 +580,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 return member
             
     def chat_item_clicked(self):
-        self.chatAreaWidget.setVisible(True)
-        self.label.setVisible(False)
-        #self.memberListWidget.destroy()
+        if self.current_chat_contact:
+            #self.messages_clear()
+            pass
+        else:
+            self.chatAreaWidget.setVisible(True)
+            self.label.setVisible(False)
+            ap = os.path.abspath(WeChat.MESSAGE_TEMPLATE)
+            self.messages.load(QUrl.fromLocalFile(ap))
         current_row = self.chatsWidget.currentIndex().row()
         user_name_index = self.chatsModel.index(current_row,0)
         user_name_o = self.chatsModel.data(user_name_index)
@@ -577,7 +613,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.currentChatUser.setText(("%s (%d)")%(unicode(dn),contact["MemberCount"]))
         else:
             self.currentChatUser.setText(unicode(dn))
-        self.messages.setText('')
+        #self.messages_clear()
+        #self.messages.setText('')
         self.draft.setText('')
         msgss = self.msg_cache.get(user_name) or []
         if msgss:
@@ -735,10 +772,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.stick(select=True)
         #self.chatsWidget.selectRow(0)
         format_msg = self.msg_timestamp(self.wxapi.user['NickName'])
-        self.messages.append(format_msg)
+        #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%msgBody)
+        #TODO append msg
+        #self.messages.append(format_msg)
         msg_text = self.emotiondecode(msgBody) if rr else msgBody
         #msg_text = self.emotiondecode(msgBody)
-        self.messages.append(unicode(msg_text))
+        #self.messages.append(unicode(msg_text))
+        self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_text))
         self.draft.setText('')
         #TODO FIX BUG
         if False:
@@ -968,8 +1008,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         to_user_name = msg['ToUserName']
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(format_msg)
-            self.messages.append(unicode("請在手機端收聽語音"))
+            #self.messages.append(format_msg)
+            #self.messages.append(unicode("請在手機端收聽語音"))
+            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode("請在手機端收聽語音"))
         else:
             pass
     def video_msg_handler(self,msg):
@@ -985,8 +1026,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         to_user_name = msg['ToUserName']
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(format_msg)
-            self.messages.append(unicode("請在手機端觀看視頻"))
+            #self.messages.append(format_msg)
+            #self.messages.append(unicode("請在手機端觀看視頻"))
+            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode("請在手機端觀看視頻"))
         else:
             pass
         
@@ -1020,8 +1062,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     if msg_content.startswith("<br/>"):
                         msg_content = msg_content.replace("<br/>","",1)
             msg_content = self.emotiondecode(msg_content)
-            self.messages.append(format_msg)
-            self.messages.append(unicode(msg_content))
+            #self.messages.append(format_msg)
+            #self.messages.append(unicode(msg_content))
+            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_content))
         else:
             pass
         
@@ -1052,7 +1095,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
             self.messages.append(format_msg)
             msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
-            self.messages.append(msg_img)
+            #self.messages.append(msg_img)
+            self.messages.page().mainFrame().evaluateJavaScript("appendImage('%s');"%unicode(msg_img))
         else:
             pass
     def sys_msg_handler(self,msg):
@@ -1070,6 +1114,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             index = xml_content.find(":")
             if xml_content.startswith("@") and index > 0:
                 xml_content = xml_content[index+1:len(msg)]
+        print('xml_content %s'%xml_content)
         doc = xml.dom.minidom.parseString(xml_content)
         replacemsg_nodes = doc.getElementsByTagName("replacemsg")
         #old_msgid
@@ -1086,7 +1131,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             user_name = msg["FromUserName"]
         # 如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         if self.current_chat_contact and user_name == self.current_chat_contact['UserName']:
-            self.messages.append((("%s\r\n%s")%(format_msg,unicode(replacemsg))))
+            new_msg = "%s\r\n%s"%(format_msg,unicode(replacemsg))
+            #self.messages.append(new_msg)
+            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(new_msg))
         else:
             pass
         
@@ -1130,8 +1177,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         to_user_name = msg['ToUserName']
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(format_msg)
-            self.messages.append(unicode(('%s %s %s')%(title,desc,app_url)))
+            #self.messages.append(format_msg)
+            #self.messages.append(unicode(('%s %s %s')%(title,desc,app_url)))
+            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(('%s %s %s')%(title,desc,app_url)))
         else:
             pass
         
@@ -1339,12 +1387,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     #st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
                     #format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
                     format_msg = self.msg_timestamp(self.wxapi.user['NickName'])
-                    self.messages.append(format_msg)
+                    #self.messages.append(format_msg)
                     if self.isImage(ffile):
                         msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
                     else:
                         msg_img = ffile
-                    self.messages.append(msg_img)
+                    #self.messages.append(msg_img)
+                    self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_img))
                 else:
                     #fileName=QtCore.QString.fromUtf8(fileName)
                     if self.isImage(ffile):

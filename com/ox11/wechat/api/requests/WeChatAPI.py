@@ -17,7 +17,6 @@ import os
 import hashlib
 import mimetypes
 import logging
-from cgi import logfile
 
 '''
 1.ContactFlag:
