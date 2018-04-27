@@ -145,8 +145,6 @@
         *
         */
         function append(msg){
-        	alert(msg)
-        	var jmsg = JSON.parse(msg);
             var content = document.getElementById("content");
             var msg_div = "<div id='"+jmsg.id+"' style='overflow:hidden;'><p class='"+jmsg.user.head_class+"' width='30px' height='30px'>"+jmsg.user.head_img+"</p><p class='"+jmsg.body.content_class+"'>"+jmsg.body.content+"</p></div>"
             content.insertAdjacentHTML("beforeEnd",msg_div);
@@ -161,7 +159,7 @@
         
         function appendImage(msg){
             var content = document.getElementById("content");
-            content.insertAdjacentHTML("beforeEnd","<div id='' style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'>"+msg+"</p></div>");
+            content.insertAdjacentHTML("beforeEnd","<div id='' style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'><img src='"+msg+"'/></p></div>");
             content.scrollTop = content.scrollHeight;
         }
         function choosephoto(){         

@@ -581,7 +581,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             
     def chat_item_clicked(self):
         if self.current_chat_contact:
-            #self.messages_clear()
+            self.messages_clear()
             pass
         else:
             self.chatAreaWidget.setVisible(True)
@@ -822,6 +822,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%msgBody)
         #TODO append msg
         #self.messages.append(format_msg)
+        msg_body = msg_body.replace("'", "\'")
+        msg_body = msg_body.replace('"', '\"')
         msg_decode_body = self.emotiondecode(msg_body) if rr else msg_body
         #msg_text = self.emotiondecode(msgBody)
         #self.messages.append(unicode(msg_text))
@@ -1121,7 +1123,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             from_user_name = msg['FromUserName']
         
             _msg = self.make_msg(user_name,unicode(msg_content))
-            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
+            script = "nappend('%s','%s','%s','%s','%s');"%(_msg['id'],_msg['user']['head_class'],_msg['user']['head_img'],_msg['body']['content_class'],_msg['body']['content'])
+            self.messages.page().mainFrame().evaluateJavaScript(script)
             #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_content))
         else:
             pass
@@ -1151,8 +1154,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
-            self.messages.append(format_msg)
-            msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
+            #self.messages.append(format_msg)
+            msg_img = ('%s/%s.jpg'%(self.cache_image_home,msg_id))
             #self.messages.append(msg_img)
             self.messages.page().mainFrame().evaluateJavaScript("appendImage('%s');"%unicode(msg_img))
         else:
@@ -1213,6 +1216,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if index > 0:
                 xmlContent = xmlContent[index+1:len(msg)]
         
+        print("xmlContent %s"%xmlContent)
         #print("xml_content %s"%xmlContent)
         doc = xml.dom.minidom.parseString(xmlContent)
         title_nodes = doc.getElementsByTagName("title")
@@ -1480,6 +1484,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     if code == '1101' and selector == '0':
                         print("session timeout")
                         self.do_logout()
+                        break
                 else:
                     if selector != '0':
                         sync_response = self.wxapi.webwx_sync()
