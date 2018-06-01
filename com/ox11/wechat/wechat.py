@@ -435,7 +435,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         item = QtGui.QStandardItem(QIcon(user_head_icon),"")
         cells.append(item)
         
-        dn = contact['RemarkName'] or contact['NickName']
+        dn = contact['DisplayName'] or contact['RemarkName'] or contact['NickName']
         #if not dn:
             #dn = contact['NickName']
         # user remark or nick name
@@ -606,7 +606,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             contact = self.get_contact(user_name)
         self.current_chat_contact = contact
-        dn = contact['RemarkName'] or contact['NickName']
+        dn = contact['DisplayName'] or contact['RemarkName'] or contact['NickName']
         #if not dn:
         #    dn = contact['NickName']
         if user_name.find('@@') >= 0:
@@ -1009,16 +1009,25 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 'List': lists
             }
             #update member list and download head image
+            #拉取聯天室成員列表
             batch_get_contact_response = self.batch_get_contact(data=params)
             for contact in batch_get_contact_response['ContactList']:
                 user_name = contact['UserName']
                 head_img_url = contact['HeadImgUrl']
                 if not user_name or not head_img_url:
                     continue
-                image = '%s/heads/contact/%s.jpg'%(self.app_home,user_name)
+                image = '%s\heads\contact\%s.jpg'%(self.app_home,user_name)
+                #下載聯天室圖標
                 if not os.path.exists(image):
                     self.wxapi.webwx_get_head_img(user_name,head_img_url)
-                    
+                
+                #TODO
+                if not contact["NickName"] and not contact["DisplayName"]:
+                    _displayName = ""
+                    for _member in contact["MemberList"][:2]:
+                        _displayName = _displayName +"、"+( _member["DisplayName"] or _member["NickName"])
+                    contact["DisplayName"] = _displayName
+                #把聯天室加入聯系人列表對象，冋同時處理那些没有設置名字的聯天室
                 for member in self.wxapi.friend_list:
                     exist = False
                     if contact["UserName"] == member["UserName"]:

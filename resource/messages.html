@@ -145,15 +145,23 @@
         *
         */
         function append(msg){
+        	var len = arguements.length;
+        	var msgs = new Array(len);
+        	for(i = 0;i < len;i++){
+				msgs[i]= arguments[i];
+			}
             var content = document.getElementById("content");
             var msg_div = "<div id='"+jmsg.id+"' style='overflow:hidden;'><p class='"+jmsg.user.head_class+"' width='30px' height='30px'>"+jmsg.user.head_img+"</p><p class='"+jmsg.body.content_class+"'>"+jmsg.body.content+"</p></div>"
             content.insertAdjacentHTML("beforeEnd",msg_div);
             content.scrollTop = content.scrollHeight;
         }
-        function nappend(id,user_head_class,user_head_image,body_content_class,body_content){
+        function nappend(msgId,userHeadClass,userHeadImage,bodyContentClass,bodyContent){
             var content = document.getElementById("content");
-            var msg_div = "<div id='"+id+"' style='overflow:hidden;'><p class='"+user_head_class+"' width='30px' height='30px'><img src='"+user_head_image+"'/></p><p class='"+body_content_class+"'>"+body_content+"</p></div>"
-            content.insertAdjacentHTML("beforeEnd",msg_div);
+            var newMsgNode =  "<div id='"+msgId+"' style='overflow:hidden;'>";
+            newMsgNode     += "<p class='"+userHeadClass+"' width='30px' height='30px'><img src='"+userHeadImage+"'/></p>";
+            newMsgNode     += "<p class='"+bodyContentClass+"'>"+bodyContent+"</p>";
+            newMsgNode     += "</div>";
+            content.insertAdjacentHTML("beforeEnd",newMsgNode);
             content.scrollTop = content.scrollHeight;
         }
         
@@ -179,12 +187,14 @@
         </script>
     </head>
     <body id="content" style='background:#efefef'>
-    	<div style='overflow:hidden;'><p class='divMyHead'><img src='./friends_sorted.png' alt='a.jpg' width='30px' height='30px'/></p><p class='triangle-right right'>file:///./friends_sorted.png</p></div>
+    <!-- 
+    	<div style='overflow:hidden;'><p class='divMyHead'><img src='C:\Users\zhaohongxing/.wechat//heads/contact/@ab6fcbbe10c39e229851f9681466569e.jpg' alt='ahhhh' width='30px' height='30px'/></p><p class='triangle-right right'>file:///./friends_sorted.png</p></div>
     	<div style='overflow:hidden;'><p class='divotherhead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-left left'>other nice</p></div>
     	<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'>OK</p></div>
     	<div style='overflow:hidden;'><p class='divotherhead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-left left'>other nice</p></div>
     	<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'>nice</p></div>
     	<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'>nice</p></div>
     	<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'>ssss<img ondblclick ='showImage(3)' src='a.jpg'/></p></div>
+    	 -->
     </body>
 </html>
