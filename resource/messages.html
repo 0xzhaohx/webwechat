@@ -1,0 +1,200 @@
+<html>
+    <head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <style type="text/css">
+        img{max-width:100px;max-height:100px;margin: 0 0;}  
+        /*定义显示的格式*/
+        p{
+            color:  black;
+            font-family: "Arial", "san-serif";
+            font-size: 14px;
+            display: inline;
+        }
+        /*自己的消息*/
+        .myMsg{
+            max-height: 300px;
+            max-width:  300px;
+            position: relative;
+            float: right;
+        }
+        /*显示自己的头像*/
+        .divMyHead{
+            position: relative;
+            float: right;
+            margin:5px 0px 5px 0px;
+            right: 1px;
+            border-radius: 5px;
+         }
+        /*对方的消息*/
+        .otherMsg{
+            max-height: 300px;
+            max-width:  300px;
+            position: relative;
+            float: right;
+        }
+        /*显示对方的头像*/
+        .divotherHead{
+            position: relative;
+            float: left;
+            margin:5px 0px 0px 0px;
+            left: 1px;
+            border-radius: 5px;
+        }
+        /*实现对方发送来的消息的方框*/
+        .triangle-left{
+            float:left;
+            max-width:380px;
+            border:1px solid #ffffff;
+            border-radius:5px;
+            padding:4px;
+            background:#ffffff;
+            position:relative;
+            display:inline-block;
+            margin:5px 0px 5px 20px;
+            word-wrap: break-word;
+        }
+
+        .triangle-left:before{
+            position:absolute;
+            content:"";
+            display:block;
+        }
+        /*实现对方消息的那个小三角，小三角的实现其实是将一个正方形对角线划分为四个小三角，其余的三个设置颜色不可见，只将对自己有用的那一个留下来*/
+        .triangle-left.left:before{
+            border-color:rgba(0, 0, 0, 0) #ffffff rgba(0, 0, 0, 0) rgba(0, 0, 0, 0);
+            border-width:5px 5px 5px 0;
+            border-style:solid;
+            bottom:auto;
+            left:-5px;
+            top:8px;
+        }
+        .triangle-left.left:after{
+            border-color:rgba(0, 0, 0, 0) #ffffff rgba(0, 0, 0, 0) rgba(0, 0, 0, 0);
+            border-width:5px 5px 5px 0;
+            border-style:solid;
+            bottom:auto;
+            left:-5px;
+            top:8px;
+        }
+        /*实现右边的气泡*/
+        .triangle-right{
+            float:right;
+            max-width:380px;
+            border:1px solid #bedfff;
+            border-radius:5px;
+            padding:5px;                        
+            background:#bedfff;
+            position:relative;
+            display:inline-block;
+            margin:5px 20px 5px 0;
+            word-wrap: break-word;
+        }
+        .triangle-right:before{
+            position:absolute;
+            content:"";
+            display:block;
+        }
+        .triangle-right.right:before{
+            border-color:rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) #bedfff;
+            border-width:5px 0px 5px 5px;
+            border-style:solid;
+            bottom:auto;
+            right:-6px;
+            top:8px;
+        }
+        .triangle-right:after{
+            position:absolute;
+            content:"";
+            display:block;
+        }
+        .triangle-right.right:after{
+            border-color:rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) #bedfff;
+            border-width:5px 0px 5px 5px;
+            border-style:solid;
+            bottom:auto;
+            right:-6px;
+            top:8px;
+        }
+        </style>
+        <script type="text/javascript">
+        function addFile()
+        {
+        	var str = '<INPUT type="file" size="20" NAME="File">'
+            document.getElementById("MyFile").insertAdjacentHTML("beforeEnd", str)
+        }
+        function getAll(){
+            content = document.body.innerHTML           
+        }
+        /*
+        *	将发送或接收的图片显示在气泡里面
+        *
+        * 
+        msg = {
+        	id:"",
+        	user:{
+        		head_class="",
+        		head_img = "<img src='xx.jpg'/>"
+        	},
+        	body:{
+        		content_class:"",
+	        	content:""
+        	}
+        }
+        *
+        *
+        *
+        */
+        function append(msg){
+        	var len = arguements.length;
+        	var msgs = new Array(len);
+        	for(i = 0;i < len;i++){
+				msgs[i]= arguments[i];
+			}
+            var content = document.getElementById("content");
+            var msg_div = "<div id='"+jmsg.id+"' style='overflow:hidden;'><p class='"+jmsg.user.head_class+"' width='30px' height='30px'>"+jmsg.user.head_img+"</p><p class='"+jmsg.body.content_class+"'>"+jmsg.body.content+"</p></div>"
+            content.insertAdjacentHTML("beforeEnd",msg_div);
+            content.scrollTop = content.scrollHeight;
+        }
+        function nappend(msgId,userHeadClass,userHeadImage,bodyContentClass,bodyContent){
+            var content = document.getElementById("content");
+            var newMsgNode =  "<div id='"+msgId+"' style='overflow:hidden;'>";
+            newMsgNode     += "<p class='"+userHeadClass+"' width='30px' height='30px'><img src='"+userHeadImage+"'/></p>";
+            newMsgNode     += "<p class='"+bodyContentClass+"'>"+bodyContent+"</p>";
+            newMsgNode     += "</div>";
+            content.insertAdjacentHTML("beforeEnd",newMsgNode);
+            content.scrollTop = content.scrollHeight;
+        }
+        
+        function appendImage(msg){
+            var content = document.getElementById("content");
+            content.insertAdjacentHTML("beforeEnd","<div id='' style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'><img src='"+msg+"'/></p></div>");
+            content.scrollTop = content.scrollHeight;
+        }
+        function choosephoto(){         
+            var obj = document.getElementById("content");
+            obj.insertAdjacentHTML("afterEnd","<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'></p><p class='triangle-right right'>nice</p></div>");
+        }
+        function clearr(){
+            document.body.innerHTML=''
+		}
+        function showImage(id){
+        	try{
+	        	Wechat.showImage(id);
+        	}catch(e){
+        		alert(e.description)
+        	}
+        }
+        </script>
+    </head>
+    <body id="content" style='background:#efefef'>
+    <!-- 
+    	<div style='overflow:hidden;'><p class='divMyHead'><img src='C:\Users\zhaohongxing/.wechat//heads/contact/@ab6fcbbe10c39e229851f9681466569e.jpg' alt='ahhhh' width='30px' height='30px'/></p><p class='triangle-right right'>file:///./friends_sorted.png</p></div>
+    	<div style='overflow:hidden;'><p class='divotherhead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-left left'>other nice</p></div>
+    	<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'>OK</p></div>
+    	<div style='overflow:hidden;'><p class='divotherhead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-left left'>other nice</p></div>
+    	<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'>nice</p></div>
+    	<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'>nice</p></div>
+    	<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'>ssss<img ondblclick ='showImage(3)' src='a.jpg'/></p></div>
+    	 -->
+    </body>
+</html>

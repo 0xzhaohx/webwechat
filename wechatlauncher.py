@@ -51,7 +51,7 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         #self.setDaemon(True)
         self.loggingclear()
         
-        logging.basicConfig(filename=WeChatLauncher.LOG_FILE,level=logging.DEBUG,format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
+        logging.basicConfig(filename=WeChatLauncher.LOG_FILE,filemode='w',level=logging.DEBUG,format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat/'
         self.wxapi = WeChatAPI()
