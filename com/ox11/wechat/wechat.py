@@ -1024,8 +1024,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 #TODO
                 if not contact["NickName"] and not contact["DisplayName"]:
                     _displayName = ""
-                    for _member in contact["MemberList"][:2]:
-                        _displayName = _displayName +"、"+( _member["DisplayName"] or _member["NickName"])
+                    for (i,_member) in enumerate(contact["MemberList"][:2]):
+                        if i == 1:
+                            _displayName = _displayName +( _member["DisplayName"] or _member["NickName"])
+                        else:
+                            _displayName = _displayName +( _member["DisplayName"] or _member["NickName"])+"、"
+                            
                     contact["DisplayName"] = _displayName
                 #把聯天室加入聯系人列表對象，冋同時處理那些没有設置名字的聯天室
                 for member in self.wxapi.friend_list:
