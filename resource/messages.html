@@ -123,7 +123,7 @@
             document.getElementById("MyFile").insertAdjacentHTML("beforeEnd", str)
         }
         function getAll(){
-            content = document.body.innerHTML           
+        	messages = document.body.innerHTML           
         }
         /*
         *	将发送或接收的图片显示在气泡里面
@@ -150,29 +150,29 @@
         	for(i = 0;i < len;i++){
 				msgs[i]= arguments[i];
 			}
-            var content = document.getElementById("content");
-            var msg_div = "<div id='"+jmsg.id+"' style='overflow:hidden;'><p class='"+jmsg.user.head_class+"' width='30px' height='30px'>"+jmsg.user.head_img+"</p><p class='"+jmsg.body.content_class+"'>"+jmsg.body.content+"</p></div>"
-            content.insertAdjacentHTML("beforeEnd",msg_div);
-            content.scrollTop = content.scrollHeight;
+            var messages = document.getElementById("messages");
+            var message = "<div id='"+msg.id+"' style='overflow:hidden;'><p class='"+jmsg.user.head_class+"' width='30px' height='30px'>"+jmsg.user.head_img+"</p><p class='"+jmsg.body.content_class+"'>"+jmsg.body.content+"</p></div>"
+            messages.insertAdjacentHTML("beforeEnd",message);
+            messages.scrollTop = messages.scrollHeight;
         }
         function nappend(msgId,userHeadClass,userHeadImage,bodyContentClass,bodyContent){
-            var content = document.getElementById("content");
-            var newMsgNode =  "<div id='"+msgId+"' style='overflow:hidden;'>";
-            newMsgNode     += "<p class='"+userHeadClass+"' width='30px' height='30px'><img src='"+userHeadImage+"'/></p>";
-            newMsgNode     += "<p class='"+bodyContentClass+"'>"+bodyContent+"</p>";
-            newMsgNode     += "</div>";
-            content.insertAdjacentHTML("beforeEnd",newMsgNode);
-            content.scrollTop = content.scrollHeight;
+            var messages = document.getElementById("messages");
+            var message =  "<div id='"+msgId+"' style='overflow:hidden;'>";
+            message     += "<p class='"+userHeadClass+"'><img src='"+userHeadImage+"' width='60px' height='60px'/></p>";
+            message     += "<p class='"+bodyContentClass+"'>"+bodyContent+"</p>";
+            message     += "</div>";
+            messages.insertAdjacentHTML("beforeEnd",message);
+            messages.scrollTop = messages.scrollHeight;
         }
         
         function appendImage(msg){
-            var content = document.getElementById("content");
-            content.insertAdjacentHTML("beforeEnd","<div id='' style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'><img src='"+msg+"'/></p></div>");
-            content.scrollTop = content.scrollHeight;
+            var messages = document.getElementById("messages");
+            messages.insertAdjacentHTML("beforeEnd","<div id='' style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'><img src='"+msg+"'/></p></div>");
+            messages.scrollTop = messages.scrollHeight;
         }
         function choosephoto(){         
-            var obj = document.getElementById("content");
-            obj.insertAdjacentHTML("afterEnd","<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'></p><p class='triangle-right right'>nice</p></div>");
+            var messages = document.getElementById("messages");
+            messages.insertAdjacentHTML("afterEnd","<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'></p><p class='triangle-right right'>nice</p></div>");
         }
         function clearr(){
             document.body.innerHTML=''
@@ -186,9 +186,14 @@
         }
         </script>
     </head>
-    <body id="content" style='background:#efefef'>
-    <!-- 
-    	<div style='overflow:hidden;'><p class='divMyHead'><img src='C:\Users\zhaohongxing/.wechat//heads/contact/@ab6fcbbe10c39e229851f9681466569e.jpg' alt='ahhhh' width='30px' height='30px'/></p><p class='triangle-right right'>file:///./friends_sorted.png</p></div>
+    <body id="messages" style='background:#efefef'>
+	    <!-- 
+    	<div style='overflow:hidden;'>
+    		<p class='divMyHead'>
+    			<img src='C:\Users\zhaohongxing\workspace\python\wechat\resource\images\default.jpg' alt='ahhhh' width='60px' height='60px'/>
+    		</p>
+    		<p class='triangle-right right'>file:///./friends_sorted.png</p>
+    	</div>
     	<div style='overflow:hidden;'><p class='divotherhead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-left left'>other nice</p></div>
     	<div style='overflow:hidden;'><p class='divMyHead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-right right'>OK</p></div>
     	<div style='overflow:hidden;'><p class='divotherhead' width='30px' height='30px'><img src=a.jpg width='30px' height='30px'/></p><p class='triangle-left left'>other nice</p></div>
