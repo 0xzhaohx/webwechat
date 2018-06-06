@@ -13,8 +13,8 @@ from time import sleep
 import time
 import logging
 
-from com.ox11.wechat.api.requests.WeChatAPI import WeChatAPI
 from com.ox11.wechat.wechat import WeChat
+from wechatweb import WeChatAPI
 import platform
 
 from PyQt4.Qt import QIcon

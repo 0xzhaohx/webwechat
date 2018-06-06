@@ -22,7 +22,7 @@ from com.ox11.wechat.emotion import Emotion
 from com.ox11.wechat.about import About
 from com.ox11.wechat import property
 from com.ox11.wechat.labeldelegate import LabelDelegate
-from api.msg import Msg
+from msg import Msg
 
 import xml.dom.minidom
 import json
