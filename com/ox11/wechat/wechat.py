@@ -115,7 +115,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.contact_head_home = ("%s/contact/"%(self.head_home))
         self.default_head_icon = './resource/images/default.png'
         self.current_chat_contact = None
-        self.msg_cache = {}
+        self.messages_cache = {}
         #没有來得及處理的新消息
         self.new_msg_cache = []
         self.prepare4Environment()
@@ -582,15 +582,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def chat_item_clicked(self):
         if self.current_chat_contact:
             self.messages_clear()
-            pass
         else:
             self.chatAreaWidget.setVisible(True)
             self.label.setVisible(False)
             ap = os.path.abspath(WeChat.MESSAGE_TEMPLATE)
             self.messages.load(QUrl.fromLocalFile(ap))
         current_row = self.chatsWidget.currentIndex().row()
-        user_name_index = self.chatsModel.index(current_row,0)
-        user_name_o = self.chatsModel.data(user_name_index)
+        user_name_cell_index = self.chatsModel.index(current_row,0)
+        user_name_cell = self.chatsModel.data(user_name_cell_index)
 
         tip_index = self.chatsModel.index(current_row,3)
         tips_item = self.chatsModel.data(tip_index)
@@ -600,8 +599,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         tips_item = self.chatsModel.data(head_tips_index)
         #if message_count:
         #    count = int(message_count)
-        user_name = str(user_name_o.toString())
-        if user_name.find("@@") >= 0:
+        user_name = str(user_name_cell.toString())
+        print("current click user is %s"%user_name)
+        if self.isChatRoom(user_name):
             contact = self.get_member(user_name)
         else:
             contact = self.get_contact(user_name)
@@ -609,16 +609,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         dn = contact['DisplayName'] or contact['RemarkName'] or contact['NickName']
         #if not dn:
         #    dn = contact['NickName']
-        if user_name.find('@@') >= 0:
+        if self.isChatRoom(user_name):
             self.currentChatUser.setText(("%s (%d)")%(unicode(dn),contact["MemberCount"]))
         else:
             self.currentChatUser.setText(unicode(dn))
         #self.messages_clear()
         #self.messages.setText('')
         self.draft.setText('')
-        msgss = self.msg_cache.get(user_name) or []
-        if msgss:
-            print("user_name %s,msgss size:%s"%(user_name,len(msgss)))
+        msgss = self.messages_cache.get(user_name) or []
         #for (key,messages_list) in self.msg_cache.items():
         #for (key,messages_list) in msgss:
             #if user_name == key:
@@ -637,6 +635,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     self.app_msg_handler(message)
                 elif msg_type == 10002:
                     self.sys_msg_handler(message)
+                elif msg_type == 10000:
+                    self.default_msg_handler(message)
                 else:
                     self.default_msg_handler(message)
                 #break
@@ -745,7 +745,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             for message in messages_list:
                 self.messages.append((message))
         '''
-    def make_msg(self,user_name,msg_body):
+    def make_message(self,user_name,msg_body):
         '''MSG TEMPLATE
         {
             id:'',
@@ -782,11 +782,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         _msg = {}
         _msg['id'] = ""
         _user = {}
-        _user['head_class']=("divMyHead" if self.wxapi.user["UserName"] == user_name else "divotherhead")
+        _user['head_class']=("divMyHead" if user_name.find('@@') >= 0 or self.wxapi.user["UserName"] == user_name else "divotherhead")
         _user['head_img']="%s.jpg"%(self.contact_head_home + user_name)
         _msg['user']=_user
         _body = {}
-        _body['content_class']= ("triangle-right right" if self.wxapi.user["UserName"] == user_name else "triangle-left left")
+        _body['content_class']= ("triangle-right right" if user_name.find('@@') >= 0 or self.wxapi.user["UserName"] == user_name else "triangle-left left")
         _body['content'] = unicode(msg_body)
         _msg['body']=_body
 
@@ -827,7 +827,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         msg_decode_body = self.emotiondecode(msg_body) if rr else msg_body
         #msg_text = self.emotiondecode(msgBody)
         #self.messages.append(unicode(msg_text))
-        _msg = self.make_msg(self.current_chat_contact['UserName'],msg_decode_body)
+        _msg = self.make_message(self.current_chat_contact['UserName'],msg_decode_body)
         script = "nappend('%s','%s','%s','%s','%s');"%(_msg['id'],_msg['user']['head_class'],_msg['user']['head_img'],_msg['body']['content_class'],_msg['body']['content'])
         print(script)
         self.messages.page().mainFrame().evaluateJavaScript(script)
@@ -920,42 +920,42 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.chatsModel.insertRow(0 ,taked_row)
             if select:
                 self.chatsWidget.selectRow(0)
+    
+    def isChatRoom(self,user):
+        '''
+        :parameter user.the id of user
+        '''
+        if user:
+            return user.find('@@') >= 0
+        else:
+            return False
         
-    def get_user_display_name(self,msg):
+    def get_user_display_name(self,message):
         
-        from_user_name = msg['FromUserName']
-        
+        from_user_name = message['FromUserName']
+        #如果和當前登陸人是同一個人
         if from_user_name == self.wxapi.user["UserName"]:
             from_user = self.wxapi.user
         else:
             from_user = self.get_contact(from_user_name)
         #如果為群，則消息來源顯示from_member_name
-        from_user_display_name = from_member_name= None
         #如果是群消息
-        msg_content = msg['Content']
-        if from_user_name.find('@@') >= 0:
-            print("get_user_display_name msg_content:%s"%msg_content)
-            index = msg_content.find(":")
-            
-            if  msg_content.startswith("@") and index > 0:
-                from_user_display_name = from_member_name = msg_content[0:index]
-                msg_content = msg_content[index:len(msg_content)]
+        from_user_display_name = from_member_name= None
+        content = message['Content']
+        if self.isChatRoom(from_user_name):
+            contents = content.split(":<br/>")
+            from_user_display_name = from_member_name = contents[0]
                 
             members = from_user["MemberList"]
             for member in members:
                 if from_member_name == member['UserName']:
-                    from_user_display_name = member['RemarkName'] if member.has_key("RemarkName") else None or member['NickName'] if member.has_key("NickName") else None
+                    from_user_display_name = member['RemarkName'] or member['NickName']
                     if not from_user_display_name:
                         from_user_display_name = from_member_name
                     break
         else:
             from_user_display_name = from_user['RemarkName'] or from_user['NickName']
-            #if not from_user_display_name:
-                #from_user_display_name = from_user['NickName']
                 
-        if not from_user_display_name:
-            from_user_display_name = from_user_name
-        
         return from_user_display_name or from_user_name
     
     
@@ -1076,7 +1076,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             #self.messages.append(format_msg)
             #self.messages.append(unicode("請在手機端收聽語音"))
             
-            _msg = self.make_msg(msg["UserName"],unicode("請在手機端收聽語音"))
+            _msg = self.make_message(msg["UserName"],unicode("請在手機端收聽語音"))
             self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
             #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode("請在手機端收聽語音"))
         else:
@@ -1096,46 +1096,37 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
             #self.messages.append(format_msg)
             #self.messages.append(unicode("請在手機端觀看視頻"))
-            _msg = self.make_msg(msg["UserName"],unicode("請在手機端觀看視頻"))
+            _msg = self.make_message(msg["UserName"],unicode("請在手機端觀看視頻"))
             self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
             #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode())
         else:
             pass
         
-    def text_msg_handler(self,msg):
+    def text_msg_handler(self,message):
         '''
         #:把文本消息加入到聊天記錄裏
         '''
         if not self.current_chat_contact:
             pass
         
-        from_user_display_name = self.get_user_display_name(msg)
+        from_user_display_name = self.get_user_display_name(message)
         
         format_msg = self.msg_timestamp(from_user_display_name)
         '''
         #:如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
-        from_user_name = msg['FromUserName']
-        user_name = None
-        if from_user_name.find("@@") >= 0:
-            user_name = from_user_name
-        else:
-            user_name = msg['ToUserName']
-        if self.current_chat_contact and user_name == self.current_chat_contact['UserName']:
-            msg_content = msg['Content']
-            if from_user_name.find('@@') >= 0:
-                index = msg_content.find(":")
+        from_user_name = message['FromUserName']
+        if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
+            content = message['Content']
+            if self.isChatRoom(from_user_name):
+                contents = content.split(":<br/>")
                 
-                if msg_content.startswith("@") and index > 0:
-                    msg_content = msg_content[index+1:]
-                    if msg_content.startswith("<br/>"):
-                        msg_content = msg_content.replace("<br/>","",1)
-            msg_content = self.emotiondecode(msg_content)
+                content = contents[1]
+            content = self.emotiondecode(content)
             #self.messages.append(format_msg)
             #self.messages.append(unicode(msg_content))
-            from_user_name = msg['FromUserName']
         
-            _msg = self.make_msg(user_name,unicode(msg_content))
+            _msg = self.make_message(from_user_name,unicode(content))
             script = "nappend('%s','%s','%s','%s','%s');"%(_msg['id'],_msg['user']['head_class'],_msg['user']['head_img'],_msg['body']['content_class'],_msg['body']['content'])
             self.messages.page().mainFrame().evaluateJavaScript(script)
             #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_content))
@@ -1159,7 +1150,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not self.current_chat_contact:
             pass
         from_user_display_name = self.get_user_display_name(msg)
-        to_user_name = msg['ToUserName']
+        to_user_name = msg['FromUserName']
         format_msg = self.msg_timestamp(from_user_display_name)
         msg_id = msg['MsgId']
         self.wxapi.webwx_get_msg_img(msg_id)
@@ -1207,7 +1198,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.current_chat_contact and user_name == self.current_chat_contact['UserName']:
             new_msg = "%s\r\n%s"%(format_msg,unicode(replacemsg))
             #self.messages.append(new_msg)
-            _msg = self.make_msg(msg["UserName"],unicode(new_msg))
+            _msg = self.make_message(msg["UserName"],unicode(new_msg))
             self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
             #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(new_msg))
         else:
@@ -1256,33 +1247,33 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
             #self.messages.append(format_msg)
             #self.messages.append(unicode(('%s %s %s')%(title,desc,app_url)))
-            _msg = self.make_msg(msg["UserName"],unicode(('%s %s %s')%(title,desc,app_url)))
+            _msg = self.make_message(msg["UserName"],unicode(('%s %s %s')%(title,desc,app_url)))
             self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
             #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(('%s %s %s')%(title,desc,app_url)))
         else:
             pass
         
-    def put_msg_cache(self,msg):
+    def put_message_cache(self,message):
         '''
-        #用ToUserName做Key把消息存起來，同時把此人置頂
+        #用FromUserName做Key把消息存起來，同時把此人置頂
         '''   
-        cache_key = None
-        from_user_name = msg['FromUserName']
-        msg_type = msg['MsgType']
-        if from_user_name.find("@@") >= 0 or msg_type == 10002:
-            cache_key = from_user_name
+        cache_key = message['FromUserName']
+        msg_type = message['MsgType']
+        if msg_type == 10002 or self.isChatRoom(cache_key):
+            cache_key = cache_key
         else:
-            cache_key = msg['ToUserName']
+            cache_key = message['FromUserName']
+        print("cache key is %s"%cache_key)
         row_count = self.chatsModel.rowCount()
         if row_count <= 0:
-            self.new_msg_cache.append(msg)
+            self.new_msg_cache.append(message)
             return False
-        if self.msg_cache.has_key(cache_key):
-            messages_list = self.msg_cache[cache_key]
+        if self.messages_cache.has_key(cache_key):
+            messages = self.messages_cache[cache_key]
         else:
-            messages_list = []
-        messages_list.append(msg)
-        self.msg_cache[cache_key] = messages_list
+            messages = []
+        messages.append(message)
+        self.messages_cache[cache_key] = messages
         #TODO ADD TIPS
         '''
         #增加消息數量提示（提昇此人在會話列表中的位置）
@@ -1342,88 +1333,50 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             
             self.chatsModel.insertRow(0,cells)
     
-    def msg_handle(self,msg):
-        msg_type = msg['MsgType']
-        print("msg_handle() will processing ,msgtype %s,msg body:%s"%(str(msg_type),str(msg)))
+    def msg_handle(self,message):
+        msg_type = message['MsgType']
+        #print("msg_handle() will processing ,msgtype %s,msg body:%s"%(str(msg_type),str(message)))
         if msg_type:
             if msg_type == 51:
-                self.wxinitial_msg_handler(msg)
+                self.wxinitial_msg_handler(message)
                 return
             if msg_type == 2 or msg_type == 52:
                 logging.warn('msg not process:')
                 logging.warn('msg type %d'%msg_type)
                 return
-            user_name = msg['ToUserName']
-            if user_name.startswith("@@") >= 0:
+            
+            print(self.wxapi.user["UserName"])
+            print(message)
+            #
+            #
+            #
+            from_user_name = message['FromUserName']
+            if self.isChatRoom(from_user_name):
                 #user_name = from_user_name
-                user_name = msg['FromUserName']
+                from_user_name = message['FromUserName']
             else:
                 pass
             '''
             #没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中;
             #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
             '''
-            if (not self.current_chat_contact) or user_name != self.current_chat_contact['UserName']:
-                self.put_msg_cache(msg)
+            if (not self.current_chat_contact) or from_user_name != self.current_chat_contact['UserName']:
+                self.put_message_cache(message)
             else:
                 if msg_type == 1:
-                    self.text_msg_handler(msg)
+                    self.text_msg_handler(message)
                 elif msg_type == 3:
-                    self.image_msg_handler(msg) 
+                    self.image_msg_handler(message) 
                 elif msg_type == 34:
-                    self.voice_msg_handler(msg)
+                    self.voice_msg_handler(message)
                 elif msg_type == 47:
-                    self.default_msg_handler(msg)
+                    self.default_msg_handler(message)
                 elif msg_type == 49:
-                    self.app_msg_handler(msg)
+                    self.app_msg_handler(message)
                 elif msg_type == 10002:
-                    self.sys_msg_handler(msg)
+                    self.sys_msg_handler(message)
                 else:
-                    self.default_msg_handler(msg)
-    @pyqtSlot(str)    
-    def webwx_sync_process(self, data):
-        '''
-        @param data
-        MSTTYPE:
-        MSGTYPE_TEXT: 1,文本消息
-        MSGTYPE_IMAGE: 3,图片消息
-        MSGTYPE_VOICE: 34,语音消息
-        37,好友确认消息
-        MSGTYPE_VIDEO: 43,
-        MSGTYPE_MICROVIDEO: 62,
-        MSGTYPE_EMOTICON: 47,
-        MSGTYPE_APP: 49,
-        MSGTYPE_VOIPMSG: 50,
-        51,微信初始化消息
-        MSGTYPE_VOIPNOTIFY: 52,
-        MSGTYPE_VOIPINVITE: 53,
-        MSGTYPE_LOCATION: 48,
-        MSGTYPE_STATUSNOTIFY: 51,
-        MSGTYPE_SYSNOTICE: 9999,
-        MSGTYPE_POSSIBLEFRIEND_MSG: 40,
-        MSGTYPE_VERIFYMSG: 37,
-        MSGTYPE_SHARECARD: 42,
-        MSGTYPE_SYS: 10000,
-        MSGTYPE_RECALLED: 10002,  // 撤销消息
-        ''' 
-        if not data:
-            return False
-        data = json.loads(str(data), object_hook=_decode_data)
-        ret_code = data['BaseResponse']['Ret']
-
-        if ret_code == 0:
-            pass
-        else:
-            return False
-
-        add_msg_count = data['AddMsgCount']
-        if add_msg_count == 0:
-            return True
-
-        msg_list = data['AddMsgList']
-
-        for msg in msg_list:
-            self.msg_handle(msg)
+                    self.default_msg_handler(message)
 
     def select_emotion(self):
         emotionWidget = Emotion(self)
@@ -1472,7 +1425,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     else:
                         msg_img = ffile
                     #self.messages.append(msg_img)
-                    _msg = self.make_msg(self.wxapi.user['UserName'],unicode(msg_img))
+                    _msg = self.make_message(self.wxapi.user['UserName'],unicode(msg_img))
                     self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
                     #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_img))
                 else:
@@ -1484,7 +1437,52 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     
     def keyPressEvent(self,event):
         print("keyPressEvent")
-        
+    
+    @pyqtSlot(str)    
+    def webwx_sync_process(self, data):
+        '''
+        @param data
+        MSTTYPE:
+        MSGTYPE_TEXT: 1,文本消息
+        MSGTYPE_IMAGE: 3,图片消息
+        MSGTYPE_VOICE: 34,语音消息
+        37,好友确认消息
+        MSGTYPE_VIDEO: 43,
+        MSGTYPE_MICROVIDEO: 62,
+        MSGTYPE_EMOTICON: 47,
+        MSGTYPE_APP: 49,
+        MSGTYPE_VOIPMSG: 50,
+        51,微信初始化消息
+        MSGTYPE_VOIPNOTIFY: 52,
+        MSGTYPE_VOIPINVITE: 53,
+        MSGTYPE_LOCATION: 48,
+        MSGTYPE_STATUSNOTIFY: 51,
+        MSGTYPE_SYSNOTICE: 9999,
+        MSGTYPE_POSSIBLEFRIEND_MSG: 40,
+        MSGTYPE_VERIFYMSG: 37,
+        MSGTYPE_SHARECARD: 42,
+        MSGTYPE_SYS: 10000,
+        MSGTYPE_RECALLED: 10002,  // 撤销消息
+        ''' 
+        if not data:
+            return False
+        data = json.loads(str(data), object_hook=_decode_data)
+        ret_code = data['BaseResponse']['Ret']
+
+        if ret_code == 0:
+            pass
+        else:
+            return False
+
+        add_msg_count = data['AddMsgCount']
+        if add_msg_count == 0:
+            return True
+
+        msg_list = data['AddMsgList']
+
+        for msg in msg_list:
+            self.msg_handle(msg)
+            
     def synccheck(self,loop=True):
         while (True):
             st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
@@ -1502,7 +1500,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     if selector != '0':
                         sync_response = self.wxapi.webwx_sync()
                         #print("WeChatSync.run#webwx_sync:")
-                        #print(sync_response)
                         
                         self.messageReceived.emit(sync_response)
                         #self.webwx_sync_process(sync_response)
