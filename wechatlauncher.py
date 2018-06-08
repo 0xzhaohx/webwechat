@@ -24,7 +24,7 @@ qtCreatorFile = "resource/ui/wechatlauncher-1.0.ui"
 
 LauncherWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 
-def getosname():
+def getOSName():
     return platform.system()
 
 def machine():
@@ -122,7 +122,7 @@ if __name__ =="__main__":
     #QtGui.QTextCodec.setCodecForTr(QtGui.QTextCodec.codecForName("utf8"))
     #QtGui.QTextCodec.setCodecForCStrings(QtGui.QTextCodec.codecForLocale())
     app = QtGui.QApplication(sys.argv)
-    if getosname() == "Windows":
+    if getOSName() == "Windows":
         logging.error("The OS name is Windows,will be exit!")
     launcher = WeChatLauncher()
     launcher.show()
