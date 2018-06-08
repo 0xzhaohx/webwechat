@@ -1083,8 +1083,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             #self.messages.append(unicode("請在手機端收聽語音"))
             
             _msg = self.make_message(from_user_name,unicode("請在手機端收聽語音"))
-            from_user_name
-            self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
+            script = "nappend('%s','%s','%s','%s','%s');"%(_msg['id'],_msg['user']['head_class'],_msg['user']['head_img'],_msg['body']['content_class'],_msg['body']['content'])
+            self.messages.page().mainFrame().evaluateJavaScript(script)
             #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode("請在手機端收聽語音"))
         else:
             pass
