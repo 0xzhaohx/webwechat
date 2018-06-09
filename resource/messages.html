@@ -158,7 +158,7 @@
         function nappend(msgId,userHeadClass,userHeadImage,bodyContentClass,bodyContent){
             var messages = document.getElementById("messages");
             var message =  "<div id='"+msgId+"' style='overflow:hidden;'>";
-            message     += "<p class='"+userHeadClass+"'><img src='"+userHeadImage+"' width='55px' height='55px'/></p>";
+            message     += "<p class='"+userHeadClass+"'><img src='"+userHeadImage+"' width='35px' height='35px'/></p>";
             message     += "<p class='"+bodyContentClass+"'>"+bodyContent+"</p>";
             message     += "</div>";
             messages.insertAdjacentHTML("beforeEnd",message);
