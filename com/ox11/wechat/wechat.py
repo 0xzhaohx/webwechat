@@ -106,13 +106,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
            
         }
         logging.basicConfig(filename='./wechat.log',level=logging.DEBUG,format=WeChat.LOG_FORMAT)
-        self.user_home = os.path.expanduser('~')
         self.setAcceptDrops(True)
-        self.app_home = self.user_home + '/.wechat/'
+        self.user_home = os.path.expanduser('~')
+        self.app_home = self.user_home + '/.wechat'
         self.head_home = ("%s/heads"%(self.app_home))
-        self.cache_home = ("%s/cache/"%(self.app_home))
-        self.cache_image_home = "%s/image/"%(self.cache_home)
-        self.contact_head_home = ("%s/contact/"%(self.head_home))
+        self.cache_home = ("%s/cache"%(self.app_home))
+        self.cache_image_home = "%s/image"%(self.cache_home)
+        self.contact_head_home = ("%s/contact"%(self.head_home))
         self.default_head_icon = './resource/images/default.png'
         self.current_chat_contact = None
         self.messages_pool = {}
@@ -785,11 +785,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         _msg = {}
         _msg['id'] = ""
         _user = {}
-        _user['head_class']=("divMyHead" if user_name.find('@@') >= 0 or self.wxapi.user["UserName"] == user_name else "divotherhead")
+        _user['head_class']=("divMyHead" if self.wxapi.user["UserName"] == user_name else "divotherhead")
         _user['head_img']="%s.jpg"%(self.contact_head_home + user_name)
         _msg['user']=_user
         _body = {}
-        _body['content_class']= ("triangle-right right" if user_name.find('@@') >= 0 or self.wxapi.user["UserName"] == user_name else "triangle-left left")
+        _body['content_class']= ("triangle-right right" if self.wxapi.user["UserName"] == user_name else "triangle-left left")
         _body['content'] = unicode(msg_body)
         _msg['body']=_body
 
