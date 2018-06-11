@@ -14,7 +14,7 @@ import time
 import logging
 
 from com.ox11.wechat.wechat import WeChat
-from wechatweb import WeChatAPI
+from wechatweb import WeChatWeb
 import platform
 
 from PyQt4.Qt import QIcon
@@ -53,8 +53,8 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         
         logging.basicConfig(filename=WeChatLauncher.LOG_FILE,filemode='w',level=logging.DEBUG,format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
         self.user_home = os.path.expanduser('~')
-        self.app_home = self.user_home + '/.wechat/'
-        self.wxapi = WeChatAPI()
+        self.app_home = self.user_home + '/.wechat'
+        self.wxapi = WeChatWeb()
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"))
         self.setWindowIconText("WeChat 0.5")
@@ -78,11 +78,11 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
 
     def do_login(self):
         login_state = self.wxapi.wait4login()
-        if self.wxapi.redirect_uri:
+        if self.wxapi.get_redirect_url():
             login_state = True
         else:
             login_state = self.wxapi.wait4login(0)
-            if self.wxapi.redirect_uri:
+            if self.wxapi.get_redirect_url():
                 login_state = True
             else:
                 login_state = False
