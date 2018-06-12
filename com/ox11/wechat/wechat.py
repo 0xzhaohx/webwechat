@@ -99,7 +99,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     initialed = pyqtSignal()
     messageReceived = pyqtSignal(str)
     
-    def __init__(self,wxapi):
+    def __init__(self,wechatweb):
         QtGui.QMainWindow.__init__(self)
         WeChatWindow.__init__(self)
         self.config = {
@@ -119,7 +119,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #没有來得及處理的新消息,主要用於存放UI未初始化完時收到消息，然後等初始結束處理
         self.blocked_messages_pool = []
         self.prepare4Environment()
-        self.wxapi = wxapi
+        self.wechatweb = wechatweb
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"))
         self.chatsModel = QStandardItemModel(0,4)
@@ -133,10 +133,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.messages.load(QUrl.fromLocalFile(ap))
         self.messages.loadFinished.connect(self.loadFinished)
         #after initial model,do login
-        self.wxapi.login()
+        self.wechatweb.login()
         
         self.wxinitial()
-        #self.synct = WeChatSync(self.wxapi)
+        #self.synct = WeChatSync(self.wechatweb)
         #self.synct.start()
         timer = threading.Timer(5, self.synccheck)
         timer.setDaemon(True)
@@ -198,7 +198,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             mainLayout = QVBoxLayout()
             image_label = QLabel()
             s_image = QtGui.QImage()
-            user_icon = self.contact_head_home + self.wxapi.getUser()['UserName'] + ".jpg"
+            user_icon = self.contact_head_home + self.wechatweb.getUser()['UserName'] + ".jpg"
             if s_image.load(user_icon):
                 image_label.setPixmap(QtGui.QPixmap.fromImage(s_image))
             mainLayout.addWidget(image_label)
@@ -211,12 +211,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             self.msg_handle(message)
     
     def wxinitial(self):
-        wx_init_response = self.wxapi.webwx_init()
-        self.wxapi.webwxstatusnotify()
+        wx_init_response = self.wechatweb.webwx_init()
+        self.wechatweb.webwxstatusnotify()
         self.setupwxuser()
         
         #do downlaod icon
-        self.wxapi.webwx_get_contact()
+        self.wechatweb.webwx_get_contact()
         self.synccheck(loop=False)
         #TODO download the head image or icon of contact
         #fetch the icon or head image that init api response
@@ -226,16 +226,16 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             head_img_url = contact['HeadImgUrl']
             if not user_name or not head_img_url:
                 continue
-            if user_name.startswith('@@'):
-                #prepare arguments for batch_get_contact api
+            if self.isChatRoom(user_name):
+                #prepare arguments for batch_get_contact
                 group = {}
                 group['UserName'] = contact['UserName']
                 group['ChatRoomId'] = ''
                 groups.append(group)
                 #doanload head image
-                self.wxapi.webwx_get_head_img(user_name,head_img_url)
+                self.wechatweb.webwx_get_head_img(user_name,head_img_url)
             elif user_name.startswith('@'):
-                self.wxapi.webwx_get_icon(user_name,head_img_url)
+                self.wechatweb.webwx_get_icon(user_name,head_img_url)
             else:
                 pass
         params = {
@@ -278,16 +278,50 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     
     def batch_get_contact(self,data=None):
         params = data
-        session_response = self.wxapi.webwx_batch_get_contact(params)
-            
-        if session_response['Count'] and session_response['Count'] > 0:
-            session_list = session_response['ContactList']
+        response = self.wechatweb.webwx_batch_get_contact(params)
+        '''
+        session_response中的contact里面有群成员，所以更新chat_contact
+        if response['Count'] and response['Count'] > 0:
+            session_list = response['ContactList']
             for x in session_list:
-                for i,ss in enumerate(self.wxapi.getChats()):
+                for i,ss in enumerate(self.wechatweb.getChatContacts()):
                     if ss["UserName"] == x["UserName"]:
-                        self.wxapi.update_chat(i,x)
+                        self.wechatweb.update_chat_contact(i,x)
                         break
-        return session_response
+        '''
+        for contact in response['ContactList']:
+            user_name = contact['UserName']
+            head_img_url = contact['HeadImgUrl']
+            if not user_name or not head_img_url:
+                continue
+            image = '%s\heads\contact\%s.jpg'%(self.app_home,user_name)
+            #下載聯天室圖像
+            if not os.path.exists(image):
+                self.wechatweb.webwx_get_head_img(user_name,head_img_url)
+            else:
+                logging.warn("%s is already exist"%image)
+            
+            #如果群没有名字，则取前2个成员名字的组合作为群名称
+            if not contact["NickName"] and not contact["DisplayName"]:
+                t_names = []
+                for _member in contact["MemberList"][:2]:
+                    t_names.append(_member['DisplayName'] or _member['NickName'])
+                        
+                contact["DisplayName"] = "、".join(t_names)
+            #把聯天室加入聯系人列表對象
+            for member in self.wechatweb.getFriends():
+                exist = False
+                if contact["UserName"] == member["UserName"]:
+                    exist = True
+                    break
+            if exist is False:
+                self.wechatweb.appendFriend(contact)
+            #更新chat_contact,以使其群成员有数据
+            for i,chat_contact in enumerate(self.wechatweb.getChatContacts()):
+                if contact["UserName"] == chat_contact["UserName"]:
+                    self.wechatweb.update_chat_contact(i,contact)
+                    break
+        return response
     
     def prepare4Environment(self):
         if os.path.exists(self.app_home):
@@ -359,7 +393,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 image.load(self.app_home)
 
     def setupwxuser(self):
-        user = self.wxapi.getUser()
+        user = self.wechatweb.getUser()
         nickName = user['NickName']
         self.userNameLabel.setText(unicode(nickName))
         user_icon = self.contact_head_home + user['UserName'] + ".jpg"
@@ -482,13 +516,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         #self.chatsWidget.setColumnCount(4)
         ''''''
-        for chat_contact in self.wxapi.getChats():
+        for chat_contact in self.wechatweb.getChatContacts():
             self.append_chat(chat_contact)
             
         '''
-        for session in sorted([x for x in self.wxapi.friend_list if x["AttrStatus"] and x["AttrStatus"] > 0],key=lambda ct: ct["AttrStatus"],reverse=True):
+        for session in sorted([x for x in self.wechatweb.friend_list if x["AttrStatus"] and x["AttrStatus"] > 0],key=lambda ct: ct["AttrStatus"],reverse=True):
             exist = False
-            for contact in self.wxapi.chat_list:
+            for contact in self.wechatweb.chat_list:
                 if contact["UserName"] == session["UserName"]:
                     exist = True
             if not exist:
@@ -507,7 +541,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         self.friendsWidget.setColumnHidden(1,True)
         group_contact_list = []
-        for member in self.wxapi.getFriends():
+        for member in self.wechatweb.getFriends():
             group_contact_list.append(member)
         group_contact_list.sort(key=lambda mm: mm['RemarkPYInitial'] or mm['PYInitial'])
         #group_contact_list.sort(key=lambda mm: mm['RemarkPYQuanPin'] or mm['PYQuanPin'])
@@ -557,11 +591,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         return self.get_member(user_name)
 
     def get_member(self,user_name):
-        for member in self.wxapi.getChats():
+        for member in self.wechatweb.getChatContacts():
             if user_name == member['UserName']:
                 return member
             
-        for member in self.wxapi.getFriends():
+        for member in self.wechatweb.getFriends():
             if user_name == member['UserName']:
                 return member
             
@@ -650,7 +684,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             print(self.frameGeometry())
             print(rect.width(), rect.height())
             
-            self.memberListWidget = MemberListWidget(memebers,self.wxapi.getFriends(),self)
+            self.memberListWidget = MemberListWidget(memebers,self.wechatweb.getFriends(),self)
             self.memberListWidget.resize(QSize(MemberListWidget.WIDTH,rect.height()+self.frameGeometry().height()-self.geometry().height()))
             self.memberListWidget.move(self.frameGeometry().x()+self.frameGeometry().width(), self.frameGeometry().y())
             
@@ -676,7 +710,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         user['UserName']=self.current_chat_contact["UserName"]
         member_list.append(user)
         
-        response_data = self.wxapi.webwx_create_chatroom(member_list)
+        response_data = self.wechatweb.webwx_create_chatroom(member_list)
         print("webwx_create_chatroom response:%s"%response_data)
         data_dict = json.loads(response_data)
         if data_dict["BaseResponse"]["Ret"] == 0:
@@ -685,13 +719,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 'Count': 1,
                 'List': [{"UserName":chat_room_name,"ChatRoomId":""}]
             }
-            batch_response = self.wxapi.webwx_batch_get_contact(data)
+            batch_response = self.wechatweb.webwx_batch_get_contact(data)
             if batch_response['Count'] and batch_response['Count'] > 0:
                 new_contact = batch_response['ContactList'][0]
-                remark_name = ("%s,%s,%s")%(self.wxapi.getUser()["NickName"],self.current_chat_contact["NickName"],"")
+                remark_name = ("%s,%s,%s")%(self.wechatweb.getUser()["NickName"],self.current_chat_contact["NickName"],"")
                 new_contact["RemarkName"]=remark_name
-                self.wxapi.appendFriend(new_contact)
-                self.wxapi.webwx_get_head_img(new_contact["UserName"], new_contact["HeadImgUrl"])
+                self.wechatweb.appendFriend(new_contact)
+                self.wechatweb.webwx_get_head_img(new_contact["UserName"], new_contact["HeadImgUrl"])
                 self.append_contact_row(new_contact,self.chatsModel,action="INSERT",row=0)
             
         
@@ -757,13 +791,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             }
         } %(
             '1',
-            ("divMyHead" if self.wxapi.user["UserName"] == user_name else "divotherhead"),
+            ("divMyHead" if self.wechatweb.user["UserName"] == user_name else "divotherhead"),
             "<img src=%s.jpg/>"%(self.contact_head_home + user_name),
-            ("triangle-right right" if self.wxapi.user["UserName"] == user_name else "triangle-left left"),
+            ("triangle-right right" if self.wechatweb.user["UserName"] == user_name else "triangle-left left"),
             unicode(msg_body)
         )
         """
-        user = self.wxapi.getUser()
+        user = self.wechatweb.getUser()
         _msg = {}
         _msg['id'] = ""
         _user = {}
@@ -797,13 +831,13 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             return 
         msg_body = unicode(msg_body)
         msg = Msg(1, msg_body, self.current_chat_contact['UserName'])
-        response = self.wxapi.webwx_send_msg(msg)
+        response = self.wechatweb.webwx_send_msg(msg)
         if not response or response is False:
             return False
         #if send success
         self.stick(select=True)
         #self.chatsWidget.selectRow(0)
-        #format_msg = self.msg_timestamp(self.wxapi.user['NickName'])
+        #format_msg = self.msg_timestamp(self.wechatweb.user['NickName'])
         #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%msgBody)
         #TODO append msg
         #self.messages.append(format_msg)
@@ -869,12 +903,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         #把圖片發送出去
         '''
-        upload_response = self.wxapi.webwx_upload_media(contact,ffile)
+        upload_response = self.wechatweb.webwx_upload_media(contact,ffile)
         json_upload_response = json.loads(upload_response)
         media_id = json_upload_response['MediaId']
         if self.isImage(ffile):
             msg = Msg(3, str(media_id), self.current_chat_contact['UserName'])
-            send_response = self.wxapi.webwx_send_msg_img(msg)
+            send_response = self.wechatweb.webwx_send_msg_img(msg)
         else:
             #parameter: appid,title,type=6,totallen,attachid(mediaid),fileext
             fileext = os.path.splitext(ffile)[1]
@@ -882,7 +916,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 fileext = fileext[1:(len(fileext))]
             content = "<appmsg appid='wxeb7ec651dd0aefa9' sdkver=''><title>%s</title><des></des><action></action><type>6</type><content></content><url></url><lowurl></lowurl><appattach><totallen>%d</totallen><attachid>%s</attachid><fileext>%s</fileext></appattach><extinfo></extinfo></appmsg>"%(os.path.basename(ffile),os.path.getsize(ffile),media_id,fileext)
             msg = Msg(6, content, self.current_chat_contact['UserName'])
-            send_response = self.wxapi.webwx_send_app_msg(msg)
+            send_response = self.wechatweb.webwx_send_app_msg(msg)
         return send_response
         
     def stick(self,row=None,select=False):
@@ -911,14 +945,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         :parameter user.the id of user
         '''
         if user:
-            return user.find('@@') >= 0
+            return user.startswith('@@') >= 0
         else:
             return False
         
     def get_user_display_name(self,message):
         
         from_user_name = message['FromUserName']
-        user = self.wxapi.getUser()
+        user = self.wechatweb.getUser()
         #如果和當前登陸人是同一個人
         if from_user_name == user["UserName"]:
             from_user = user
@@ -976,7 +1010,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             lists = []
             for userName in statusNotifyUserNames:
                 exist = False
-                for tl in self.wxapi.getChats():
+                for tl in self.wechatweb.getChatContacts():
                     if userName == tl["UserName"]:
                         exist = True
                         break
@@ -995,36 +1029,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             }
             #update member list and download head image
             #拉取聯天室成員列表
-            batch_get_contact_response = self.batch_get_contact(data=params)
-            for contact in batch_get_contact_response['ContactList']:
-                user_name = contact['UserName']
-                head_img_url = contact['HeadImgUrl']
-                if not user_name or not head_img_url:
-                    continue
-                image = '%s\heads\contact\%s.jpg'%(self.app_home,user_name)
-                #下載聯天室圖像
-                if not os.path.exists(image):
-                    self.wxapi.webwx_get_head_img(user_name,head_img_url)
-                
-                #如果群没有名字，则取前2个成员的名字
-                if not contact["NickName"] and not contact["DisplayName"]:
-                    t_names = []
-                    for _member in contact["MemberList"][:2]:
-                        t_names.append(_member['DisplayName'] or _member['NickName'])
-                            
-                    contact["DisplayName"] = "、".join(t_names)
-                #把聯天室加入聯系人列表對象
-                for member in self.wxapi.getFriends():
-                    exist = False
-                    if contact["UserName"] == member["UserName"]:
-                        exist = True
-                        break
-                if exist is False:
-                    self.wxapi.appendFriend(contact)
+            self.batch_get_contact(data=params)
+            
             logging.debug('statusNotifyCode:%s'%statusNotifyCode)
             if statusNotifyCode == 4:
                 #update chat list
-                tmp_list = self.wxapi.getChats()[:]
+                tmp_list = self.wechatweb.getChatContacts()[:]
                 for userName in statusNotifyUserNames:
                     exist = False
                     for tl in tmp_list:
@@ -1033,9 +1043,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                             break
                     if exist:
                         continue
-                    for member in self.wxapi.getFriends():
+                    for member in self.wechatweb.getFriends():
                         if userName == member["UserName"]:
-                            self.wxapi.appendChat(member)
+                            self.wechatweb.appendChatContact(member)
                             #self.append_contact_row(member,self.chatsModel)
                             break
             else:
@@ -1055,7 +1065,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #:如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         from_user_name = msg['FromUserName']
-        if from_user_name == self.wxapi.getUser()['UserName']:
+        if from_user_name == self.wechatweb.getUser()['UserName']:
             from_user_name = msg['ToUserName']
         
         if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
@@ -1080,7 +1090,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         from_user_name = msg['FromUserName']
-        if from_user_name == self.wxapi.getUser()['UserName']:
+        if from_user_name == self.wechatweb.getUser()['UserName']:
             from_user_name = msg['ToUserName']
         if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
             #self.messages.append(format_msg)
@@ -1106,7 +1116,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #:如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
         from_user_name = message['FromUserName']
-        if from_user_name == self.wxapi.getUser()['UserName']:
+        if from_user_name == self.wechatweb.getUser()['UserName']:
             from_user_name = message['ToUserName']
             
         if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
@@ -1127,7 +1137,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pass
         
     def download_msg_img(self,msg_id):
-        data = self.wxapi.webwx_get_msg_img(msg_id)
+        data = self.wechatweb.webwx_get_msg_img(msg_id)
         if not data:
             return False
         img_cache_folder = ('%s/cache/img/'%(self.app_home))
@@ -1144,11 +1154,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pass
         from_user_display_name = self.get_user_display_name(message)
         from_user_name = message['FromUserName']
-        if from_user_name == self.wxapi.getUser()['UserName']:
+        if from_user_name == self.wechatweb.getUser()['UserName']:
             from_user_name = message['ToUserName']
         format_msg = self.msg_timestamp(from_user_display_name)
         msg_id = message['MsgId']
-        self.wxapi.webwx_get_msg_img(msg_id)
+        self.wechatweb.webwx_get_msg_img(msg_id)
         '''
         #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
@@ -1170,7 +1180,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         format_msg = self.msg_timestamp(from_user_display_name)
         
         user_name = msg['FromUserName']
-        if user_name == self.wxapi.getUser()['UserName']:
+        if user_name == self.wechatweb.getUser()['UserName']:
             user_name = msg['ToUserName']
         msg_type = msg['MsgType']
         if msg_type == 10002:
@@ -1303,7 +1313,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #have not received a message before（如果此人没有在會話列表中，則加入之）
         if not exist:
             contact = {}
-            for member in self.wxapi.getFriends():
+            for member in self.wechatweb.getFriends():
                 if member['UserName'] == cache_key:
                     contact = member
                     break
@@ -1344,7 +1354,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 logging.warn('msg body %s'%message)
                 return
             
-            print(self.wxapi.getUser()["UserName"])
+            print(self.wechatweb.getUser()["UserName"])
             print(message)
             #
             #
@@ -1355,7 +1365,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 from_user_name = message['FromUserName']
             else:
                 #如果消息的發送者和登陸人一致，那麼上比消息有可能是通過其他設备發送，那麼有取ToUserName,才能顯示正确
-                if from_user_name == self.wxapi.getUser()['UserName']:
+                if from_user_name == self.wechatweb.getUser()['UserName']:
                     from_user_name = message['ToUserName']
             '''
             #没有選擇和誰對話或者此消息的發送人和當前的對話人不一致，則把消息存放在message_cache中;
@@ -1416,17 +1426,17 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 #send success append the image to history;failed append to draft 
                 if msg_id:
                     self.stick(select=True)
-                    self.wxapi.webwx_get_msg_img(msg_id)
+                    self.wechatweb.webwx_get_msg_img(msg_id)
                     #st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-                    #format_msg = ('(%s) %s:') % (st, self.wxapi.user['NickName'])
-                    format_msg = self.msg_timestamp(self.wxapi.getUser()['NickName'])
+                    #format_msg = ('(%s) %s:') % (st, self.wechatweb.user['NickName'])
+                    format_msg = self.msg_timestamp(self.wechatweb.getUser()['NickName'])
                     #self.messages.append(format_msg)
                     if self.isImage(ffile):
                         msg_img = ('<img src=%s/%s.jpg>'%(self.cache_image_home,msg_id))
                     else:
                         msg_img = ffile
                     #self.messages.append(msg_img)
-                    _msg = self.make_message(self.wxapi.getUser()['UserName'],unicode(msg_img))
+                    _msg = self.make_message(self.wechatweb.getUser()['UserName'],unicode(msg_img))
                     self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
                     #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_img))
                 else:
@@ -1488,9 +1498,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         while (True):
             st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
             print('push#synccheck %s' %(st))
-            (code, selector) = self.wxapi.sync_check()
+            (code, selector) = self.wechatweb.sync_check()
             if code == -1 and selector == -1:
-                print("self.wxapi.sync_check() error")
+                print("self.wechatweb.sync_check() error")
             else:
                 if code != '0':
                     if code == '1101' and selector == '0':
@@ -1499,7 +1509,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         break
                 else:
                     if selector != '0':
-                        sync_response = self.wxapi.webwx_sync()
+                        sync_response = self.wechatweb.webwx_sync()
                         #print("WeChatSync.run#webwx_sync:")
                         
                         self.messageReceived.emit(sync_response)
