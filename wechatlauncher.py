@@ -54,11 +54,11 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         logging.basicConfig(filename=WeChatLauncher.LOG_FILE,filemode='w',level=logging.DEBUG,format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
         self.user_home = os.path.expanduser('~')
         self.app_home = self.user_home + '/.wechat'
-        self.wxapi = WeChatWeb()
+        self.weChatWeb = WeChatWeb()
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"))
         self.setWindowIconText("WeChat 0.5")
-        self.launcher_thread = WeChatLauncherThread(self,self.wxapi)
+        self.launcher_thread = WeChatLauncherThread(self,self.weChatWeb)
         self.generate_qrcode()
         self.launcher_thread.start()
         self.load_qr_code_image()
@@ -77,12 +77,12 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
             pass
 
     def do_login(self):
-        login_state = self.wxapi.wait4login()
-        if self.wxapi.get_redirect_url():
+        login_state = self.weChatWeb.wait4login()
+        if self.weChatWeb.get_redirect_url():
             login_state = True
         else:
-            login_state = self.wxapi.wait4login(0)
-            if self.wxapi.get_redirect_url():
+            login_state = self.weChatWeb.wait4login(0)
+            if self.weChatWeb.get_redirect_url():
                 login_state = True
             else:
                 login_state = False
@@ -91,8 +91,8 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
             self.accept()
 
     def generate_qrcode(self):
-        uuid = self.wxapi.get_uuid()
-        self.wxapi.generate_qrcode()
+        uuid = self.weChatWeb.get_uuid()
+        self.weChatWeb.generate_qrcode()
 
     def loggingclear(self):
         if os.path.exists(WeChatLauncher.LOG_FILE):
@@ -103,11 +103,11 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
 
 class WeChatLauncherThread(threading.Thread):
 
-    def __init__(self,launcher,wxapi):
+    def __init__(self,launcher,weChatWeb):
         threading.Thread.__init__(self,name='wechat launcher thread')
         self.setDaemon(True)
         self.launcher = launcher
-        self.wxapi = wxapi
+        self.weChatWeb = weChatWeb
 
     def run(self):
 
@@ -127,7 +127,7 @@ if __name__ =="__main__":
     launcher = WeChatLauncher()
     launcher.show()
     if QtGui.QDialog.Accepted == launcher.exec_():
-        window = WeChat(launcher.wxapi)
+        window = WeChat(launcher.weChatWeb)
         window.show()
         sys.exit(app.exec_())
     else:

@@ -1008,14 +1008,11 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 
                 #如果群没有名字，则取前2个成员的名字
                 if not contact["NickName"] and not contact["DisplayName"]:
-                    _displayName = ""
-                    for (i,_member) in enumerate(contact["MemberList"][:2]):
-                        if i == 1:
-                            _displayName = _displayName +( _member["DisplayName"] or _member["NickName"])
-                        else:
-                            _displayName = _displayName +( _member["DisplayName"] or _member["NickName"])+"、"
+                    t_names = []
+                    for _member in contact["MemberList"][:2]:
+                        t_names.append(_member['DisplayName'] or _member['NickName'])
                             
-                    contact["DisplayName"] = _displayName
+                    contact["DisplayName"] = "、".join(t_names)
                 #把聯天室加入聯系人列表對象
                 for member in self.wxapi.getFriends():
                     exist = False
