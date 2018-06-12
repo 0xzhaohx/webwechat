@@ -945,7 +945,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         :parameter user.the id of user
         '''
         if user:
-            return user.startswith('@@') >= 0
+            return user.startswith('@@')
         else:
             return False
         
