@@ -147,7 +147,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.friendsWidget.setVisible(False)
         self.publicWidget.setVisible(False)
         self.profileWidget.setVisible(False)
-        self.init_chats()
+        self.init_chat_contacts()
         self.init_friends()
         self.init_public()
         self.emotionscodeinitial()
@@ -325,12 +325,12 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     
     def prepare4Environment(self):
         if os.path.exists(self.app_home):
-            self.clear()
+            self.__remove()
         else:
             os.makedirs(self.app_home)
             
         if os.path.exists(self.contact_head_home):
-            self.clear()
+            self.__remove()
         else:
             os.makedirs(self.contact_head_home)
             
@@ -348,7 +348,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pass
         else:
             os.makedirs(self.cache_image_home)
-    def clear(self):
+            
+    def __remove(self):
         '''
         #删除下载的头像文件
         '''
@@ -404,7 +405,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             if user_head_image.load(self.default_head_icon):
                 self.headImageLabel.setPixmap(QtGui.QPixmap.fromImage(user_head_image).scaled(40, 40))
 
-    def emotioncode(self,msg):
+    def code_emotion(self,msg):
         imagepattern=re.compile(r'src="([.*\S]*\.gif)"',re.I)
         ppattern = re.compile(r'<p style=".*\S">(.+?)</p>', re.I)
         pimages = []
@@ -419,7 +420,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     epath = os.path.join(WeChat.EMOTION_DIR,("%s.gif")%key)
                     imagemark = ('<img src="%s" />')%(epath)
                     if image ==epath:
-                        #print('[%s]'%((emotioncode)))
+                        #print('[%s]'%((code_emotion)))
                         pcode = p.replace(imagemark,'[%s]'%(unicode(emotioncode)))
                         #print("p coded:%s"%pcode)
                         pimage["p"]=pcode
@@ -428,7 +429,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pimages.append(pimage)
         return pimages
     
-    def emotiondecode(self,msg):
+    def decode_emotion(self,msg):
         emotionPattern =re.compile(u"\[[\u4e00-\u9fa5]{1,3}\]")
         result=re.findall(emotionPattern,str(msg).decode("utf-8"))
         for emotion in result:
@@ -440,14 +441,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     break
         return msg
         
-    def append_chat(self,contact,action="APPEND",row=None):
+    def append_chat_contact(self,chat_contact,action="APPEND",row=None):
         '''
         :param action APPEND OR INSERT,APPEND value is default
         '''
         ###############
         cells = []
         # user name item
-        user_name = contact['UserName']
+        user_name = chat_contact['UserName']
         user_name_item = QtGui.QStandardItem(unicode(user_name))
         cells.append(user_name_item)
         
@@ -455,7 +456,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         item = QtGui.QStandardItem(QIcon(user_head_icon),"")
         cells.append(item)
         
-        dn = contact['DisplayName'] or contact['RemarkName'] or contact['NickName']
+        dn = chat_contact['DisplayName'] or chat_contact['RemarkName'] or chat_contact['NickName']
         #if not dn:
             #dn = contact['NickName']
         # user remark or nick name
@@ -482,7 +483,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         user_name_item = QtGui.QStandardItem(unicode(user_name))
         cells.append(user_name_item)
         
-        user_head_icon = self.contact_head_home + user_name+".jpg"
+        user_head_icon = "%s/%s.jpg"%(self.contact_head_home, user_name)
         item = QtGui.QStandardItem(QIcon(user_head_icon),"")
         cells.append(item)
         
@@ -505,7 +506,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #self.messages.load(QUrl.fromLocalFile(ap))
         self.messages.page().mainFrame().evaluateJavaScript("clearr();")
         
-    def init_chats(self):
+    def init_chat_contacts(self):
         '''
         contact table (5 columns)
         column 1:user name(will be hidden)
@@ -517,7 +518,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #self.chatsWidget.setColumnCount(4)
         ''''''
         for chat_contact in self.wechatweb.getChatContacts():
-            self.append_chat(chat_contact)
+            self.append_chat_contact(chat_contact)
             
         '''
         for session in sorted([x for x in self.wechatweb.friend_list if x["AttrStatus"] and x["AttrStatus"] > 0],key=lambda ct: ct["AttrStatus"],reverse=True):
@@ -819,7 +820,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         rr = re.search(r'<img src="([.*\S]*\.gif)"',msg_html,re.I)
         msg_body = ""
         if rr:
-            pimages = self.emotioncode(msg_html)
+            pimages = self.code_emotion(msg_html)
             for pimage in pimages:
                 p = pimage["p"]
                 msg_body+=p
@@ -843,8 +844,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #self.messages.append(format_msg)
         msg_body = msg_body.replace("'", "\'")
         msg_body = msg_body.replace('"', '\"')
-        msg_decode_body = self.emotiondecode(msg_body) if rr else msg_body
-        #msg_text = self.emotiondecode(msgBody)
+        msg_decode_body = self.decode_emotion(msg_body) if rr else msg_body
+        #msg_text = self.decode_emotion(msgBody)
         #self.messages.append(unicode(msg_text))
         _msg = self.make_message(self.current_chat_contact['UserName'],msg_decode_body)
         script = "nappend('%s','%s','%s','%s','%s');"%(_msg['id'],_msg['user']['head_class'],_msg['user']['head_img'],_msg['body']['content_class'],_msg['body']['content'])
@@ -1125,7 +1126,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 if content.startswith("@"):
                     contents = content.split(":<br/>")
                     content = contents[1]
-            content = self.emotiondecode(content)
+            content = self.decode_emotion(content)
             #self.messages.append(format_msg)
             #self.messages.append(unicode(msg_content))
         

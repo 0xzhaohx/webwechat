@@ -9,7 +9,7 @@ Created on 2018年3月25日
 import os
 import sys
 import threading
-from time import sleep
+#from time import sleep
 import time
 import logging
 
@@ -91,7 +91,7 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
             self.accept()
 
     def generate_qrcode(self):
-        uuid = self.weChatWeb.get_uuid()
+        #uuid = self.weChatWeb.__get_uuid()
         self.weChatWeb.generate_qrcode()
 
     def loggingclear(self):
@@ -115,7 +115,7 @@ class WeChatLauncherThread(threading.Thread):
             #print(WeChatLauncher.timeout)
             self.launcher.do_login()
             
-            sleep(2)
+            time.sleep(2)
 
 if __name__ =="__main__":
     
