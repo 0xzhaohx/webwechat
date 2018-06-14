@@ -53,15 +53,15 @@ class LabelDelegate(QStyledItemDelegate):
                 painter.setPen(white)
                 painter.setBrush(white)
                 ellipse_r = 20
-                ellipse_x = rect_x+LabelDelegate.HEAD_IMG_WIDTH-5
-                ellipse_y = rect_y+head_image_y_offset-7.5
+                ellipse_x = rect_x + LabelDelegate.HEAD_IMG_WIDTH - 5
+                ellipse_y = rect_y + head_image_y_offset - 7.5
                 
                 painter.drawEllipse(ellipse_x,ellipse_y,ellipse_r,ellipse_r)
                 red = QColor(255, 255, 255)
                 painter.setPen(red)
                 painter.setBrush(red)
                 
-                msg_count_x = rect_x+LabelDelegate.HEAD_IMG_WIDTH+2.5
+                msg_count_x = rect_x + LabelDelegate.HEAD_IMG_WIDTH + 2.5
                 
                 if msgCount >= 10 and msgCount < 100:
                     msg_count_x = msg_count_x - 0.5
@@ -69,7 +69,7 @@ class LabelDelegate(QStyledItemDelegate):
                     msg_count_x = msg_count_x - 3.5
                 elif msgCount >= 1000 and msgCount < 10000:
                     msg_count_x = msg_count_x - 5
-                msg_count_y = rect_y+head_image_y_offset + 5
+                msg_count_y = rect_y + head_image_y_offset + 5
                 painter.drawText(msg_count_x,msg_count_y, str(msgCount))
             painter.restore()
         else:

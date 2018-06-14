@@ -42,7 +42,7 @@ def osbits(machine=None):
 
 class WeChatLauncher(QtGui.QDialog, LauncherWindow):
 
-    timeout = False
+    timeout = login_state = exitt = False
     LOG_FILE = './wechat.log'
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
@@ -76,22 +76,20 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         else:
             pass
 
-    def do_login(self):
-        login_state = self.weChatWeb.wait4login()
-        if self.weChatWeb.get_redirect_url():
-            login_state = True
+    def login(self):
+        code = self.weChatWeb.wait4login()
+        print("code is %s"%code)
+        if "200" == code:
+            WeChatLauncher.login_state = True
         else:
-            login_state = self.weChatWeb.wait4login(0)
-            if self.weChatWeb.get_redirect_url():
-                login_state = True
-            else:
-                login_state = False
+            code = self.weChatWeb.wait4login(0)
+            print("code is %s"%code)
+            WeChatLauncher.login_state = (True if "200" == code else False)
 
-        if login_state:
+        if WeChatLauncher.login_state:
             self.accept()
 
     def generate_qrcode(self):
-        #uuid = self.weChatWeb.__get_uuid()
         self.weChatWeb.generate_qrcode()
 
     def loggingclear(self):
@@ -110,10 +108,10 @@ class WeChatLauncherThread(threading.Thread):
         self.weChatWeb = weChatWeb
 
     def run(self):
-
-        while(False == WeChatLauncher.timeout):
-            #print(WeChatLauncher.timeout)
-            self.launcher.do_login()
+        while(False == WeChatLauncher.timeout == WeChatLauncher.login_state):
+            if(WeChatLauncher.exitt):
+                break
+            self.launcher.login()
             
             time.sleep(2)
 
@@ -131,4 +129,5 @@ if __name__ =="__main__":
         window.show()
         sys.exit(app.exec_())
     else:
+        WeChatLauncher.exitt=True
         sys.exit(0)
