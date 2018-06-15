@@ -13,12 +13,13 @@ import threading
 import time
 import logging
 
-from com.ox11.wechat.wechat import WeChat
+from com.ox11.wechat.wechatte import WeChat
 from wechatweb import WeChatWeb
 import platform
 
 from PyQt4.Qt import QIcon
 from PyQt4 import QtGui, uic
+from config import WechatConfig
 
 qtCreatorFile = "resource/ui/wechatlauncher-1.0.ui"
 
@@ -52,9 +53,8 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         self.loggingclear()
         
         logging.basicConfig(filename=WeChatLauncher.LOG_FILE,filemode='w',level=logging.DEBUG,format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
-        self.user_home = os.path.expanduser('~')
-        self.app_home = self.user_home + '/.wechat'
         self.weChatWeb = WeChatWeb()
+        self.config = WechatConfig()
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"))
         self.setWindowIconText("WeChat 0.5")
@@ -67,7 +67,7 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         WeChatLauncher.timeout = True
 
     def load_qr_code_image(self):
-        qrcode_path = self.app_home+"/qrcode.jpg"
+        qrcode_path = self.config.getAppHome()+"/qrcode.jpg"
         qr_image = QtGui.QImage()
         if qr_image.load(qrcode_path):
             self.qrLabel.setPixmap(QtGui.QPixmap.fromImage(qr_image))

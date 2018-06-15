@@ -22,6 +22,7 @@ def emotioncmp(x,y):
         return -1
     else:
         return 0
+    
 class Emotion(QtGui.QWidget):
     EMOTION_DIR = "./resource/expression"
     WIDTH = 460
