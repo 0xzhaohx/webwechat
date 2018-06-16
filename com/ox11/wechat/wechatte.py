@@ -300,7 +300,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     
     def wxinitial(self):
         wx_init_response = self.wechatweb.webwx_init()
-        #self.wechatweb.webwxstatusnotify()
+        self.wechatweb.webwxstatusnotify()
         self.setupwxuser()
         
         #do downlaod icon
@@ -1377,7 +1377,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     
     def msg_handle(self,message):
         msg_type = message['MsgType']
-        #print("msg_handle() will processing ,msgtype %s,msg body:%s"%(str(msg_type),str(message)))
         if msg_type:
             if msg_type == 51:
                 self.wxinitial_msg_handler(message)

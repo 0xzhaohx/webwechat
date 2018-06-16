@@ -207,7 +207,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     
     def wxinitial(self):
         wx_init_response = self.wechatweb.webwx_init()
-        #self.wechatweb.webwxstatusnotify()
+        self.wechatweb.webwxstatusnotify()
         self.setupwxuser()
         
         #do downlaod icon
