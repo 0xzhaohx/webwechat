@@ -1003,6 +1003,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             return False
         
     def get_user_display_name(self,message):
+        '''
+        :获取用户的显示名称，如果是群，则显示成员的名称
+        '''
         
         from_user_name = message['FromUserName']
         user = self.wechatweb.getUser()
@@ -1011,20 +1014,18 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             from_user = user
         else:
             from_user = self.get_contact(from_user_name)
+        from_user_display_name = from_member_name= None
         #如果為群，則消息來源顯示from_member_name
         #如果是群消息
-        from_user_display_name = from_member_name= None
-        content = message['Content']
         if self.isChatRoom(from_user_name):
+            content = message['Content']
             contents = content.split(":<br/>")
             from_user_display_name = from_member_name = contents[0]
                 
             members = from_user["MemberList"]
             for member in members:
                 if from_member_name == member['UserName']:
-                    from_user_display_name = member['NickName'] or member['DisplayName']
-                    if not from_user_display_name:
-                        from_user_display_name = from_member_name
+                    from_user_display_name = member['NickName'] or member['DisplayName'] or from_member_name
                     break
         else:
             from_user_display_name = from_user['RemarkName'] or from_user['NickName']
@@ -1198,6 +1199,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         from_user_name = message['FromUserName']
         if from_user_name == self.wechatweb.getUser()['UserName']:
             from_user_name = message['ToUserName']
+            
         if self.current_chat_contact and from_user_name == self.current_chat_contact['UserName']:
             self.messages.append(format_msg)
             msg_img = ('<img src=%s/%s.jpg>'%(self.config.getCacheImageHome(),msg_id))
@@ -1257,7 +1259,10 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             xmlContent = xmlContent.replace("&lt;","<")
             xmlContent = xmlContent.replace("<br/>","")
         print("xmlContent %s"%xmlContent)
-        if msg["FromUserName"].find("@@") >=0:
+        user_name = msg['FromUserName']
+        if user_name == self.wechatweb.getUser()['UserName']:
+            user_name = msg['ToUserName']
+        if self.isChatRoom(user_name):
             index = xmlContent.find(":")
             if index > 0:
                 xmlContent = xmlContent[index+1:len(msg)]
@@ -1284,8 +1289,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
-        to_user_name = msg['ToUserName']
-        if self.current_chat_contact and to_user_name == self.current_chat_contact['UserName']:
+        if self.current_chat_contact and user_name == self.current_chat_contact['UserName']:
             self.messages.append(format_msg)
             self.messages.append(unicode(('%s %s %s')%(title,desc,app_url)))
         else:
@@ -1302,7 +1306,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             cache_key = message['FromUserName']
         '''
-        print("cache key is %s"%cache_key)
         row_count = self.chatsModel.rowCount()
         if row_count <= 0:
             self.blocked_messages_pool.append(message)
@@ -1450,14 +1453,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                     #st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
                     #format_msg = ('(%s) %s:') % (st, self.wechatweb.user['NickName'])
                     format_msg = self.msg_timestamp(self.wechatweb.getUser()['NickName'])
-                    #self.messages.append(format_msg)
+                    self.messages.append(format_msg)
                     if self.isImage(ffile):
                         msg_img = ('<img src=%s/%s.jpg>'%(self.config.getCacheImageHome(),msg_id))
                     else:
                         msg_img = ffile
-                    #self.messages.append(msg_img)
-                    _msg = self.make_message(self.wechatweb.getUser()['UserName'],unicode(msg_img))
-                    self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
+                    self.messages.append(msg_img)
+                    #_msg = self.make_message(self.wechatweb.getUser()['UserName'],unicode(msg_img))
+                    #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%(json.dumps(_msg)))
                     #self.messages.page().mainFrame().evaluateJavaScript("append('%s');"%unicode(msg_img))
                 else:
                     #fileName=QtCore.QString.fromUtf8(fileName)
@@ -1494,4 +1497,4 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         #self.webwx_sync_process(sync_response)
             if loop is False:
                 break
-            sleep(25)
+            sleep(15)

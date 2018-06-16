@@ -965,9 +965,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             members = from_user["MemberList"]
             for member in members:
                 if from_member_name == member['UserName']:
-                    from_user_display_name = member['NickName'] or member['DisplayName']
-                    if not from_user_display_name:
-                        from_user_display_name = from_member_name
+                    from_user_display_name = member['NickName'] or member['DisplayName'] or from_member_name
                     break
         else:
             from_user_display_name = from_user['RemarkName'] or from_user['NickName']
@@ -1267,7 +1265,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         else:
             cache_key = message['FromUserName']
         '''
-        print("cache key is %s"%cache_key)
         row_count = self.chatsModel.rowCount()
         if row_count <= 0:
             self.blocked_messages_pool.append(message)
@@ -1512,4 +1509,4 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         #self.webwx_sync_process(sync_response)
             if loop is False:
                 break
-            sleep(25)
+            sleep(15)

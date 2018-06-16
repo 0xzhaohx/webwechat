@@ -439,7 +439,11 @@
            </widget>
           </item>
           <item>
-           <widget class="QTextEdit" name="messages"/>
+           <widget class="QTextEdit" name="messages">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_8">
