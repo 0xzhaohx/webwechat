@@ -1265,7 +1265,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if self.isChatRoom(user_name):
             index = xmlContent.find(":")
             if index > 0:
-                xmlContent = xmlContent[index+1:len(msg)]
+                xmlContent = xmlContent[index+1:len(xmlContent)]
         
         #print("xml_content %s"%xmlContent)
         doc = xml.dom.minidom.parseString(xmlContent)

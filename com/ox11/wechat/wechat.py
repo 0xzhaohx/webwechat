@@ -1219,7 +1219,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if msg["FromUserName"].find("@@") >=0:
             index = xmlContent.find(":")
             if index > 0:
-                xmlContent = xmlContent[index+1:len(msg)]
+                xmlContent = xmlContent[index+1:len(xmlContent)]
         
         print("xmlContent %s"%xmlContent)
         #print("xml_content %s"%xmlContent)
