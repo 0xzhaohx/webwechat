@@ -403,6 +403,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                 exist = False
                 if contact["UserName"] == member["UserName"]:
                     exist = True
+                    if not member["NickName"] and not member["DisplayName"] and t_names:
+                        member["DisplayName"]= "、".join(t_names)
                     break
             if exist is False:
                 self.wechatweb.appendFriend(contact)
@@ -577,7 +579,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         item = QtGui.QStandardItem(QIcon(user_head_icon),"")
         cells.append(item)
         
-        _name = contact['RemarkName'] or contact['NickName']
+        _name = contact['DisplayName'] or contact['RemarkName'] or contact['NickName']
         #if not dn:
             #dn = contact['NickName']
         # user remark or nick name
@@ -1056,7 +1058,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     
     def msg_timestamp(self,userName):
         st = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        msg_timestamp = ('%s %s:') % (userName, st)
+        msg_timestamp = ('%s %s') % (userName, st)
         return unicode(msg_timestamp)
     
     def default_msg_handler(self,msg):

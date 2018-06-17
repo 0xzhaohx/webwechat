@@ -2,9 +2,8 @@
 
 block_cipher = None
 
-
-a = Analysis(['/home/zhaohongxing/workspace/python/webwechat/wechatlauncher.py'],
-             pathex=['/home/zhaohongxing/Downloads/PyInstaller-3.3.1/wechat'],
+a = Analysis(['./wechatlauncher.py'],
+             pathex=['/home/zhaohongxing/workspace/python/webwechat','/home/zhaohongxing/workspace/python/libwechatweb'],
              binaries=[],
              datas=[('./resource','resource')
              ],
