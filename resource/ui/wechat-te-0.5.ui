@@ -286,7 +286,20 @@
            </widget>
           </item>
           <item>
+           <widget class="QLabel" name="user_name_label">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QLabel" name="signature_label">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>10</height>
+             </size>
+            </property>
             <property name="text">
              <string>恍恍惚惚红红火火</string>
             </property>
@@ -303,6 +316,12 @@
           </item>
           <item>
            <widget class="QLabel" name="remark_label">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>10</height>
+             </size>
+            </property>
             <property name="text">
              <string>備註：阿福</string>
             </property>
@@ -316,6 +335,12 @@
           </item>
           <item>
            <widget class="QLabel" name="province_label">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>10</height>
+             </size>
+            </property>
             <property name="text">
              <string>地區：北京</string>
             </property>

@@ -168,6 +168,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.friendButton.clicked.connect(self.switch_friend)
 
         self.sendButton.clicked.connect(self.send_msg)
+        
+        self.pushButton.clicked.connect(self.to_chat)
         self.emotionButton.clicked.connect(self.select_emotion)
         self.selectImageFileButton.clicked.connect(self.select_document)
         self.currentChatUser.clicked.connect(self.current_chat_user_click)
@@ -647,14 +649,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         #self.readerListWidget.addItem("readers")
         #self.readerListWidget.clicked.connect(self.contact_cell_clicked)
 
-    def switch_chat(self):
+    def switch_chat(self,show=False):
         current_row =self.chatsWidget.currentIndex().row()
-        if current_row > 0:
+        if current_row > 0 or show:
             self.chatAreaWidget.setVisible(True)
             self.label.setVisible(False)
         else:
-            self.label.setVisible(True)
             self.chatAreaWidget.setVisible(False)
+            self.label.setVisible(True)
             
         self.chatsWidget.setVisible(True)
         self.friendsWidget.setVisible(False)
@@ -791,6 +793,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         user_name_o = self.friendsModel.data(user_name_index)
         user_name = user_name_o.toString()
         contact = self.get_member(user_name)
+        self.user_name_label.setVisible(False)
+        self.user_name_label.setText(user_name)
         if contact:
             user_icon = self.config.getContactHeadHome() + contact['UserName'] + ".jpg"
             user_head_image = QtGui.QImage()
@@ -974,24 +978,41 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         
     def stick(self,row=None,select=False):
         '''
-        :param row the row which will be move to the top of the session table
+        :param row the row which will be move to the top of the chat contact list
+        :select 是否要選中row指定的行
         '''
         #提昇from_user_name在會話列表中的位置
         #move this row to the top of the session table
+        #從chat_contact列表中找人
         if not row or row <= 0:
             row_count = self.chatsModel.rowCount()
             for _row in range(row_count):
                 index = self.chatsModel.index(_row,0)
                 user_name_o = self.chatsModel.data(index)
-                user_name = user_name_o
+                user_name = user_name_o.toString()
                 if user_name and user_name == self.current_chat_contact["UserName"]:
                     row = _row
                     break;
-        if row > 1:
+        if row == 0:
+            return True
+        elif row >= 1:
             taked_row = self.chatsModel.takeRow(row)
             self.chatsModel.insertRow(0 ,taked_row)
             if select:
                 self.chatsWidget.selectRow(0)
+            return True
+        else:
+            return False
+                
+    def over_the_top(self):
+        '''
+        :see stick
+        '''
+        sticked = self.stick(select=True)
+        if not sticked:
+            user = self.get_contact(self.current_chat_contact["UserName"])
+            self.append_chat_contact(user,action="INSERT",row=0)
+            self.chatsWidget.selectRow(0)
     
     def isChatRoom(self,user):
         '''
@@ -1467,7 +1488,18 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.draft.append("<img src=%s width=80 height=80>"%(ffile))
                     else:
                         print(ffile)
-                    
+    def to_chat(self):
+        '''點擊傳消息按鈕
+        把此人加入Chat列表，同時顯示
+        '''
+        user_name = self.user_name_label.text()
+        print("to_chat user_name %s"%(user_name))
+        self.current_chat_contact = self.get_contact(user_name)
+        if self.current_chat_contact:
+            self.messages_clear()
+        self.switch_chat(show=True)
+        self.over_the_top()
+            
     def keyPressEvent(self,event):
         print("keyPressEvent")
     
@@ -1495,5 +1527,6 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.messageReceived.emit(sync_response)
                         #self.webwx_sync_process(sync_response)
             if loop is False:
+                print("break and loop %s"%loop)
                 break
             sleep(15)
