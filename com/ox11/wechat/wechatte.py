@@ -149,7 +149,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         
         self.chatAreaWidget.setVisible(False)
         self.chatsWidget.setItemDelegate(LabelDelegate())
-        self.chatsWidget.setIconSize(QSize(40,40))
+        self.chatsWidget.setIconSize(QSize(45,45))
         self.chatsWidget.setModel(self.chatsModel)
         self.chatsWidget.selectionModel().selectionChanged.connect(self.chat_item_clicked)
         self.chatsWidget.setColumnHidden(0,True)
@@ -158,7 +158,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         self.chatsWidget.setColumnWidth(3, 30);
         #self.chatsWidget.horizontalHeader().setStretchLastSection(True)
         self.friendsWidget.setModel(self.friendsModel)
-        self.friendsWidget.setIconSize(QSize(40,40))
+        self.friendsWidget.setIconSize(QSize(45,45))
         self.friendsWidget.setColumnHidden(0,True)
         self.friendsWidget.setColumnWidth(1, 70);
         self.friendsWidget.setColumnWidth(3, 30);

@@ -193,10 +193,10 @@
           <bool>true</bool>
          </attribute>
          <attribute name="verticalHeaderVisible">
-          <bool>true</bool>
+          <bool>false</bool>
          </attribute>
          <attribute name="verticalHeaderDefaultSectionSize">
-          <number>60</number>
+          <number>70</number>
          </attribute>
         </widget>
        </item>
