@@ -1056,8 +1056,8 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         return from_user_display_name or from_user_name
     
     
-    def msg_timestamp(self,userName):
-        st = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    def msg_timestamp(self,userName,createTime=None):
+        st = time.strftime("%Y-%m-%d %H:%M", time.localtime(createTime) if createTime else time.localtime())
         msg_timestamp = ('%s %s') % (userName, st)
         return unicode(msg_timestamp)
     
@@ -1135,7 +1135,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pass
         
         from_user_display_name = self.get_user_display_name(msg)
-        format_msg = self.msg_timestamp(from_user_display_name)
+        format_msg = self.msg_timestamp(from_user_display_name,msg["CreateTime"])
         '''
         #:如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
@@ -1154,7 +1154,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not self.current_chat_contact:
             pass
         from_user_display_name = self.get_user_display_name(msg)
-        format_msg = self.msg_timestamp(from_user_display_name)
+        format_msg = self.msg_timestamp(from_user_display_name,msg["CreateTime"])
         '''
         #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
@@ -1177,7 +1177,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         from_user_display_name = self.get_user_display_name(message)
         
             
-        format_msg = self.msg_timestamp(from_user_display_name)
+        format_msg = self.msg_timestamp(from_user_display_name,message["CreateTime"])
         '''
         #:如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
         '''
@@ -1213,7 +1213,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         if not self.current_chat_contact:
             pass
         from_user_display_name = self.get_user_display_name(message)
-        format_msg = self.msg_timestamp(from_user_display_name)
+        format_msg = self.msg_timestamp(from_user_display_name,message["CreateTime"])
         msg_id = message['MsgId']
         self.wechatweb.webwx_get_msg_img(msg_id)
         '''
@@ -1238,7 +1238,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             pass
         
         from_user_display_name = self.get_user_display_name(msg)
-        format_msg = self.msg_timestamp(from_user_display_name)
+        format_msg = self.msg_timestamp(from_user_display_name,msg["CreateTime"])
         
         xml_content = msg['Content']
         if xml_content:
@@ -1307,7 +1307,7 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
             app_url = app_url_nodes[0].firstChild.data
         
         from_user_display_name = self.get_user_display_name(msg)
-        format_msg = self.msg_timestamp(from_user_display_name)
+        format_msg = self.msg_timestamp(from_user_display_name,msg["CreateTime"])
         
         '''
         #如果此消息的發件人和當前聊天的是同一個人，則把消息顯示在窗口中
