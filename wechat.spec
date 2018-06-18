@@ -8,7 +8,7 @@ a = Analysis(['./wechatlauncher.py'],
              datas=[
              	('./resource','resource'),
              	('./icons','icons'),
-             	('wechat.sh','wechat.sh')
+             	('./wechat.sh','')
              ],
              hiddenimports=[],
              hookspath=[],

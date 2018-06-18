@@ -25,7 +25,7 @@ class About(QtGui.QDialog):
     def about_initial(self):
         #
         mainLayout=QVBoxLayout()
-        label = QtGui.QLabel("v0.5")
+        label = QtGui.QLabel("v0.6")
         label.setAlignment(Qt.AlignHCenter)
         mainLayout.addWidget(label)
         #mainLayout.addWidget(self.emotion_table)
