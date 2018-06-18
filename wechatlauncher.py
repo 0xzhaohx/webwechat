@@ -44,17 +44,17 @@ def osbits(machine=None):
 class WeChatLauncher(QtGui.QDialog, LauncherWindow):
 
     timeout = login_state = exitt = False
-    LOG_FILE = './wechat.log'
+    LOG_FILE = '%s/wechat.log'
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
         LauncherWindow.__init__(self)
         #threading.Thread.__init__(self,name='wechat launcher')
         #self.setDaemon(True)
-        self.loggingclear()
         
-        logging.basicConfig(filename=WeChatLauncher.LOG_FILE,filemode='w',level=logging.DEBUG,format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
         self.weChatWeb = WeChatWeb()
         self.config = WechatConfig()
+        self.loggingclear()
+        logging.basicConfig(filename=(WeChatLauncher.LOG_FILE)%(self.config.getAppHome()),filemode='w',level=logging.DEBUG,format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
         self.setupUi(self)
         self.setWindowIcon(QIcon("resource/icons/hicolor/32x32/apps/wechat.png"))
         self.setWindowIconText("WeChat 0.5")
@@ -78,14 +78,12 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
 
     def login(self):
         code = self.weChatWeb.wait4login()
-        print("code is %s"%code)
         if "200" == code:
             WeChatLauncher.login_state = True
         else:
             code = self.weChatWeb.wait4login(0)
-            print("code is %s"%code)
             WeChatLauncher.login_state = (True if "200" == code else False)
-
+        logging.debug("code is %s"%code)
         if WeChatLauncher.login_state:
             self.accept()
 
@@ -93,8 +91,8 @@ class WeChatLauncher(QtGui.QDialog, LauncherWindow):
         self.weChatWeb.generate_qrcode()
 
     def loggingclear(self):
-        if os.path.exists(WeChatLauncher.LOG_FILE):
-            with open(WeChatLauncher.LOG_FILE,'w') as lf:
+        if os.path.exists(WeChatLauncher.LOG_FILE%self.config.getAppHome()):
+            with open(WeChatLauncher.LOG_FILE%self.config.getAppHome(),'w') as lf:
                 lf.seek(0)
                 lf.truncate()
                 logging.debug(time.time())

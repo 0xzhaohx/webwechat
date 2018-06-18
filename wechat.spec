@@ -5,7 +5,10 @@ block_cipher = None
 a = Analysis(['./wechatlauncher.py'],
              pathex=['/home/zhaohongxing/workspace/python/webwechat','/home/zhaohongxing/workspace/python/libwechatweb'],
              binaries=[],
-             datas=[('./resource','resource')
+             datas=[
+             	('./resource','resource'),
+             	('./icons','icons'),
+             	('wechat.sh','wechat.sh')
              ],
              hiddenimports=[],
              hookspath=[],

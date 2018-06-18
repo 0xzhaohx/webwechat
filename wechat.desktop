@@ -2,22 +2,13 @@
 Version=0.5
 Type=Application
 Name=Wechat
-GenericName=Text Editor
-Comment=A Client of wechat
-Exec=/opt/sublime_text_3/sublime_text %F
+Encoding=UTF-8
+GenericName=Wechat 0.6
+Comment=A Client of Wechat
+Exec=/opt/wechat/wechat
 Terminal=false
-MimeType=text/plain;
-Icon=/opt/sublime_text_3/Icon/128x128/sublime-text.png
-Categories=TextEditor;Development;
+Icon=/opt/wechat/icons/hicolor/72x72/apps/wechat.png
+Categories=Application;
 StartupNotify=true
-Actions=Window;Document;
-
-[Desktop Action Window]
-Name=New Window
-Exec=/opt/sublime_text_3/sublime_text -n
-OnlyShowIn=Unity;
-
-[Desktop Action Document]
-Name=New File
-Exec=/opt/sublime_text_3/sublime_text --command new_file
-OnlyShowIn=Unity;
+Name[zh_CN]=微信
+Name[zh_TW]=微信

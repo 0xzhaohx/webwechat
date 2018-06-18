@@ -104,9 +104,9 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
     def __init__(self,wechatweb):
         QtGui.QMainWindow.__init__(self)
         WeChatWindow.__init__(self)
-        logging.basicConfig(filename='./wechat.log',level=logging.DEBUG,format=WeChat.LOG_FORMAT)
         self.setAcceptDrops(True)
         self.config = WechatConfig()
+        logging.basicConfig(filename='%s/wechat.log'%self.config.getAppHome(),level=logging.DEBUG,format=WeChat.LOG_FORMAT)
         self.default_head_icon = './resource/images/default.png'
         self.current_chat_contact = None
         self.messages_pool = {}
@@ -1511,14 +1511,14 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
         '''
         while (True):
             st = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime())
-            print('[push]synccheck %s' %(st))
+            logging.debug('[push]synccheck %s' %(st))
             (code, selector) = self.wechatweb.sync_check()
             if code == -1 and selector == -1:
-                print("self.wechatweb.sync_check() error")
+                logging.error("self.wechatweb.sync_check() error")
             else:
                 if code != '0':
                     if code == '1101' and selector == '0':
-                        print("session timeout")
+                        logging.debug("session timeout")
                         self.do_logout()
                         break
                 else:
@@ -1529,6 +1529,5 @@ class WeChat(QtGui.QMainWindow, WeChatWindow):
                         self.messageReceived.emit(sync_response)
                         #self.webwx_sync_process(sync_response)
             if loop is False:
-                print("break and loop %s"%loop)
                 break
             sleep(15)
