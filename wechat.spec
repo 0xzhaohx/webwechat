@@ -8,7 +8,8 @@ a = Analysis(['./wechatlauncher.py'],
              datas=[
              	('./resource','resource'),
              	('./icons','icons'),
-             	('./wechat.sh','')
+             	('./wechat.sh',''),
+             	('./logo.ico','')
              ],
              hiddenimports=[],
              hookspath=[],
@@ -26,7 +27,8 @@ exe = EXE(pyz,
           debug=False,
           strip=False,
           upx=True,
-          console=False )
+          console=False,
+          icon='logo.ico' )
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
